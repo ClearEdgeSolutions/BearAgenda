@@ -379,6 +379,8 @@ const HOUSE_INIT = {
   items: [],
   pockets: [],
   transactions: [],
+  deletedItems: [],
+  deletedPockets: [],
   nextId: 1,
   updatedAt: null,
 };
@@ -488,7 +490,56 @@ function normalizeHouse() {
   if (!H.items) H.items = [];
   if (!H.pockets) H.pockets = [];
   if (!H.transactions) H.transactions = [];
+  if (!H.deletedItems) H.deletedItems = [];
+  if (!H.deletedPockets) H.deletedPockets = [];
   if (!H.nextId) H.nextId = 1;
+}
+
+function newestTime(obj) {
+  return new Date(obj.updatedAt||obj.createdAt||obj.updated_at||0).getTime()||0;
+}
+
+function mergeById(a=[], b=[], preferNewest=true) {
+  const map=new Map();
+  [...a,...b].forEach(row=>{
+    if(!row||!row.id) return;
+    const prev=map.get(row.id);
+    if(!prev) map.set(row.id,{...row});
+    else if(!preferNewest || newestTime(row)>=newestTime(prev)) map.set(row.id,{...prev,...row});
+  });
+  return [...map.values()];
+}
+
+function mergeHouseItems(localItems=[], cloudItems=[], deleted=[]) {
+  const deletedSet=new Set(deleted);
+  const map=new Map();
+  [...localItems,...cloudItems].forEach(item=>{
+    if(!item||!item.id||deletedSet.has(item.id)) return;
+    const prev=map.get(item.id);
+    const merged=prev&&newestTime(prev)>newestTime(item)?{...item,...prev}:{...prev,...item};
+    merged.payments=mergeById(prev&&prev.payments||[], item.payments||[], false)
+      .sort((a,b)=>new Date(b.createdAt||b.date)-new Date(a.createdAt||a.date));
+    map.set(item.id,merged);
+  });
+  return [...map.values()];
+}
+
+function mergeHouseData(localData={}, cloudData={}) {
+  const local={...HOUSE_INIT,...(localData||{})};
+  const cloud={...HOUSE_INIT,...(cloudData||{})};
+  const deletedItems=[...new Set([...(local.deletedItems||[]),...(cloud.deletedItems||[])])];
+  const deletedPockets=[...new Set([...(local.deletedPockets||[]),...(cloud.deletedPockets||[])])];
+  const deletedPocketSet=new Set(deletedPockets);
+  const merged={...HOUSE_INIT};
+  merged.items=mergeHouseItems(local.items,cloud.items,deletedItems);
+  merged.pockets=mergeById(local.pockets,cloud.pockets,true).filter(p=>!deletedPocketSet.has(p.id));
+  merged.transactions=mergeById(local.transactions,cloud.transactions,false)
+    .sort((a,b)=>new Date(b.createdAt||b.date)-new Date(a.createdAt||a.date));
+  merged.deletedItems=deletedItems;
+  merged.deletedPockets=deletedPockets;
+  merged.nextId=Math.max(local.nextId||1,cloud.nextId||1);
+  merged.updatedAt=[local.updatedAt,cloud.updatedAt].filter(Boolean).sort().pop()||null;
+  return merged;
 }
 
 function load() {
@@ -522,6 +573,19 @@ async function saveHouse() {
   localStorage.setItem(HOUSE_SK, JSON.stringify(H));
   if (!supabase || !CURRENT_USER) { houseSyncStatus='local'; houseSyncMessage='Sin sesión o conexión cloud'; return; }
   try {
+    const { data: cloudRow, error: readError } = await supabase
+      .from('house_data').select('data').eq('id', HOUSE_CLOUD_ID).maybeSingle();
+    if(readError) {
+      houseSyncStatus='error';
+      houseSyncMessage=readError.message||'No se pudo leer Casa antes de guardar';
+      console.warn('read shared house before save:', readError);
+      return;
+    }
+    if(cloudRow&&cloudRow.data) {
+      H=mergeHouseData(H,cloudRow.data);
+      H.updatedAt=new Date().toISOString();
+      localStorage.setItem(HOUSE_SK, JSON.stringify(H));
+    }
     const { error } = await supabase.from('house_data').upsert(
       { id: HOUSE_CLOUD_ID, data: {houseShared:true, ...H}, updated_at: H.updatedAt },
       { onConflict: 'id' }
@@ -554,10 +618,14 @@ async function loadHouseCloud() {
       return;
     }
     if (data && data.data) {
-      const cloud = {...HOUSE_INIT, ...data.data};
-      if (!H.updatedAt || (cloud.updatedAt && new Date(cloud.updatedAt) > new Date(H.updatedAt))) H = cloud;
+      H = mergeHouseData(H, data.data);
+      H.updatedAt = new Date().toISOString();
       normalizeHouse();
       localStorage.setItem(HOUSE_SK, JSON.stringify(H));
+      await supabase.from('house_data').upsert(
+        { id: HOUSE_CLOUD_ID, data: {houseShared:true, ...H}, updated_at: H.updatedAt },
+        { onConflict: 'id' }
+      );
       houseSyncStatus='cloud';
       houseSyncMessage='Casa sincronizada';
     } else if ((H.items||[]).length || (H.transactions||[]).length) {
@@ -1153,7 +1221,8 @@ function housePocketMovements(pk) {
 }
 
 function houseAddAction() {
-  openModal(houseTab==='pockets'?'addHousePocket':'addHouseItem');
+  if(houseTab==='pockets') openModal('addHousePocket');
+  else openModal('addHouseItem');
 }
 
 function setHouseTab(tab) {
@@ -1174,6 +1243,7 @@ function renderHouse() {
   <div class="tabs-scroll mb-3">
     <button class="pill-tab ${houseTab==='payments'?'active':''} text-xs font-bold px-4 py-1.5 rounded-full whitespace-nowrap" onclick="setHouseTab('payments')">Pagos</button>
     <button class="pill-tab ${houseTab==='pockets'?'active':''} text-xs font-bold px-4 py-1.5 rounded-full whitespace-nowrap" onclick="setHouseTab('pockets')">Bolsillos</button>
+    <button class="pill-tab ${houseTab==='history'?'active':''} text-xs font-bold px-4 py-1.5 rounded-full whitespace-nowrap" onclick="setHouseTab('history')">Historial</button>
   </div>`;
 
   if(houseTab==='payments') {
@@ -1207,7 +1277,7 @@ function renderHouse() {
         </div>`;
       });
     }
-  } else {
+  } else if(houseTab==='pockets') {
     const totalSaved=housePocketTotal();
     html+=`<div class="card p-4 bg-indigo-50 border border-indigo-100"><div class="text-xs text-indigo-500 font-bold uppercase">Total en bolsillos de Casa</div><div class="text-2xl font-extrabold text-indigo-700">${fmt(totalSaved)}</div><div class="text-xs text-indigo-400 mt-1">Visible y compartido para ambos perfiles.</div></div>`;
     if(!H.pockets.length) {
@@ -1230,10 +1300,12 @@ function renderHouse() {
         </div>`;
       });
     }
+  } else {
+    const completed=(H.items||[]).filter(item=>housePaid(item)>0).sort((a,b)=>new Date(b.updatedAt||b.createdAt||0)-new Date(a.updatedAt||a.createdAt||0));
+    const recent=(H.transactions||[]).slice(0,30);
+    html+=`<div class="card p-4"><div class="font-semibold text-indigo-700 text-sm mb-3">Pagos realizados</div>${completed.length?completed.map(item=>`<button onclick="openModal('houseItemDetail','${item.id}')" class="w-full text-left flex justify-between py-2 border-t border-slate-50"><div><div class="text-sm font-semibold text-slate-700">${item.emoji||'🏠'} ${item.name}</div><div class="text-xs text-slate-400">${houseAssigneeLabel(item.assignedTo||'both')} · ${fmtDate(item.dueDate||isoToday())}</div></div><div class="font-bold text-green-600">${fmt(housePaid(item))}</div></button>`).join(''):`<div class="text-sm text-indigo-300 text-center py-3">Aún no hay pagos realizados.</div>`}</div>`;
+    html+=`<div class="card p-4"><div class="font-semibold text-indigo-700 text-sm mb-3">Actividad compartida</div>${recent.length?recent.map(t=>`<div class="flex justify-between py-2 border-t border-slate-50"><div><div class="text-sm font-semibold text-slate-700">${t.label}</div><div class="text-xs text-slate-400">${fmtDate(t.date)} · ${t.by||'Casa'}</div></div><div class="font-bold ${t.amount>=0?'text-green-600':'text-red-500'}">${fmt(Math.abs(t.amount||0))}</div></div>`).join(''):`<div class="text-sm text-indigo-300 text-center py-3">Sin actividad todavía.</div>`}</div>`;
   }
-
-  const recent=(H.transactions||[]).slice(0,8);
-  html+=`<div class="card p-4"><div class="font-semibold text-indigo-700 text-sm mb-3">Actividad compartida</div>${recent.length?recent.map(t=>`<div class="flex justify-between py-2 border-t border-slate-50"><div><div class="text-sm font-semibold text-slate-700">${t.label}</div><div class="text-xs text-slate-400">${fmtDate(t.date)} · ${t.by||'Casa'}</div></div><div class="font-bold ${t.amount>=0?'text-green-600':'text-red-500'}">${fmt(Math.abs(t.amount||0))}</div></div>`).join(''):`<div class="text-sm text-indigo-300 text-center py-3">Sin actividad todavia.</div>`}</div>`;
   document.getElementById('houseContent').innerHTML=html;
 }
 
@@ -1696,6 +1768,7 @@ async function deleteHouseItem(id) {
   const item=H.items.find(x=>x.id===id);
   if(!item||!confirm('¿Eliminar este item de Casa para ambos perfiles?')) return;
   H.items=H.items.filter(x=>x.id!==id);
+  H.deletedItems=[...new Set([...(H.deletedItems||[]),id])];
   H.transactions.unshift({id:'ht'+Date.now(),label:`Elimino ${item.name}`,amount:0,date:isoToday(),by:currentActorName(),createdAt:new Date().toISOString()});
   await saveHouse(); renderCurrentView(); showToast('Item eliminado de Casa');
 }
@@ -1747,6 +1820,7 @@ async function deleteHousePocket(id) {
   if(!pk||!confirm('¿Eliminar este bolsillo de Casa para ambos perfiles?')) return;
   if((pk.saved||0)>0){showToast('Saca el dinero del bolsillo antes de borrarlo');return;}
   H.pockets=H.pockets.filter(x=>x.id!==id);
+  H.deletedPockets=[...new Set([...(H.deletedPockets||[]),id])];
   H.transactions.unshift({id:'ht'+Date.now(),label:`Elimino bolsillo ${pk.name}`,amount:0,date:isoToday(),by:currentActorName(),createdAt:new Date().toISOString()});
   await saveHouse(); renderCurrentView(); showToast('Bolsillo eliminado');
 }
