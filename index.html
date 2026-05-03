@@ -220,6 +220,7 @@
 </button>
         <button onclick="exportData()" class="w-full bg-indigo-50 text-indigo-700 font-semibold py-2.5 rounded-xl text-sm">📤 Exportar datos</button>
         <button onclick="confirmFormatProfile()" class="w-full bg-amber-50 text-amber-600 font-semibold py-2.5 rounded-xl text-sm">Limpiar este perfil</button>
+        <button onclick="confirmClearHouse()" class="w-full bg-orange-50 text-orange-600 font-semibold py-2.5 rounded-xl text-sm">Limpiar Casa</button>
         <button onclick="confirmReset()" class="w-full bg-red-50 text-red-500 font-semibold py-2.5 rounded-xl text-sm">🔄 Reiniciar app</button>
       </div>
       <p class="text-center text-xs text-slate-400">BearAgenda v2.0 · Datos guardados localmente</p>
@@ -2711,6 +2712,34 @@ function confirmFormatProfile(){
     renderCurrentView();
     showToast('Perfil limpio');
   }
+}
+
+async function confirmClearHouse(){
+  if(!confirm('Esto borra TODO Casa para ambos perfiles: pagos, bolsillos e historial. ¿Continuar?')) return;
+  if(!confirm('Confirmación final: Casa quedará en cero para Felipe y Laura.')) return;
+  H = clone(HOUSE_INIT);
+  H.updatedAt = new Date().toISOString();
+  localStorage.setItem(HOUSE_SK, JSON.stringify(H));
+  if(supabase && CURRENT_USER) {
+    const { error } = await supabase.from('house_data').upsert(
+      { id: HOUSE_CLOUD_ID, data: {houseShared:true, ...H}, updated_at: H.updatedAt },
+      { onConflict: 'id' }
+    );
+    if(error) {
+      houseSyncStatus='error';
+      houseSyncMessage=error.message||'No se pudo limpiar Casa en la nube';
+      showToast('Casa local limpia, nube con error');
+    } else {
+      houseSyncStatus='cloud';
+      houseSyncMessage='Casa limpia y sincronizada';
+      showToast('Casa limpia');
+    }
+  } else {
+    houseSyncStatus='local';
+    houseSyncMessage='Casa limpia localmente';
+    showToast('Casa limpia localmente');
+  }
+  if(currentView==='casa') renderHouse();
 }
 
 function confirmReset(){if(confirm('¿Reiniciar todo?')){localStorage.removeItem(SK);location.reload();}}
