@@ -497,6 +497,10 @@ function normalizeHouse() {
   if (!H.nextId) H.nextId = 1;
 }
 
+function houseUid(prefix='h') {
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+}
+
 function newestTime(obj) {
   return new Date(obj.updatedAt||obj.createdAt||obj.updated_at||0).getTime()||0;
 }
@@ -1776,10 +1780,10 @@ async function saveHouseItem(id=null) {
     const item=H.items.find(x=>x.id===id);
     if(item) Object.assign(item,{name,amount,emoji,note,dueDate,frequency,assignedTo,updatedAt:new Date().toISOString(),updatedBy:currentActorName()});
   } else {
-    const item={id:'h'+(H.nextId++),name,amount,emoji,note,dueDate,frequency,assignedTo,createdAt:new Date().toISOString(),createdBy:currentActorName(),payments:[]};
-    if(alreadyPaid) item.payments.unshift({id:'hp'+Date.now(),amount,date:dueDate||isoToday(),note:'Registrado como realizado',by:currentActorName(),createdAt:new Date().toISOString()});
+    const item={id:houseUid('house_item'),name,amount,emoji,note,dueDate,frequency,assignedTo,createdAt:new Date().toISOString(),createdBy:currentActorName(),payments:[]};
+    if(alreadyPaid) item.payments.unshift({id:houseUid('house_pay'),amount,date:dueDate||isoToday(),note:'Registrado como realizado',by:currentActorName(),createdAt:new Date().toISOString()});
     H.items.unshift(item);
-    H.transactions.unshift({id:'ht'+Date.now(),label:`Agrego ${name}`,amount:alreadyPaid?amount:0,date:dueDate||isoToday(),by:currentActorName(),createdAt:new Date().toISOString()});
+    H.transactions.unshift({id:houseUid('house_tx'),label:`Agrego ${name}`,amount:alreadyPaid?amount:0,date:dueDate||isoToday(),by:currentActorName(),createdAt:new Date().toISOString(),refType:'houseItem',refId:item.id});
   }
   await saveHouse(); closeModal(); renderCurrentView(); showToast('Casa actualizada');
 }
@@ -1791,9 +1795,9 @@ async function saveHousePayment(id) {
   const note=document.getElementById('mNote').value.trim();
   if(!item||!amount){showToast('Escribe el monto');return;}
   item.payments=item.payments||[];
-  item.payments.unshift({id:'hp'+Date.now(),amount,date,note,by:currentActorName(),createdAt:new Date().toISOString()});
+  item.payments.unshift({id:houseUid('house_pay'),amount,date,note,by:currentActorName(),createdAt:new Date().toISOString()});
   if(housePaid(item)>=(item.amount||0)) item.done=true;
-  H.transactions.unshift({id:'ht'+Date.now(),label:`Abono a ${item.name}`,amount,date,by:currentActorName(),createdAt:new Date().toISOString()});
+  H.transactions.unshift({id:houseUid('house_tx'),label:`Abono a ${item.name}`,amount,date,by:currentActorName(),createdAt:new Date().toISOString(),refType:'houseItem',refId:item.id});
   await saveHouse(); closeModal(); renderCurrentView(); showToast('Abono registrado en Casa');
 }
 
@@ -1802,7 +1806,7 @@ async function deleteHouseItem(id) {
   if(!item||!confirm('¿Eliminar este item de Casa para ambos perfiles?')) return;
   H.items=H.items.filter(x=>x.id!==id);
   H.deletedItems=[...new Set([...(H.deletedItems||[]),id])];
-  H.transactions.unshift({id:'ht'+Date.now(),label:`Elimino ${item.name}`,amount:0,date:isoToday(),by:currentActorName(),createdAt:new Date().toISOString()});
+  H.transactions.unshift({id:houseUid('house_tx'),label:`Elimino ${item.name}`,amount:0,date:isoToday(),by:currentActorName(),createdAt:new Date().toISOString(),refType:'houseItem',refId:item.id});
   await saveHouse(); renderCurrentView(); showToast('Item eliminado de Casa');
 }
 
@@ -1821,13 +1825,13 @@ async function saveHousePocket(id=null) {
       if(diff>freeBalance()){showToast('No hay suficiente balance libre personal');return;}
       if(diff!==0) adjustBalance(-diff);
       Object.assign(pk,{name,emoji,saved,target,note,updatedAt:new Date().toISOString(),updatedBy:currentActorName()});
-      H.transactions.unshift({id:'ht'+Date.now(),label:`Ajusto bolsillo ${name}`,amount:diff,date:isoToday(),by:currentActorName(),createdAt:new Date().toISOString(),refType:'housePocket',refId:pk.id});
+      H.transactions.unshift({id:houseUid('house_tx'),label:`Ajusto bolsillo ${name}`,amount:diff,date:isoToday(),by:currentActorName(),createdAt:new Date().toISOString(),refType:'housePocket',refId:pk.id});
     }
   } else {
     if(saved>freeBalance()){showToast('No hay suficiente balance libre personal');return;}
     if(saved>0) adjustBalance(-saved);
-    H.pockets.unshift({id:'hpocket'+(H.nextId++),name,emoji,saved,target,note,createdAt:new Date().toISOString(),createdBy:currentActorName()});
-    H.transactions.unshift({id:'ht'+Date.now(),label:`Creo bolsillo ${name}`,amount:saved,date:isoToday(),by:currentActorName(),createdAt:new Date().toISOString(),refType:'housePocket',refId:H.pockets[0].id});
+    H.pockets.unshift({id:houseUid('house_pocket'),name,emoji,saved,target,note,createdAt:new Date().toISOString(),createdBy:currentActorName()});
+    H.transactions.unshift({id:houseUid('house_tx'),label:`Creo bolsillo ${name}`,amount:saved,date:isoToday(),by:currentActorName(),createdAt:new Date().toISOString(),refType:'housePocket',refId:H.pockets[0].id});
   }
   await save();
   await saveHouse(); closeModal(); renderCurrentView(); updateHeaderBalance(); showToast('Bolsillo de Casa guardado');
@@ -1843,7 +1847,7 @@ async function moveHousePocket(id) {
   if(direction==='out' && amount>(pk.saved||0)){showToast('No hay suficiente dinero en ese bolsillo');return;}
   pk.saved=(pk.saved||0)+(direction==='in'?amount:-amount);
   adjustBalance(direction==='in'?-amount:amount);
-  H.transactions.unshift({id:'ht'+Date.now(),label:`${direction==='in'?'Agrego a':'Saco de'} bolsillo ${pk.name}${note?' · '+note:''}`,amount:direction==='in'?amount:-amount,date:isoToday(),by:currentActorName(),createdAt:new Date().toISOString(),refType:'housePocket',refId:pk.id});
+  H.transactions.unshift({id:houseUid('house_tx'),label:`${direction==='in'?'Agrego a':'Saco de'} bolsillo ${pk.name}${note?' · '+note:''}`,amount:direction==='in'?amount:-amount,date:isoToday(),by:currentActorName(),createdAt:new Date().toISOString(),refType:'housePocket',refId:pk.id});
   await save();
   await saveHouse(); closeModal(); renderCurrentView(); updateHeaderBalance(); showToast('Movimiento registrado');
 }
@@ -1854,7 +1858,7 @@ async function deleteHousePocket(id) {
   if((pk.saved||0)>0){showToast('Saca el dinero del bolsillo antes de borrarlo');return;}
   H.pockets=H.pockets.filter(x=>x.id!==id);
   H.deletedPockets=[...new Set([...(H.deletedPockets||[]),id])];
-  H.transactions.unshift({id:'ht'+Date.now(),label:`Elimino bolsillo ${pk.name}`,amount:0,date:isoToday(),by:currentActorName(),createdAt:new Date().toISOString()});
+  H.transactions.unshift({id:houseUid('house_tx'),label:`Elimino bolsillo ${pk.name}`,amount:0,date:isoToday(),by:currentActorName(),createdAt:new Date().toISOString(),refType:'housePocket',refId:pk.id});
   await saveHouse(); renderCurrentView(); showToast('Bolsillo eliminado');
 }
 
