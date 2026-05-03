@@ -1801,31 +1801,55 @@ async function signupUser() {
   msg.textContent = 'Cuenta creada. Revisa si Supabase pide confirmar email.';
 }
 
-async function loginUser() {
-  const email = document.getElementById('authEmail').value.trim();
-  const password = document.getElementById('authPassword').value.trim();
-  const msg = document.getElementById('authMsg');
+function authError(msg, text) {
   const btn = document.getElementById('loginBtn');
+  msg.textContent = text;
+  msg.style.cssText = 'font-size:14px;font-weight:600;color:#dc2626;text-align:center;padding:8px;background:#fef2f2;border-radius:10px;margin-top:4px';
+  if (btn) { btn.textContent = 'Entrar'; btn.disabled = false; }
+}
 
-  if (!email || !password) { msg.textContent = 'Escribe email y contraseña.'; return; }
+async function loginUser() {
+  const emailEl = document.getElementById('authEmail');
+  const passEl  = document.getElementById('authPassword');
+  const msg     = document.getElementById('authMsg');
+  const btn     = document.getElementById('loginBtn');
 
-  if (!supabase) { msg.textContent = 'Error: Supabase no cargó. Revisa tu conexión.'; return; }
+  const email    = emailEl ? emailEl.value.trim() : '';
+  const password = passEl  ? passEl.value.trim()  : '';
 
-  btn.textContent = 'Entrando...'; btn.disabled = true; msg.textContent = '';
+  msg.style.cssText = '';
+  msg.textContent = '';
 
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (!email || !password) { authError(msg, 'Escribe email y contraseña.'); return; }
+  if (!supabase)            { authError(msg, 'Sin conexión con el servidor. Recarga la página.'); return; }
 
-  if (error) {
-    msg.textContent = error.message === 'Invalid login credentials'
-      ? 'Email o contraseña incorrectos.' : error.message;
-    btn.textContent = 'Entrar'; btn.disabled = false;
-    return;
+  btn.textContent = 'Verificando...'; btn.disabled = true;
+
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      const msgs = {
+        'Invalid login credentials': 'Email o contraseña incorrectos.',
+        'Email not confirmed':        'Confirma tu email primero.',
+        'Too many requests':          'Demasiados intentos. Espera un momento.',
+      };
+      authError(msg, msgs[error.message] || error.message);
+      return;
+    }
+
+    if (!data || !data.user) { authError(msg, 'Respuesta inesperada. Intenta de nuevo.'); return; }
+
+    btn.textContent = 'Cargando datos...';
+    CURRENT_USER = data.user;
+    await loadCloudData();
+    document.getElementById('authScreen').classList.add('hidden');
+    renderCurrentView();
+
+  } catch(e) {
+    console.error('loginUser error:', e);
+    authError(msg, 'Error de red. Revisa tu conexión e intenta de nuevo.');
   }
-
-  CURRENT_USER = data.user;
-  await loadCloudData();
-  document.getElementById('authScreen').classList.add('hidden');
-  renderCurrentView();
 }
 
 async function logoutUser() {
