@@ -75,11 +75,8 @@
         <div id="headerBalanceLabel" class="text-[10px] text-indigo-400 font-semibold uppercase tracking-wide">Balance libre</div>
         <div id="headerBalance" class="text-lg font-bold leading-none text-indigo-600">$0</div>
       </div>
-      <div class="flex items-center gap-2">
-        <h1 class="text-lg font-bold text-slate-800">BearAgenda</h1>
-        <div class="w-12 h-12 rounded-2xl bg-white overflow-hidden flex items-center justify-center">
-          <img src="logo.png" alt="BearAgenda" class="w-full h-full object-cover" style="transform:scale(1.65);transform-origin:center 32%;">
-        </div>
+      <div class="w-14 h-14 rounded-2xl bg-white overflow-hidden flex items-center justify-center">
+        <img src="logo sin texto.png" alt="BearAgenda" class="w-full h-full object-contain" style="transform:scale(1.18);transform-origin:center center;">
       </div>
     </div>
   </div>
@@ -214,11 +211,7 @@
       </div>
       <div class="card p-4">
         <h3 class="font-semibold text-indigo-700 mb-3">📋 Perfil financiero</h3>
-        <div class="space-y-2 text-sm text-slate-600">
-          <div class="flex justify-between"><span>Salario anual bruto</span><span class="font-semibold">$52,000</span></div>
-          <div class="flex justify-between"><span>Cheque neto</span><span class="font-semibold text-green-600">$1,742</span></div>
-          <div class="flex justify-between"><span>Gastos fijos/mes</span><span class="font-semibold text-red-500">$2,080</span></div>
-        </div>
+        <div id="financialProfileContent" class="space-y-2 text-sm text-slate-600"></div>
       </div>
       <div class="card p-4 space-y-3">
         <h3 class="font-semibold text-indigo-700">⚙️ Acciones</h3>
@@ -262,8 +255,15 @@
 <div id="sideMenuOverlay" class="hidden fixed inset-0 z-50" onclick="closeAppMenuOutside(event)">
   <aside id="sideMenuPanel" class="h-full w-56 bg-white border-r border-indigo-100 flex flex-col rounded-r-3xl overflow-hidden">
     <div class="p-3 border-b border-indigo-50">
-      <div class="text-base font-extrabold text-slate-800">Menú</div>
-      <div class="text-[11px] text-slate-400">Herramientas</div>
+      <div class="flex items-center gap-2">
+        <div class="w-10 h-10 rounded-xl bg-white overflow-hidden flex items-center justify-center">
+          <img src="logo.png" alt="BearAgenda" class="w-full h-full object-cover" style="transform:scale(1.55);transform-origin:center 32%;">
+        </div>
+        <div>
+          <div class="text-base font-extrabold text-slate-800">BearAgenda</div>
+          <div class="text-[11px] text-slate-400">Menú</div>
+        </div>
+      </div>
     </div>
     <div id="sideMenuItems" class="p-2.5 space-y-1.5 flex-1"></div>
     <div class="p-3 border-t border-indigo-50">
@@ -296,7 +296,7 @@ window.addEventListener('error', function(e) {
 // ═══════════════════════════════════════
 const SK = 'fh_v2_data';
 const HOUSE_SK = 'fh_v2_house_shared';
-const HOUSE_CLOUD_ID = '00000000-0000-0000-0000-000000000001';
+const HOUSE_CLOUD_ID = 'main';
 const SUPABASE_URL = 'https://bzstxpifsknhqjtvlmes.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6c3R4cGlmc2tuaHFqdHZsbWVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MzQxNTUsImV4cCI6MjA5MzQxMDE1NX0.RweRjy9Byzd1pwS9HQ5xSYg412yktwu1wpC2WcW5Xj8';
 
@@ -522,9 +522,9 @@ async function saveHouse() {
   localStorage.setItem(HOUSE_SK, JSON.stringify(H));
   if (!supabase || !CURRENT_USER) { houseSyncStatus='local'; houseSyncMessage='Sin sesión o conexión cloud'; return; }
   try {
-    const { error } = await supabase.from('app_data').upsert(
-      { user_id: HOUSE_CLOUD_ID, data: {houseShared:true, ...H}, updated_at: H.updatedAt },
-      { onConflict: 'user_id' }
+    const { error } = await supabase.from('house_data').upsert(
+      { id: HOUSE_CLOUD_ID, data: {houseShared:true, ...H}, updated_at: H.updatedAt },
+      { onConflict: 'id' }
     );
     if(error) {
       houseSyncStatus='error';
@@ -546,7 +546,7 @@ async function loadHouseCloud() {
   if (!supabase || !CURRENT_USER) { houseSyncStatus='local'; houseSyncMessage='Sin sesión o conexión cloud'; return; }
   try {
     const { data, error } = await supabase
-      .from('app_data').select('data').eq('user_id', HOUSE_CLOUD_ID).maybeSingle();
+      .from('house_data').select('data').eq('id', HOUSE_CLOUD_ID).maybeSingle();
     if (error) {
       houseSyncStatus='error';
       houseSyncMessage=error.message||'No se pudo leer Casa compartida';
@@ -589,6 +589,15 @@ function profileDisplayName() {
 function currentActorName() {
   const name = profileDisplayName();
   return name || 'Alguien';
+}
+
+function currentHousePerson() {
+  const raw = ((S.profileName||'') + ' ' + (CURRENT_USER&&CURRENT_USER.email?CURRENT_USER.email:'')).toLowerCase();
+  return raw.includes('laura') ? 'laura' : 'felipe';
+}
+
+function houseAssigneeLabel(v) {
+  return {felipe:'Felipe',laura:'Laura',both:'Los dos'}[v]||'Los dos';
 }
 
 function isLauraProfile() {
@@ -795,6 +804,15 @@ function getUpcomingItems(days=14) {
     const d=parseDate(l.dueDate);
     if(d>=t&&d<=limit) items.push({type:'borrowed',id:l.id,name:`Pagar préstamo a ${l.personName}`,amount:l.amount,date:l.dueDate,days:daysUntil(l.dueDate)});
   });
+  const who=currentHousePerson();
+  (H.items||[]).forEach(item=>{
+    const assigned=item.assignedTo||'both';
+    const date=item.dueDate||item.createdAt&&item.createdAt.slice(0,10);
+    if(!date || housePaid(item)>=(item.amount||0)) return;
+    if(!(assigned==='both'||assigned===who)) return;
+    const d=parseDate(date);
+    if(d>=t&&d<=limit) items.push({type:'house',id:item.id,name:`Casa: ${item.name}`,amount:Math.max(0,(item.amount||0)-housePaid(item)),date,days:daysUntil(date),emoji:item.emoji||'🏠'});
+  });
   Object.entries(S.calendarNotes||{}).forEach(([date,notes])=>{
     const d=parseDate(date);
     if(d>=t&&d<=limit) (notes||[]).filter(n=>!n.done).forEach(n=>items.push({type:'task',id:n.id,name:n.text,amount:0,date,dateKey:date,days:daysUntil(date)}));
@@ -822,7 +840,7 @@ function updateHeaderBalance() {
 function renderHome() {
   const bal=freeBalance(), pkt=totalPockets();
   const upcoming=getUpcomingItems(14);
-  const pay14=upcoming.filter(x=>['bill','onetime','expense','borrowed'].includes(x.type)).reduce((s,x)=>s+x.amount,0);
+  const pay14=upcoming.filter(x=>['bill','onetime','expense','borrowed','house'].includes(x.type)).reduce((s,x)=>s+x.amount,0);
   const owedToMe=S.loans.reduce((s,l)=>s+Math.max(0,(l.totalAmount||0)-loanPaid(l)),0);
   const t=today(), mk=monthKey(t);
   const monthPayments=getMonthPayments(mk).filter(x=>x.kind!=='loan');
@@ -848,7 +866,7 @@ function renderHome() {
     <div class="card p-4">
       <div class="text-indigo-400 text-[10px] font-bold uppercase tracking-wide">Pagar 14d</div>
       <div class="text-xl font-extrabold leading-tight text-red-500">${fmt(pay14)}</div>
-      <div class="text-[11px] text-slate-400 truncate">${upcoming.filter(x=>['bill','onetime','expense','borrowed'].includes(x.type)).length} pagos</div>
+      <div class="text-[11px] text-slate-400 truncate">${upcoming.filter(x=>['bill','onetime','expense','borrowed','house'].includes(x.type)).length} pagos</div>
     </div>
     <div class="card p-4">
       <div class="text-indigo-400 text-[10px] font-bold uppercase tracking-wide">Me deben</div>
@@ -885,6 +903,7 @@ function renderHome() {
       else if(item.type==='onetime') actionBtn=`<button onclick="openModal('confirmPayOnce','${item.id}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Pagar ✓</button>`;
       else if(item.type==='expense') actionBtn=`<button onclick="markExpensePaid('${item.id}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Pagar ✓</button>`;
       else if(item.type==='borrowed') actionBtn=`<button onclick="markBorrowedPaid('${item.id}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Pagar ✓</button>`;
+      else if(item.type==='house') actionBtn=`<button onclick="openModal('addHousePayment','${item.id}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Abonar ✓</button>`;
       else if(item.type==='task') actionBtn=`<div class="flex gap-1 justify-end"><button onclick="completeCalendarNote('${item.dateKey}','${item.id}')" class="text-xs bg-green-50 text-green-700 font-semibold px-2 py-1 rounded-full">Completar</button><button onclick="openModal('rescheduleCalendarNote','${item.dateKey}','${item.id}')" class="text-xs bg-slate-100 text-slate-600 font-semibold px-2 py-1 rounded-full">Mover</button></div>`;
       else actionBtn=`<button onclick="openModal('addLoanPayment','${item.id}')" class="text-xs bg-purple-50 text-purple-700 font-semibold px-3 py-1 rounded-full">Registrar</button>`;
       html+=`<div class="card p-3.5 flex items-center gap-3">
@@ -1174,7 +1193,7 @@ function renderHouse() {
             <div class="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-2xl">${item.emoji||'🏠'}</div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap"><span class="font-bold text-slate-800">${item.name}</span>${left<=0?'<span class="status-paid text-xs font-bold px-2 py-0.5 rounded-full">Listo</span>':''}</div>
-              <div class="text-xs text-slate-400">${item.note||'Casa compartida'} · creado por ${item.createdBy||'Casa'}</div>
+              <div class="text-xs text-slate-400">${fmtDate(item.dueDate||isoToday())} · ${houseAssigneeLabel(item.assignedTo||'both')} · ${item.frequency==='monthly'?'Mensual':item.frequency==='weekly'?'Semanal':item.frequency==='biweekly'?'Quincenal':'Único'}</div>
             </div>
             <div class="text-right"><div class="font-bold text-slate-800">${fmt(item.amount||0)}</div><div class="text-xs text-red-500">${fmt(left)} pendiente</div></div>
           </div>
@@ -1295,6 +1314,54 @@ function renderAnalysis() {
 function setAnalysisMonth(month) {
   analysisMonth=month;
   renderAnalysis();
+}
+
+function scheduledIncomeYearTotal(year=today().getFullYear()) {
+  return (S.paychecks||[])
+    .filter(p=>parseDate(p.receivedDate||p.date).getFullYear()===year)
+    .reduce((s,p)=>s+(p.amount||0),0);
+}
+
+function monthlyIncomeApprox() {
+  const received=(S.paychecks||[]).filter(p=>p.received);
+  if(received.length) {
+    const months=new Set(received.map(p=>monthKey(parseDate(p.receivedDate||p.date))));
+    return received.reduce((s,p)=>s+(p.amount||0),0)/Math.max(1,months.size);
+  }
+  return scheduledIncomeYearTotal()/12;
+}
+
+function monthlyExpenseActual() {
+  const tx=getTransactions(9999).filter(t=>t.sign==='-');
+  const months=new Set(tx.map(t=>monthKey(parseDate(t.date))));
+  const personal=tx.reduce((s,t)=>s+(t.amount||0),0);
+  const housePayments=(H.items||[]).flatMap(item=>(item.payments||[]).map(p=>({amount:p.amount||0,date:p.date})));
+  housePayments.forEach(p=>months.add(monthKey(parseDate(p.date))));
+  const house=housePayments.reduce((s,p)=>s+p.amount,0);
+  return (personal+house)/Math.max(1,months.size||1);
+}
+
+function monthlySavingsHeld() {
+  return totalPockets()+housePocketTotal();
+}
+
+function renderFinancialProfile() {
+  const el=document.getElementById('financialProfileContent');
+  if(!el) return;
+  const year=today().getFullYear();
+  const annual=scheduledIncomeYearTotal(year);
+  const monthlyIn=monthlyIncomeApprox();
+  const monthlyOut=monthlyExpenseActual();
+  const savings=monthlySavingsHeld();
+  const available=(S.bankBalance||0)-totalPockets();
+  el.innerHTML=`
+    <div class="flex justify-between"><span>Ingresos ${year}</span><span class="font-semibold text-green-600">${fmt(annual)}</span></div>
+    <div class="flex justify-between"><span>Neto mensual aprox.</span><span class="font-semibold text-green-600">${fmt(monthlyIn)}</span></div>
+    <div class="flex justify-between"><span>Gastos mensuales reales</span><span class="font-semibold text-red-500">${fmt(monthlyOut)}</span></div>
+    <div class="flex justify-between"><span>Ahorros / bolsillos</span><span class="font-semibold text-indigo-600">${fmt(savings)}</span></div>
+    <div class="flex justify-between border-t border-slate-100 pt-2"><span>Disponible libre</span><span class="font-semibold ${available>=0?'text-indigo-600':'text-red-500'}">${available<0?'-':''}${fmt(Math.abs(available))}</span></div>
+    <p class="text-xs text-slate-400 pt-1">Los ahorros se descuentan de lo disponible, pero no se cuentan como gasto.</p>
+  `;
 }
 
 function decorateMoneyInputs(root=document) {
@@ -1594,15 +1661,20 @@ async function saveHouseItem(id=null) {
   const amount=parseFloat(document.getElementById('mAmount').value)||0;
   const emoji=document.getElementById('mEmoji').value.trim()||'🏠';
   const note=document.getElementById('mNote').value.trim();
+  const dueDate=document.getElementById('mDate')?document.getElementById('mDate').value:isoToday();
+  const frequency=document.getElementById('mFreq')?document.getElementById('mFreq').value:'once';
+  const assignedTo=document.getElementById('mAssigned')?document.getElementById('mAssigned').value:'both';
+  const alreadyPaid=document.getElementById('mPaid')?document.getElementById('mPaid').checked:false;
   if(!name||!amount){showToast('Completa nombre y monto');return;}
   normalizeHouse();
   if(id) {
     const item=H.items.find(x=>x.id===id);
-    if(item) Object.assign(item,{name,amount,emoji,note,updatedAt:new Date().toISOString(),updatedBy:currentActorName()});
+    if(item) Object.assign(item,{name,amount,emoji,note,dueDate,frequency,assignedTo,updatedAt:new Date().toISOString(),updatedBy:currentActorName()});
   } else {
-    const item={id:'h'+(H.nextId++),name,amount,emoji,note,createdAt:new Date().toISOString(),createdBy:currentActorName(),payments:[]};
+    const item={id:'h'+(H.nextId++),name,amount,emoji,note,dueDate,frequency,assignedTo,createdAt:new Date().toISOString(),createdBy:currentActorName(),payments:[]};
+    if(alreadyPaid) item.payments.unshift({id:'hp'+Date.now(),amount,date:dueDate||isoToday(),note:'Registrado como realizado',by:currentActorName(),createdAt:new Date().toISOString()});
     H.items.unshift(item);
-    H.transactions.unshift({id:'ht'+Date.now(),label:`Agrego ${name}`,amount:0,date:isoToday(),by:currentActorName(),createdAt:new Date().toISOString()});
+    H.transactions.unshift({id:'ht'+Date.now(),label:`Agrego ${name}`,amount:alreadyPaid?amount:0,date:dueDate||isoToday(),by:currentActorName(),createdAt:new Date().toISOString()});
   }
   await saveHouse(); closeModal(); renderCurrentView(); showToast('Casa actualizada');
 }
@@ -2094,6 +2166,22 @@ function openModal(type, id, extra) {
       </div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Monto total ($)</label>
       <input type="number" id="mAmount" value="${item?item.amount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold text-lg"></div>
+      <div class="flex gap-3">
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Fecha</label>
+        <input type="date" id="mDate" value="${item&&item.dueDate?item.dueDate:isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Frecuencia</label>
+        <select id="mFreq" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+          ${[['once','Único'],['weekly','Semanal'],['biweekly','Quincenal'],['monthly','Mensual']].map(([v,l])=>`<option value="${v}" ${item&&item.frequency===v?'selected':''}>${l}</option>`).join('')}
+        </select></div>
+      </div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Responsable</label>
+      <select id="mAssigned" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+        ${[['felipe','Felipe'],['laura','Laura'],['both','Los dos']].map(([v,l])=>`<option value="${v}" ${(!item&&v==='both')||item&&item.assignedTo===v?'selected':''}>${l}</option>`).join('')}
+      </select></div>
+      ${!item?`<div class="bg-indigo-50 rounded-xl p-3 flex items-center justify-between">
+        <div><label class="text-xs font-bold text-indigo-700 uppercase">Ya se realizó</label><div class="text-xs text-indigo-400">Si está activo, se registra como abonado completo.</div></div>
+        <label class="toggle"><input type="checkbox" id="mPaid"><span class="slider"></span></label>
+      </div>`:''}
       <div><label class="text-xs font-bold text-slate-500 uppercase">Nota</label>
       <input type="text" id="mNote" value="${item?item.note:''}" placeholder="Opcional" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       <button onclick="saveHouseItem(${item?`'${id}'`:'null'})" class="w-full btn-primary py-3">${item?'Guardar cambios':'Agregar a Casa'}</button>
@@ -2131,6 +2219,9 @@ function openModal(type, id, extra) {
     <div class="space-y-2 text-sm">
       <div class="flex justify-between"><span class="text-slate-400">Creado por</span><span class="font-semibold text-slate-700">${item.createdBy||'Casa'}</span></div>
       <div class="flex justify-between"><span class="text-slate-400">Creado</span><span class="font-semibold text-slate-700">${item.createdAt?fmtDate(item.createdAt.slice(0,10)):'-'}</span></div>
+      <div class="flex justify-between"><span class="text-slate-400">Fecha</span><span class="font-semibold text-slate-700">${item.dueDate?fmtDate(item.dueDate):'-'}</span></div>
+      <div class="flex justify-between"><span class="text-slate-400">Frecuencia</span><span class="font-semibold text-slate-700">${item.frequency==='monthly'?'Mensual':item.frequency==='weekly'?'Semanal':item.frequency==='biweekly'?'Quincenal':'Único'}</span></div>
+      <div class="flex justify-between"><span class="text-slate-400">Responsable</span><span class="font-semibold text-slate-700">${houseAssigneeLabel(item.assignedTo||'both')}</span></div>
     </div>
     <div class="mt-4"><div class="font-bold text-indigo-700 text-xs uppercase mb-2">Abonos</div>
       ${(item.payments||[]).length?(item.payments||[]).map(p=>`<div class="flex justify-between py-2 border-t border-slate-50 text-sm"><div><div class="font-semibold text-slate-700">${p.by||'Casa'}</div><div class="text-xs text-slate-400">${fmtDate(p.date)}${p.note?' · '+p.note:''}</div></div><div class="font-bold text-green-600">${fmt(p.amount)}</div></div>`).join(''):`<div class="text-sm text-indigo-300 text-center py-3">Sin abonos todavía.</div>`}
@@ -2435,6 +2526,11 @@ function showView(view) {
 
 function openAppMenu() {
   const items=[
+    ['home','Inicio','Resumen principal y accesos rápidos'],
+    ['cheques','Ingresos','Pagos recibidos y próximos ingresos'],
+    ['facturas','Finanzas','Pagos, gastos y préstamos'],
+    ['cal','Calendario','Pagos, citas, notas y tareas'],
+    ['casa','Casa','Pagos y bolsillos compartidos'],
     ['bolsillos','Bolsillos','Dinero separado por propósito'],
     ['plan','Planes','Planes cheque a cheque editables'],
     ['analysis','Análisis mensual','Gráfico de ingresos, egresos y gastos']
@@ -2470,6 +2566,7 @@ function renderCurrentView() {
   else if(currentView==='config'){
     const el=document.getElementById('bankBalanceInput');if(el)el.value=S.bankBalance||'';
     const nameEl=document.getElementById('profileNameInput');if(nameEl)nameEl.value=S.profileName||'';
+    renderFinancialProfile();
     decorateMoneyInputs();
   }
 }
