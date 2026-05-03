@@ -3,7 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>BearAgenda</title>
+  <title>BearAgenda — Finanzas personales y planeación</title>
+  <meta name="description" content="Controla tus finanzas personales: pagos, cheques, bolsillos y proyecciones cheque a cheque.">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="BearAgenda">
+  <!-- Favicon + iOS home screen icon -->
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="apple-touch-icon" href="logo.png">
+  <!-- PWA manifest -->
+  <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -43,6 +54,7 @@
     .money-wrap { position: relative; display: block; width: 100%; }
     .money-wrap .money-sign { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-weight: 700; pointer-events: none; }
     .money-wrap input { padding-left: 28px !important; width: 100%; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body class="min-h-screen select-none">
@@ -66,30 +78,40 @@
     </div>
   </div>
 </header>
-<div id="authScreen" class="fixed inset-0 z-[999] bg-indigo-50 flex items-center justify-center px-5">
-  <!-- loading state -->
-  <div id="authLoading" class="text-center">
-    <div class="w-12 h-12 border-4 border-indigo-200 border-t-indigo-500 rounded-full animate-spin mx-auto mb-3"></div>
-    <p class="text-sm text-indigo-400 font-medium">Cargando...</p>
+<div id="authScreen" class="fixed inset-0 z-[999] flex items-center justify-center px-5" style="background:#eef2ff">
+
+  <!-- Pantalla de carga (visible mientras verifica sesión) -->
+  <div id="authLoading" class="hidden flex-col items-center justify-center text-center">
+    <div class="relative mb-5">
+      <img src="logo.png" alt="BearAgenda" class="w-24 h-24 rounded-3xl object-cover mx-auto" style="box-shadow:0 8px 32px rgba(79,70,229,0.25)">
+      <div class="absolute -bottom-2 -right-2 w-7 h-7 rounded-full border-4 border-white" style="border-top-color:#6366f1;border-right-color:#6366f1;border-bottom-color:#c7d2fe;border-left-color:#c7d2fe;animation:spin 0.8s linear infinite"></div>
+    </div>
+    <p class="text-slate-600 font-semibold text-sm">Cargando tu cuenta...</p>
+    <p class="text-slate-400 text-xs mt-1">BearAgenda</p>
   </div>
-  <!-- login form (hidden until session check completes) -->
-  <div id="authForm" class="hidden bg-white rounded-3xl shadow-xl p-6 w-full max-w-sm">
-    <div class="text-center mb-5">
-      <img src="logo.png" class="w-24 h-24 mx-auto object-cover rounded-3xl" style="transform:scale(1.2);">
-      <h2 class="text-2xl font-extrabold text-slate-800 mt-3">BearAgenda</h2>
-      <p class="text-sm text-slate-400">Entra a tu perfil financiero</p>
+
+  <!-- Formulario de login (visible por defecto) -->
+  <div id="authForm" class="bg-white rounded-3xl p-6 w-full max-w-sm" style="box-shadow:0 20px 60px rgba(79,70,229,0.18)">
+    <div class="text-center mb-6">
+      <img src="logo.png" alt="BearAgenda"
+        class="w-24 h-24 rounded-3xl object-cover mx-auto mb-3"
+        style="box-shadow:0 8px 32px rgba(79,70,229,0.2);transform:scale(1.0)">
+      <h2 class="text-2xl font-extrabold text-slate-800">BearAgenda</h2>
+      <p class="text-sm text-slate-400 mt-1">Finanzas personales y planeación</p>
     </div>
     <div class="space-y-3">
-      <input id="authEmail" type="email" placeholder="Email" autocomplete="email"
-        class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-3 text-sm"
-        onkeydown="if(event.key==='Enter')loginUser()">
+      <input id="authEmail" type="email" placeholder="Correo electrónico" autocomplete="email"
+        class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 bg-slate-50"
+        style="outline:none" onkeydown="if(event.key==='Enter')document.getElementById('authPassword').focus()">
       <input id="authPassword" type="password" placeholder="Contraseña" autocomplete="current-password"
-        class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-3 text-sm"
-        onkeydown="if(event.key==='Enter')loginUser()">
-      <button onclick="loginUser()" id="loginBtn" class="w-full btn-primary py-3">
+        class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 bg-slate-50"
+        style="outline:none" onkeydown="if(event.key==='Enter')loginUser()">
+      <button onclick="loginUser()" id="loginBtn"
+        class="w-full py-3 rounded-xl font-bold text-white text-sm"
+        style="background:linear-gradient(135deg,#6366f1,#4f46e5)">
         Entrar
       </button>
-      <p id="authMsg" class="text-xs text-center text-red-400 mt-2"></p>
+      <p id="authMsg" class="text-xs text-center text-red-500 min-h-[16px]"></p>
     </div>
   </div>
 </div>
@@ -212,7 +234,7 @@
 </div>
 
 <div id="toast" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white text-sm font-medium px-4 py-2.5 rounded-full shadow-lg fade-in whitespace-nowrap"></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 // ═══════════════════════════════════════
 // DATA
@@ -221,7 +243,8 @@ const SK = 'fh_v2_data';
 const SUPABASE_URL = 'https://bzstxpifsknhqjtvlmes.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6c3R4cGlmc2tuaHFqdHZsbWVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MzQxNTUsImV4cCI6MjA5MzQxMDE1NX0.RweRjy9Byzd1pwS9HQ5xSYg412yktwu1wpC2WcW5Xj8';
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+if (!window.supabase) { console.error('Supabase CDN no cargó'); }
+const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 let CURRENT_USER = null;
 const INIT = {
@@ -335,46 +358,35 @@ function load() {
 }
 async function save() {
   localStorage.setItem(SK, JSON.stringify(S));
-
-  if (!CURRENT_USER) return;
-
-  await supabase
-    .from('app_data')
-    .upsert({
-      user_id: CURRENT_USER.id,
-      data: S,
-      updated_at: new Date().toISOString()
-    }, {
-      onConflict: 'user_id'
-    });
+  if (!supabase || !CURRENT_USER) return;
+  try {
+    await supabase.from('app_data').upsert(
+      { user_id: CURRENT_USER.id, data: S, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
+    );
+  } catch(e) { console.error('save cloud:', e); }
 }
+
 async function loadCloudData() {
-  if (!CURRENT_USER) return;
-
-  const { data, error } = await supabase
-    .from('app_data')
-    .select('data')
-    .eq('user_id', CURRENT_USER.id)
-    .maybeSingle();
-
-  if (error) {
-    console.error(error);
-    return;
-  }
-
-  if (data && data.data) {
-    S = { ...INIT, ...data.data };
-  } else {
-    S = JSON.parse(JSON.stringify(INIT));
-
-    await supabase
-      .from('app_data')
-      .insert({
-        user_id: CURRENT_USER.id,
-        data: S
-      });
-  }
-
+  if (!supabase || !CURRENT_USER) return;
+  try {
+    const { data, error } = await supabase
+      .from('app_data').select('data').eq('user_id', CURRENT_USER.id).maybeSingle();
+    if (error) { console.error('loadCloudData:', error); return; }
+    if (data && data.data) {
+      S = { ...INIT, ...data.data };
+      // ensure new fields
+      if (!S.pockets) S.pockets = [];
+      if (!S.loans) S.loans = [];
+      if (!S.customPlans) S.customPlans = [];
+      if (!S.calendarNotes) S.calendarNotes = {};
+      if (!S.borrowedLoans) S.borrowedLoans = [];
+      if (!S.incomeCategories) S.incomeCategories = ['Trabajo','Préstamo','Otro'];
+    } else {
+      S = JSON.parse(JSON.stringify(INIT));
+      await supabase.from('app_data').insert({ user_id: CURRENT_USER.id, data: S });
+    }
+  } catch(e) { console.error('loadCloudData:', e); }
   updateHeaderBalance();
 }
 function setLastAction() { S.lastActionTime = new Date().toISOString(); save(); updateHeaderBalance(); }
@@ -1736,22 +1748,35 @@ function confirmReset(){if(confirm('¿Reiniciar todo?')){localStorage.removeItem
 // ═══════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
   load();
-
-  const { data } = await supabase.auth.getSession();
-  const session = data && data.session;
-
-  if (session && session.user) {
-    CURRENT_USER = session.user;
-    await loadCloudData();
-    document.getElementById('authScreen').classList.add('hidden');
-  } else {
-    // no session — show the login form
-    document.getElementById('authLoading').classList.add('hidden');
-    document.getElementById('authForm').classList.remove('hidden');
-  }
-
   updateHeaderBalance();
   renderHome();
+
+  if (!supabase) return;
+
+  // mostrar pantalla de carga mientras verifica sesión
+  document.getElementById('authForm').classList.add('hidden');
+  document.getElementById('authLoading').classList.remove('hidden');
+  document.getElementById('authLoading').style.display = 'flex';
+
+  try {
+    const { data } = await supabase.auth.getSession();
+    const session = data && data.session;
+    if (session && session.user) {
+      CURRENT_USER = session.user;
+      await loadCloudData();
+      document.getElementById('authScreen').classList.add('hidden');
+      updateHeaderBalance();
+      renderHome();
+    } else {
+      // sin sesión — mostrar login
+      document.getElementById('authLoading').style.display = 'none';
+      document.getElementById('authForm').classList.remove('hidden');
+    }
+  } catch(e) {
+    console.error('Auth init:', e);
+    document.getElementById('authLoading').style.display = 'none';
+    document.getElementById('authForm').classList.remove('hidden');
+  }
 });
 async function signupUser() {
   const email = document.getElementById('authEmail').value.trim();
@@ -1783,6 +1808,8 @@ async function loginUser() {
   const btn = document.getElementById('loginBtn');
 
   if (!email || !password) { msg.textContent = 'Escribe email y contraseña.'; return; }
+
+  if (!supabase) { msg.textContent = 'Error: Supabase no cargó. Revisa tu conexión.'; return; }
 
   btn.textContent = 'Entrando...'; btn.disabled = true; msg.textContent = '';
 
