@@ -64,19 +64,19 @@
 <body class="min-h-screen select-none">
 
 <header class="fixed top-0 left-0 right-0 z-40 bg-white border-b border-indigo-100" style="box-shadow:0 2px 12px rgba(79,70,229,0.07)">
-  <div class="px-4 py-2.5 flex items-center justify-between">
-    <div class="flex items-center gap-2">
+  <div class="px-4 h-16 flex items-center justify-between">
+    <div class="flex items-center gap-2 w-14">
       <button onclick="openAppMenu()" class="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-500">
         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm1 4a1 1 0 100 2h12a1 1 0 100-2H4z"/></svg>
       </button>
     </div>
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-3 h-full">
       <div id="headerBalanceWrap" class="flex flex-col items-end gap-0.5">
         <div id="headerBalanceLabel" class="text-[10px] text-indigo-400 font-semibold uppercase tracking-wide">Balance libre</div>
         <div id="headerBalance" class="text-lg font-bold leading-none text-indigo-600">$0</div>
       </div>
-      <div class="w-14 h-14 rounded-2xl bg-white overflow-hidden flex items-center justify-center">
-        <img src="logo sin texto.png" alt="BearAgenda" class="w-full h-full object-contain" style="transform:scale(1.18);transform-origin:center center;">
+      <div class="w-14 h-14 rounded-2xl bg-white overflow-hidden flex items-center justify-center shrink-0">
+        <img src="logo sin texto.png" alt="BearAgenda" class="w-full h-full object-contain block" style="transform:scale(1.32);transform-origin:center center;">
       </div>
     </div>
   </div>
@@ -568,32 +568,59 @@ async function save() {
   } catch(e) { console.error('save cloud:', e); }
 }
 
-async function saveHouse() {
+async function saveHouse(attempt=0) {
   H.updatedAt = new Date().toISOString();
   localStorage.setItem(HOUSE_SK, JSON.stringify(H));
   if (!supabase || !CURRENT_USER) { houseSyncStatus='local'; houseSyncMessage='Sin sesión o conexión cloud'; return; }
   try {
     const { data: cloudRow, error: readError } = await supabase
-      .from('house_data').select('data').eq('id', HOUSE_CLOUD_ID).maybeSingle();
+      .from('house_data').select('data,updated_at').eq('id', HOUSE_CLOUD_ID).maybeSingle();
     if(readError) {
       houseSyncStatus='error';
       houseSyncMessage=readError.message||'No se pudo leer Casa antes de guardar';
       console.warn('read shared house before save:', readError);
       return;
     }
+    const cloudUpdatedAt=cloudRow&&cloudRow.updated_at;
     if(cloudRow&&cloudRow.data) {
       H=mergeHouseData(H,cloudRow.data);
       H.updatedAt=new Date().toISOString();
       localStorage.setItem(HOUSE_SK, JSON.stringify(H));
     }
-    const { error } = await supabase.from('house_data').upsert(
-      { id: HOUSE_CLOUD_ID, data: {houseShared:true, ...H}, updated_at: H.updatedAt },
-      { onConflict: 'id' }
-    );
+    let error=null, saved=null;
+    if(cloudRow) {
+      const res = await supabase.from('house_data')
+        .update({ data: {houseShared:true, ...H}, updated_at: H.updatedAt })
+        .eq('id', HOUSE_CLOUD_ID)
+        .eq('updated_at', cloudUpdatedAt)
+        .select('updated_at')
+        .maybeSingle();
+      error=res.error; saved=res.data;
+      if(!error && !saved && attempt<4) {
+        houseSyncMessage='La nube cambió, mezclando de nuevo...';
+        await new Promise(r=>setTimeout(r,120+(attempt*120)));
+        return saveHouse(attempt+1);
+      }
+    } else {
+      const res = await supabase.from('house_data')
+        .insert({ id: HOUSE_CLOUD_ID, data: {houseShared:true, ...H}, updated_at: H.updatedAt })
+        .select('updated_at')
+        .maybeSingle();
+      error=res.error; saved=res.data;
+      if(error && String(error.message||'').toLowerCase().includes('duplicate') && attempt<4) {
+        await new Promise(r=>setTimeout(r,120+(attempt*120)));
+        return saveHouse(attempt+1);
+      }
+    }
     if(error) {
       houseSyncStatus='error';
       houseSyncMessage=error.message||'No se pudo guardar Casa en la nube';
       console.warn('save shared house fallback local:', error);
+      return;
+    }
+    if(!saved && attempt>=4) {
+      houseSyncStatus='error';
+      houseSyncMessage='Casa cambió mientras guardabas. Pulsa ↻ y vuelve a intentar.';
       return;
     }
     houseSyncStatus='cloud';
@@ -622,10 +649,6 @@ async function loadHouseCloud() {
       H.updatedAt = new Date().toISOString();
       normalizeHouse();
       localStorage.setItem(HOUSE_SK, JSON.stringify(H));
-      await supabase.from('house_data').upsert(
-        { id: HOUSE_CLOUD_ID, data: {houseShared:true, ...H}, updated_at: H.updatedAt },
-        { onConflict: 'id' }
-      );
       houseSyncStatus='cloud';
       houseSyncMessage='Casa sincronizada';
     } else if ((H.items||[]).length || (H.transactions||[]).length) {
