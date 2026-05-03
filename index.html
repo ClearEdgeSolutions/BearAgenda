@@ -88,9 +88,9 @@
 
   <!-- Pantalla de carga (visible mientras verifica sesión) -->
   <div id="authLoading" class="hidden flex-col items-center justify-center text-center">
-    <div class="relative mb-5">
-      <img src="logo.png" alt="BearAgenda" class="w-24 h-24 rounded-3xl object-cover mx-auto" style="box-shadow:0 8px 32px rgba(79,70,229,0.25)">
-      <div class="absolute -bottom-2 -right-2 w-7 h-7 rounded-full border-4 border-white" style="border-top-color:#6366f1;border-right-color:#6366f1;border-bottom-color:#c7d2fe;border-left-color:#c7d2fe;animation:spin 0.8s linear infinite"></div>
+    <div class="relative mb-5 w-32 h-32 flex items-center justify-center">
+      <div class="absolute inset-0 rounded-[2rem] border-4 border-indigo-100" style="border-top-color:#6366f1;border-right-color:#818cf8;animation:spin 0.9s cubic-bezier(.4,0,.2,1) infinite"></div>
+      <img src="logo.png" alt="BearAgenda" class="w-24 h-24 rounded-3xl object-cover mx-auto relative z-10" style="box-shadow:0 8px 32px rgba(79,70,229,0.25)">
     </div>
     <p class="text-slate-600 font-semibold text-sm">Cargando tu cuenta...</p>
     <p class="text-slate-400 text-xs mt-1">BearAgenda</p>
@@ -183,7 +183,10 @@
           <h2 class="text-lg font-bold text-slate-800">Casa</h2>
           <p class="text-xs text-slate-400">Pagos y bolsillos compartidos</p>
         </div>
-        <button onclick="houseAddAction()" class="btn-primary text-sm px-3 py-1.5">+ Agregar</button>
+        <div class="flex gap-2">
+          <button onclick="refreshHouseData()" class="bg-indigo-50 text-indigo-600 font-bold text-sm px-3 py-1.5 rounded-xl">↻</button>
+          <button onclick="houseAddAction()" class="btn-primary text-sm px-3 py-1.5">+ Agregar</button>
+        </div>
       </div>
       <div id="houseContent" class="space-y-3"></div>
     </div>
@@ -421,6 +424,8 @@ let finSection = 'payments';
 let finMonth = '';
 let analysisMonth = '';
 let houseTab = 'payments';
+let houseSyncStatus = 'local';
+let houseSyncMessage = '';
 let selectedIncomeCategory = '';
 let calDate = null;
 let lastUndoAction = null;
@@ -515,31 +520,64 @@ async function save() {
 async function saveHouse() {
   H.updatedAt = new Date().toISOString();
   localStorage.setItem(HOUSE_SK, JSON.stringify(H));
-  if (!supabase || !CURRENT_USER) return;
+  if (!supabase || !CURRENT_USER) { houseSyncStatus='local'; houseSyncMessage='Sin sesión o conexión cloud'; return; }
   try {
-    await supabase.from('app_data').upsert(
+    const { error } = await supabase.from('app_data').upsert(
       { user_id: HOUSE_CLOUD_ID, data: {houseShared:true, ...H}, updated_at: H.updatedAt },
       { onConflict: 'user_id' }
     );
-  } catch(e) { console.warn('save shared house fallback local:', e); }
+    if(error) {
+      houseSyncStatus='error';
+      houseSyncMessage=error.message||'No se pudo guardar Casa en la nube';
+      console.warn('save shared house fallback local:', error);
+      return;
+    }
+    houseSyncStatus='cloud';
+    houseSyncMessage='Casa sincronizada';
+  } catch(e) {
+    houseSyncStatus='error';
+    houseSyncMessage=e.message||'No se pudo guardar Casa en la nube';
+    console.warn('save shared house fallback local:', e);
+  }
 }
 
 async function loadHouseCloud() {
   loadHouseLocal();
-  if (!supabase || !CURRENT_USER) return;
+  if (!supabase || !CURRENT_USER) { houseSyncStatus='local'; houseSyncMessage='Sin sesión o conexión cloud'; return; }
   try {
     const { data, error } = await supabase
       .from('app_data').select('data').eq('user_id', HOUSE_CLOUD_ID).maybeSingle();
-    if (error) { console.warn('load shared house fallback local:', error); return; }
+    if (error) {
+      houseSyncStatus='error';
+      houseSyncMessage=error.message||'No se pudo leer Casa compartida';
+      console.warn('load shared house fallback local:', error);
+      return;
+    }
     if (data && data.data) {
       const cloud = {...HOUSE_INIT, ...data.data};
       if (!H.updatedAt || (cloud.updatedAt && new Date(cloud.updatedAt) > new Date(H.updatedAt))) H = cloud;
       normalizeHouse();
       localStorage.setItem(HOUSE_SK, JSON.stringify(H));
+      houseSyncStatus='cloud';
+      houseSyncMessage='Casa sincronizada';
     } else if ((H.items||[]).length || (H.transactions||[]).length) {
       await saveHouse();
+    } else {
+      houseSyncStatus='cloud';
+      houseSyncMessage='Casa lista para sincronizar';
     }
-  } catch(e) { console.warn('load shared house:', e); }
+  } catch(e) {
+    houseSyncStatus='error';
+    houseSyncMessage=e.message||'No se pudo leer Casa compartida';
+    console.warn('load shared house:', e);
+  }
+}
+
+async function refreshHouseData(showResult=true) {
+  if(showResult) showToast('Sincronizando Casa...');
+  await loadHouseCloud();
+  if(currentView==='casa') renderHouse();
+  if(showResult) showToast(houseSyncStatus==='cloud'?'Casa sincronizada':`Casa local: ${houseSyncMessage}`);
 }
 
 function profileDisplayName() {
@@ -1109,7 +1147,12 @@ function renderHouse() {
   const total=H.items.reduce((s,i)=>s+(i.amount||0),0);
   const paid=H.items.reduce((s,i)=>s+housePaid(i),0);
   const pending=Math.max(0,total-paid);
-  let html=`<div class="tabs-scroll mb-3">
+  let syncLabel=houseSyncStatus==='cloud'?'Sincronizado':houseSyncStatus==='error'?'Solo local':'Local';
+  let syncCls=houseSyncStatus==='cloud'?'text-green-600 bg-green-50':houseSyncStatus==='error'?'text-amber-700 bg-amber-50':'text-slate-500 bg-slate-50';
+  let html=`<div class="${syncCls} rounded-xl px-3 py-2 text-xs font-semibold flex justify-between items-center">
+    <span>${syncLabel}</span><span class="truncate ml-2">${houseSyncMessage||'Pulsa ↻ para actualizar Casa'}</span>
+  </div>
+  <div class="tabs-scroll mb-3">
     <button class="pill-tab ${houseTab==='payments'?'active':''} text-xs font-bold px-4 py-1.5 rounded-full whitespace-nowrap" onclick="setHouseTab('payments')">Pagos</button>
     <button class="pill-tab ${houseTab==='pockets'?'active':''} text-xs font-bold px-4 py-1.5 rounded-full whitespace-nowrap" onclick="setHouseTab('pockets')">Bolsillos</button>
   </div>`;
@@ -2463,6 +2506,22 @@ function confirmFormatProfile(){
 }
 
 function confirmReset(){if(confirm('¿Reiniciar todo?')){localStorage.removeItem(SK);location.reload();}}
+
+let pullStartY = null;
+let pullBusy = false;
+document.addEventListener('touchstart', e => {
+  if(currentView==='casa' && window.scrollY===0) pullStartY = e.touches[0].clientY;
+}, {passive:true});
+document.addEventListener('touchmove', e => {
+  if(pullStartY===null || pullBusy || currentView!=='casa') return;
+  const diff=e.touches[0].clientY-pullStartY;
+  if(diff>90) {
+    pullBusy=true;
+    pullStartY=null;
+    refreshHouseData(true).finally(()=>setTimeout(()=>pullBusy=false,900));
+  }
+}, {passive:true});
+document.addEventListener('touchend', () => { pullStartY=null; }, {passive:true});
 
 // ═══════════════════════════════════════
 // INIT
