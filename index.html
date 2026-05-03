@@ -1,0 +1,1955 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BearAgenda</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: #f0f4ff; overscroll-behavior: none; }
+    .view { display: none; } .view.active { display: block; }
+    .modal-bg { background: rgba(79,70,229,0.15); backdrop-filter: blur(4px); }
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .slide-up { animation: slideUp 0.22s cubic-bezier(.22,.68,0,1.2); }
+    .fade-in { animation: fadeIn 0.15s ease-out; }
+    .nav-btn.active { color: #4f46e5; }
+    .status-paid { background: #d1fae5; color: #065f46; }
+    .status-due-soon { background: #fef3c7; color: #92400e; }
+    .status-overdue { background: #fee2e2; color: #b91c1c; }
+    .status-upcoming { background: #ede9fe; color: #4c1d95; }
+    .plan-tight { border-left: 4px solid #f87171; }
+    .plan-ok { border-left: 4px solid #fbbf24; }
+    .plan-great { border-left: 4px solid #34d399; }
+    input, select, textarea { outline: none; -webkit-appearance: none; }
+    .pill-tab.active { background: #4f46e5; color: white; }
+    .pill-tab { background: #ede9fe; color: #6d28d9; }
+    ::-webkit-scrollbar { display: none; }
+    .card { background: white; border-radius: 20px; box-shadow: 0 1px 4px rgba(79,70,229,0.08); }
+    .btn-primary { background: linear-gradient(135deg,#6366f1,#4f46e5); color: white; border-radius: 14px; font-weight: 700; }
+    .tabs-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+    .tabs-scroll::-webkit-scrollbar { display: none; }
+    .fin-active { border: 2px solid #818cf8 !important; }
+    .cal-day { min-height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; cursor: pointer; }
+    .cal-today { background: #4f46e5 !important; color: white; }
+    .toggle { position: relative; display: inline-block; width: 44px; height: 24px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; inset: 0; background: #cbd5e1; border-radius: 999px; transition: .2s; }
+    .slider:before { content: ""; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: .2s; box-shadow: 0 1px 3px rgba(15,23,42,.18); }
+    .toggle input:checked + .slider { background: #6366f1; }
+    .toggle input:checked + .slider:before { transform: translateX(20px); }
+    .money-wrap { position: relative; display: block; width: 100%; }
+    .money-wrap .money-sign { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-weight: 700; pointer-events: none; }
+    .money-wrap input { padding-left: 28px !important; width: 100%; }
+  </style>
+</head>
+<body class="min-h-screen select-none">
+
+<header class="fixed top-0 left-0 right-0 z-40 bg-white border-b border-indigo-100" style="box-shadow:0 2px 12px rgba(79,70,229,0.07)">
+  <div class="px-4 py-2.5 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <div class="w-14 h-14 rounded-2xl bg-white overflow-hidden flex items-center justify-center">
+        <img src="logo.png" alt="BearAgenda" class="w-full h-full object-cover" style="transform:scale(1.65);transform-origin:center 32%;">
+      </div>
+      <h1 class="text-lg font-bold text-slate-800">BearAgenda</h1>
+    </div>
+    <div class="flex items-center gap-3">
+      <div id="headerBalanceWrap" class="flex flex-col items-end gap-0.5">
+        <div id="headerBalanceLabel" class="text-[10px] text-indigo-400 font-semibold uppercase tracking-wide">Balance libre</div>
+        <div id="headerBalance" class="text-lg font-bold leading-none text-indigo-600">$0</div>
+      </div>
+      <button onclick="showView('config')" class="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-400">
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+<div id="authScreen" class="fixed inset-0 z-[999] bg-indigo-50 flex items-center justify-center px-5">
+  <div class="bg-white rounded-3xl shadow-xl p-6 w-full max-w-sm">
+    <div class="text-center mb-5">
+      <img src="logo.png" class="w-24 h-24 mx-auto object-cover rounded-3xl" style="transform:scale(1.2);">
+      <h2 class="text-2xl font-extrabold text-slate-800 mt-3">BearAgenda</h2>
+      <p class="text-sm text-slate-400">Entra a tu perfil financiero</p>
+    </div>
+
+    <div class="space-y-3">
+      <input id="authEmail" type="email" placeholder="Email"
+        class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-3 text-sm">
+
+      <input id="authPassword" type="password" placeholder="Password"
+        class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-3 text-sm">
+
+      <button onclick="loginUser()" class="w-full btn-primary py-3">
+        Entrar
+      </button>
+
+      <button onclick="signupUser()" class="w-full bg-indigo-50 text-indigo-700 font-bold py-3 rounded-xl text-sm">
+        Crear cuenta
+      </button>
+
+      <p id="authMsg" class="text-xs text-center text-red-400 mt-2"></p>
+    </div>
+  </div>
+</div>
+<main class="pt-20 pb-20 min-h-screen">
+  <div id="view-home" class="view active"><div class="px-4 py-5 space-y-4" id="homeContent"></div></div>
+  <div id="view-cheques" class="view">
+    <div class="px-4 py-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-slate-800">Ingresos</h2>
+        <button onclick="openModal('addPaycheck')" class="btn-primary text-sm px-3 py-1.5">+ Agregar</button>
+      </div>
+      <div id="checksList" class="space-y-2.5"></div>
+    </div>
+  </div>
+  <div id="view-facturas" class="view">
+    <div class="px-4 py-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-slate-800">Finanzas</h2>
+        <button id="facturaAddBtn" onclick="facturaAddAction()" class="btn-primary text-sm px-3 py-1.5">+ Agregar</button>
+      </div>
+      <div class="tabs-scroll mb-4">
+        <button class="pill-tab active text-xs font-bold px-4 py-1.5 rounded-full whitespace-nowrap" onclick="switchTab('monthly',this)">Pagos</button>
+        <button class="pill-tab text-xs font-bold px-4 py-1.5 rounded-full whitespace-nowrap" onclick="switchTab('prestamos',this)">Préstamos</button>
+        <button class="pill-tab text-xs font-bold px-4 py-1.5 rounded-full whitespace-nowrap" onclick="switchTab('gastos',this)">Historial gastos</button>
+      </div>
+      <div id="billsContent"></div>
+    </div>
+  </div>
+  <div id="view-cal" class="view">
+    <div class="px-4 py-5">
+      <div id="calContent"></div>
+    </div>
+  </div>
+  <div id="view-bolsillos" class="view">
+    <div class="px-4 py-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-slate-800">Bolsillos</h2>
+        <button onclick="openModal('addPocket')" class="btn-primary text-sm px-3 py-1.5">+ Crear</button>
+      </div>
+      <div id="pocketsContent"></div>
+    </div>
+  </div>
+  <div id="view-plan" class="view">
+    <div class="px-4 py-5">
+      <div class="flex items-center justify-between mb-2">
+        <div><h2 class="text-lg font-bold text-slate-800">Proyecciones</h2><p class="text-xs text-slate-400">Guía cheque a cheque</p></div>
+        <button onclick="openModal('addCustomPlan')" class="btn-primary text-xs px-3 py-1.5">+ Crear plan</button>
+      </div>
+      <div id="planContent" class="space-y-3 mt-4"></div>
+    </div>
+  </div>
+  <div id="view-config" class="view">
+    <div class="px-4 py-5 space-y-4">
+      <h2 class="text-lg font-bold text-slate-800">Configuración</h2>
+      <div class="card p-4">
+        <h3 class="font-semibold text-indigo-700 mb-3">💰 Balance actual en banco</h3>
+        <div class="flex gap-2 items-center">
+          <span class="text-slate-400 font-medium">$</span>
+          <input type="number" id="bankBalanceInput" placeholder="0.00" step="0.01"
+            class="flex-1 border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2 text-slate-800 font-semibold text-lg focus:border-indigo-300"
+            onchange="updateBankBalance(this.value)">
+        </div>
+        <p class="text-xs text-slate-400 mt-2">Actualiza cada vez que revises tu banco. El balance libre se calcula restando los bolsillos.</p>
+      </div>
+      <div class="card p-4">
+        <h3 class="font-semibold text-indigo-700 mb-3">📋 Perfil financiero</h3>
+        <div class="space-y-2 text-sm text-slate-600">
+          <div class="flex justify-between"><span>Salario anual bruto</span><span class="font-semibold">$52,000</span></div>
+          <div class="flex justify-between"><span>Cheque neto</span><span class="font-semibold text-green-600">$1,742</span></div>
+          <div class="flex justify-between"><span>Gastos fijos/mes</span><span class="font-semibold text-red-500">$2,080</span></div>
+        </div>
+      </div>
+      <div class="card p-4 space-y-3">
+        <h3 class="font-semibold text-indigo-700">⚙️ Acciones</h3>
+<button onclick="logoutUser()" class="w-full bg-slate-100 text-slate-600 font-semibold py-2.5 rounded-xl text-sm">
+  Cerrar sesión
+</button>
+        <button onclick="exportData()" class="w-full bg-indigo-50 text-indigo-700 font-semibold py-2.5 rounded-xl text-sm">📤 Exportar datos</button>
+        <button onclick="confirmReset()" class="w-full bg-red-50 text-red-500 font-semibold py-2.5 rounded-xl text-sm">🔄 Reiniciar app</button>
+      </div>
+      <p class="text-center text-xs text-slate-400">BearAgenda v2.0 · Datos guardados localmente</p>
+    </div>
+  </div>
+</main>
+
+<nav class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-indigo-100" style="padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 12px rgba(79,70,229,0.07)">
+  <div class="flex justify-around items-center h-16">
+    <button class="nav-btn active flex flex-col items-center gap-0.5 flex-1 py-2 text-indigo-600" onclick="showView('home')">
+      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/></svg>
+      <span class="text-[9px] font-semibold">Inicio</span>
+    </button>
+    <button class="nav-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-slate-400" onclick="showView('cheques')">
+      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"/></svg>
+      <span class="text-[9px] font-semibold">Ingresos</span>
+    </button>
+    <button class="nav-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-slate-400" onclick="showView('facturas')">
+      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm2 10a1 1 0 10-2 0v3a1 1 0 102 0v-3zm2-3a1 1 0 011 1v5a1 1 0 11-2 0v-5a1 1 0 011-1zm4-1a1 1 0 10-2 0v6a1 1 0 102 0V8z" clip-rule="evenodd"/></svg>
+      <span class="text-[9px] font-semibold">Finanzas</span>
+    </button>
+    <button class="nav-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-slate-400" onclick="showView('cal')">
+      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+      <span class="text-[9px] font-semibold">Calendario</span>
+    </button>
+    <button class="nav-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-slate-400" onclick="showView('bolsillos')">
+      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V8a2 2 0 00-2-2h-5l-2-2H4z"/></svg>
+      <span class="text-[9px] font-semibold">Bolsillos</span>
+    </button>
+    <button class="nav-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-slate-400" onclick="showView('plan')">
+      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
+      <span class="text-[9px] font-semibold">Proy.</span>
+    </button>
+  </div>
+</nav>
+
+<div id="modalOverlay" class="hidden fixed inset-0 z-50 flex items-end justify-center modal-bg" onclick="closeModalOutside(event)">
+  <div id="modalSheet" class="bg-white rounded-t-3xl w-full max-w-lg slide-up overflow-y-auto" style="max-height:92vh">
+    <div class="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-3 mb-1"></div>
+    <div id="modalContent" class="p-5 pb-8"></div>
+  </div>
+</div>
+
+<div id="toast" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white text-sm font-medium px-4 py-2.5 rounded-full shadow-lg fade-in whitespace-nowrap"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ═══════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════
+const SK = 'fh_v2_data';
+const SUPABASE_URL = 'https://bzstxpifsknhqjtvlmes.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6c3R4cGlmc2tuaHFqdHZsbWVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MzQxNTUsImV4cCI6MjA5MzQxMDE1NX0.RweRjy9Byzd1pwS9HQ5xSYg412yktwu1wpC2WcW5Xj8';
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let CURRENT_USER = null;
+const INIT = {
+  bankBalance: 0,
+  lastActionTime: null,
+  paychecks: [
+    {id:'pc1',date:'2026-05-08',amount:1742,received:false,category:'trabajo',note:''},
+    {id:'pc2',date:'2026-05-22',amount:1742,received:false,category:'trabajo',note:''},
+    {id:'pc3',date:'2026-06-05',amount:1742,received:false,category:'trabajo',note:''},
+    {id:'pc4',date:'2026-06-19',amount:1742,received:false,category:'trabajo',note:''},
+    {id:'pc5',date:'2026-07-03',amount:1742,received:false,category:'trabajo',note:''},
+    {id:'pc6',date:'2026-07-17',amount:1742,received:false,category:'trabajo',note:''},
+    {id:'pc7',date:'2026-07-31',amount:1742,received:false,category:'trabajo',note:'🟢 TERCER CHEQUE'},
+    {id:'pc8',date:'2026-08-14',amount:1742,received:false,category:'trabajo',note:''},
+    {id:'pc9',date:'2026-08-28',amount:1742,received:false,category:'trabajo',note:''},
+  ],
+  bills: [
+    {id:'b1',name:'Renta',amount:1600,dueDay:30,emoji:'🏠',category:'vivienda',frequency:'monthly',active:true,termType:'indefinite',totalPayments:null},
+    {id:'b2',name:'Seguro',amount:280,dueDay:8,emoji:'🛡️',category:'seguro',frequency:'monthly',active:true,termType:'indefinite',totalPayments:null},
+    {id:'b3',name:'Verizon',amount:100,dueDay:17,emoji:'📱',category:'servicios',frequency:'monthly',active:true,termType:'indefinite',totalPayments:null},
+    {id:'b4',name:'Capital One',amount:50,dueDay:20,emoji:'💳',category:'deuda',frequency:'monthly',active:true,termType:'indefinite',totalPayments:null},
+    {id:'b5',name:'Credit One',amount:50,dueDay:20,emoji:'💳',category:'deuda',frequency:'monthly',active:true,termType:'indefinite',totalPayments:null},
+  ],
+  oneTimePayments: [
+    {id:'o1',name:'NetCredit — liquidar',amount:1000,dueDate:'2026-05-08',paid:false,paidDate:null,paidAmount:null},
+    {id:'o2',name:'Mamá — pago 1/2',amount:1000,dueDate:'2026-06-05',paid:false,paidDate:null,paidAmount:null},
+    {id:'o3',name:'Mamá — pago 2/2',amount:1000,dueDate:'2026-07-03',paid:false,paidDate:null,paidAmount:null},
+  ],
+  paidBills: [], // {billId, dateKey:'YYYY-MM-DD', paidDate, paidAmount}
+  expenses: [],  // {id,name,amount,date,category,paid,dueDate,paidDate}
+  pockets: [],   // {id,name,emoji,target,saved,color}
+  loans: [],     // {id,personName,totalAmount,note,source,payments:[{id,amount,date,note}],recurring:{freq,amount,nextDate,totalPayments}|null}
+  borrowedLoans: [], // {id,personName,amount,dueDate,description,paid}
+  incomeCategories: ['Trabajo','Préstamo','Otro'],
+  customPlans: [],// {id,label,date,color,items:[{name,amount,type}],note,living,completed}
+  calendarNotes: {}, // {'YYYY-MM-DD':[{id,text,done}]}
+  nextId: 100,
+};
+
+const PLAN_DATA = [
+  {id:'pc1',date:'2026-05-08',label:'CHEQUE 1 — MES DE SACRIFICIO',color:'tight',
+    items:[{name:'NetCredit (liquidar)',amount:1000,type:'pay'},{name:'Seguro (1er pago)',amount:280,type:'pay'},{name:'Verizon (vence el 17)',amount:100,type:'hold'}],
+    living:362,note:'⚠️ Cero extras. $362 para 2 semanas (~$26/día). Come en casa.'},
+  {id:'pc2',date:'2026-05-22',label:'CHEQUE 2 — RENTA Y TARJETAS',color:'tight',
+    items:[{name:'Capital One',amount:50,type:'pay'},{name:'Credit One',amount:50,type:'pay'},{name:'Renta 30 de mayo',amount:1600,type:'pay'}],
+    living:42,note:'📌 +$362 del cheque anterior = $404 para todo mayo (~$13/día).'},
+  {id:'pc3',date:'2026-06-05',label:'CHEQUE 3 — MAMÁ PAGO 1/2',color:'ok',
+    items:[{name:'Seguro junio',amount:280,type:'pay'},{name:'Mamá — pago 1/2',amount:1000,type:'pay'},{name:'Verizon (hold)',amount:100,type:'hold'}],
+    living:362,note:'📌 Primer pago a mamá. Aguanta.'},
+  {id:'pc4',date:'2026-06-19',label:'CHEQUE 4 — RENTA JUNIO',color:'ok',
+    items:[{name:'Capital One',amount:50,type:'pay'},{name:'Credit One',amount:50,type:'pay'},{name:'Renta 30 de junio',amount:1600,type:'pay'}],
+    living:42,note:'⚠️ Ajustado. Guarda lo que puedas del cheque 3.'},
+  {id:'pc5',date:'2026-07-03',label:'CHEQUE 5 — MAMÁ PAGO 2/2 ✅',color:'ok',
+    items:[{name:'Seguro julio',amount:280,type:'pay'},{name:'Mamá — pago 2/2 ÚLTIMO',amount:1000,type:'pay'},{name:'Verizon (hold)',amount:100,type:'hold'}],
+    living:362,note:'✅ Último pago a mamá. A partir de aquí $1,000 libres por ciclo.'},
+  {id:'pc6',date:'2026-07-17',label:'CHEQUE 6 — RENTA JULIO',color:'ok',
+    items:[{name:'Capital One',amount:50,type:'pay'},{name:'Credit One',amount:50,type:'pay'},{name:'Renta 30 de julio',amount:1600,type:'pay'}],
+    living:42,note:'📌 Verizon ya pagado del cheque anterior.'},
+  {id:'pc7',date:'2026-07-31',label:'CHEQUE 7 — EL TERCER CHEQUE 🟢',color:'great',
+    items:[{name:'Pre-pagar Seguro agosto (vence 8/ago)',amount:280,type:'critical'},{name:'Fondo de emergencia',amount:500,type:'save'},{name:'Vivir Aug 1-13',amount:400,type:'hold'},{name:'Refuerzo renta agosto',amount:400,type:'save'},{name:'Colchón',amount:162,type:'free'}],
+    living:0,note:'🟢 Seguro de agosto sale de aquí porque el cheque del 14/ago llega tarde. Págalo el 1 de agosto.'},
+  {id:'pc8',date:'2026-08-14',label:'CHEQUE 8 — AGOSTO RESPIRA',color:'great',
+    items:[{name:'Seguro agosto (ya pagado)',amount:0,type:'done'},{name:'Verizon (hold)',amount:100,type:'hold'}],
+    living:1642,note:'🟢 Sin deuda de mamá. $1,642 para vivir, guardar y reforzar renta.'},
+  {id:'pc9',date:'2026-08-28',label:'CHEQUE 9 — RENTA AGOSTO',color:'great',
+    items:[{name:'Capital One',amount:50,type:'pay'},{name:'Credit One',amount:50,type:'pay'},{name:'Renta 30 de agosto',amount:1600,type:'pay'}],
+    living:42,note:'✅ Sep en adelante: +$1,400/mes disponible. Hora de ahorrar en serio.'},
+];
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let S = {};
+let currentView = 'home';
+let currentTab = 'monthly';
+let finSection = 'payments';
+let finMonth = '';
+let selectedIncomeCategory = '';
+let calDate = null;
+let lastUndoAction = null;
+
+function load() {
+  try { const d = localStorage.getItem(SK); S = d ? {...INIT,...JSON.parse(d)} : JSON.parse(JSON.stringify(INIT)); }
+  catch(e) { S = JSON.parse(JSON.stringify(INIT)); }
+  // ensure new fields exist
+  if (!S.pockets) S.pockets = [];
+  if (!S.loans) S.loans = [];
+  if (!S.customPlans) S.customPlans = [];
+  if (!S.calendarNotes) S.calendarNotes = {};
+  if (!S.borrowedLoans) S.borrowedLoans = [];
+  if (!S.incomeCategories) S.incomeCategories = ['Trabajo','Préstamo','Otro'];
+  if (!S.lastActionTime) S.lastActionTime = null;
+  S.bills.forEach(b => {
+    if (!b.frequency) b.frequency = 'monthly';
+    if (!b.termType) b.termType = 'indefinite';
+    if (b.totalPayments === undefined) b.totalPayments = null;
+  });
+  S.paychecks.forEach(p => { if (!p.category) p.category = 'trabajo'; });
+  S.oneTimePayments.forEach(o => { if (o.paidAmount === undefined) o.paidAmount = null; });
+  S.expenses.forEach(e => {
+    if (e.paid === undefined) e.paid = true;
+    if (!e.dueDate) e.dueDate = e.date;
+    if (!e.paidDate && e.paid) e.paidDate = e.date;
+  });
+  S.loans.forEach(l => {
+    if (!l.payments) l.payments = [];
+    if (!l.source) l.source = {type:'balance',id:null};
+    if (l.recurring && l.recurring.totalPayments === undefined) l.recurring.totalPayments = null;
+  });
+  finMonth = monthKey(today());
+}
+async function save() {
+  localStorage.setItem(SK, JSON.stringify(S));
+
+  if (!CURRENT_USER) return;
+
+  await supabase
+    .from('app_data')
+    .upsert({
+      user_id: CURRENT_USER.id,
+      data: S,
+      updated_at: new Date().toISOString()
+    }, {
+      onConflict: 'user_id'
+    });
+}
+async function loadCloudData() {
+  if (!CURRENT_USER) return;
+
+  const { data, error } = await supabase
+    .from('app_data')
+    .select('data')
+    .eq('user_id', CURRENT_USER.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  if (data && data.data) {
+    S = { ...INIT, ...data.data };
+  } else {
+    S = JSON.parse(JSON.stringify(INIT));
+
+    await supabase
+      .from('app_data')
+      .insert({
+        user_id: CURRENT_USER.id,
+        data: S
+      });
+  }
+
+  updateHeaderBalance();
+}
+function setLastAction() { S.lastActionTime = new Date().toISOString(); save(); updateHeaderBalance(); }
+
+// ═══════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════
+const fmt = a => '$' + Math.abs(a||0).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2});
+const uid = () => 'x' + (++S.nextId);
+const today = () => { const n=new Date(); return new Date(n.getFullYear(),n.getMonth(),n.getDate()); };
+const parseDate = s => { const[y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); };
+const monthKey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+const daysUntil = s => Math.round((parseDate(s)-today())/(864e5));
+const isoToday = () => fmtISO(today());
+function fmtISO(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function fmtDate(s) {
+  const d=parseDate(s), months=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'], days=['dom','lun','mar','mié','jue','vie','sáb'];
+  return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}`;
+}
+function fmtDateLong(s) {
+  const d=parseDate(s), months=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return `${d.getDate()} de ${months[d.getMonth()]}`;
+}
+function fmtActionTime(iso) {
+  if (!iso) return 'Sin actualizaciones';
+  const diff = Math.floor((Date.now()-new Date(iso).getTime())/1000);
+  if (diff < 60) return 'hace un momento';
+  if (diff < 3600) return `hace ${Math.floor(diff/60)} min`;
+  if (diff < 86400) return `hace ${Math.floor(diff/3600)}h`;
+  if (diff < 172800) return 'ayer';
+  return fmtDate(iso.slice(0,10));
+}
+function getStatusInfo(days) {
+  if (days < 0) return {cls:'status-overdue',label:`Vencida hace ${Math.abs(days)}d`};
+  if (days === 0) return {cls:'status-overdue',label:'Vence HOY'};
+  if (days <= 5) return {cls:'status-due-soon',label:`Vence en ${days}d`};
+  return {cls:'status-upcoming',label:`${days}d`};
+}
+function getBillDueDate(bill, forMonth) {
+  const y=forMonth.getFullYear(), m=forMonth.getMonth();
+  const maxDay=new Date(y,m+1,0).getDate();
+  return new Date(y,m,Math.min(bill.dueDay,maxDay));
+}
+function isBillPaid(billId, dateKey) {
+  return S.paidBills.some(p=>p.billId===billId && p.dateKey===dateKey);
+}
+function totalPockets() { return S.pockets.reduce((s,p)=>s+(p.saved||0),0); }
+function loanPaid(loan) { return (loan.payments||[]).reduce((s,p)=>s+p.amount,0); }
+function catLabel(c) { return {trabajo:'💼 Trabajo',deuda:'📋 Deuda',persona:'👤 Persona',otro:'📦 Otro'}[c]||c; }
+function methodLabel(m) { return {deposito:'depósito',efectivo:'efectivo',transferencia:'transferencia'}[m]||m; }
+function freqLabel(f) { return {monthly:'Mensual',biweekly:'Quincenal',weekly:'Semanal'}[f]||f; }
+function paycheckFreqLabel(p) { return {weekly:'Semanal',biweekly:'Quincenal',monthly:'Mensual'}[p.recurrenceFreq] || (p.paymentType==='unico'?'Único':'Recurrente'); }
+function peopleNames() { return [...new Set([...S.loans.map(l=>l.personName), ...S.borrowedLoans.map(l=>l.personName)].filter(Boolean))]; }
+function paycheckSourceLabel(p) {
+  if(p.category==='persona') return p.personName||'Persona';
+  if(p.category==='otro') return p.sourceName||'Otro';
+  return p.sourceName||'Trabajo';
+}
+function billPaidCount(bill) { return S.paidBills.filter(p=>p.billId===bill.id).length; }
+function isBillActiveForMonth(bill, forMonth) {
+  if(!bill.active) return false;
+  if(bill.termType==='term' && bill.totalPayments && billPaidCount(bill)>=bill.totalPayments) return false;
+  return true;
+}
+function availableForPocket(excludeId=null) {
+  const other=S.pockets.filter(p=>p.id!==excludeId).reduce((s,p)=>s+(p.saved||0),0);
+  return (S.bankBalance||0)-other;
+}
+function adjustBalance(amount) {
+  S.bankBalance=(S.bankBalance||0)+(parseFloat(amount)||0);
+}
+function adjustSource(source, amount) {
+  amount=parseFloat(amount)||0;
+  if(!source||source.type==='balance') adjustBalance(amount);
+  else {
+    const p=S.pockets.find(x=>x.id===source.id);
+    if(p) p.saved=Math.max(0,(p.saved||0)+amount);
+  }
+}
+function sourceLabel(source) {
+  if(!source||source.type==='balance') return 'Balance libre';
+  const p=S.pockets.find(x=>x.id===source.id);
+  return p ? `Bolsillo: ${p.name}` : 'Bolsillo';
+}
+function getMonthPayments(month=finMonth) {
+  const [y,m]=month.split('-').map(Number);
+  const cm=new Date(y,m-1,1);
+  const items=[];
+  S.bills.forEach(b=>{
+    if(!isBillActiveForMonth(b,cm)) return;
+    const due=getBillDueDate(b,cm), dk=fmtISO(due);
+    items.push({kind:'bill',id:b.id,date:dk,name:b.name,amount:b.amount,emoji:b.emoji||'💳',paid:isBillPaid(b.id,dk),category:b.category,frequency:b.frequency});
+  });
+  S.oneTimePayments.forEach(o=>{
+    if(monthKey(parseDate(o.dueDate))===month) items.push({kind:'onetime',id:o.id,date:o.dueDate,name:o.name,amount:o.amount,emoji:'📌',paid:o.paid,category:'único'});
+  });
+  S.expenses.forEach(e=>{
+    const d=e.paid ? (e.paidDate||e.date) : (e.dueDate||e.date);
+    if(d&&monthKey(parseDate(d))===month) items.push({kind:'expense',id:e.id,date:d,name:e.name,amount:e.amount,emoji:catEmoji(e.category),paid:e.paid,category:e.category||'otros'});
+  });
+  S.loans.forEach(l=>{
+    if(l.recurring&&l.recurring.nextDate&&monthKey(parseDate(l.recurring.nextDate))===month) {
+      items.push({kind:'loan',id:l.id,date:l.recurring.nextDate,name:`Cobrar a ${l.personName}`,amount:l.recurring.amount,emoji:'🤝',paid:false,category:'préstamo'});
+    }
+  });
+  S.borrowedLoans.forEach(l=>{
+    if(monthKey(parseDate(l.dueDate))===month) items.push({kind:'borrowed',id:l.id,date:l.dueDate,name:`Pagar préstamo a ${l.personName}`,amount:l.amount,emoji:'🏦',paid:l.paid,category:`préstamo recibido · ${l.paymentsCount||1} pagos`});
+  });
+  return items.sort((a,b)=>parseDate(a.date)-parseDate(b.date));
+}
+function getTransactions(limit=8) {
+  const tx=[];
+  S.paychecks.filter(p=>p.received).forEach(p=>tx.push({date:p.receivedDate||p.date,createdAt:p.receivedAt,type:'Ingreso',name:catLabel(p.category),amount:p.amount,sign:'+'}));
+  S.loanPayments=S.loans.flatMap(l=>(l.payments||[]).map(p=>({...p,person:l.personName})));
+  S.loanPayments.forEach(p=>tx.push({date:p.date,createdAt:p.createdAt,type:'Ingreso',name:`Abono préstamo: ${p.person}`,amount:p.amount,sign:'+'}));
+  S.paidBills.forEach(p=>{const b=S.bills.find(x=>x.id===p.billId); if(b) tx.push({date:p.paidDate||p.dateKey,createdAt:p.createdAt,type:'Pago',name:b.name,amount:p.paidAmount||b.amount,sign:'-'});});
+  S.oneTimePayments.filter(o=>o.paid).forEach(o=>tx.push({date:o.paidDate||o.dueDate,createdAt:o.paidAt,type:'Pago',name:o.name,amount:o.paidAmount||o.amount,sign:'-'}));
+  S.expenses.filter(e=>e.paid).forEach(e=>tx.push({date:e.paidDate||e.date,createdAt:e.paidAt||e.createdAt,type:'Gasto',name:e.name,amount:e.amount,sign:'-'}));
+  S.borrowedLoans.forEach(l=>tx.push({date:l.createdDate||l.dueDate,createdAt:l.createdAt,type:'Ingreso',name:`Préstamo de ${l.personName}`,amount:l.amount,sign:'+'}));
+  S.borrowedLoans.filter(l=>l.paid).forEach(l=>tx.push({date:l.paidDate||l.dueDate,createdAt:l.paidAt,type:'Pago',name:`Pago préstamo a ${l.personName}`,amount:l.amount,sign:'-'}));
+  return tx.sort((a,b)=>(parseDate(b.date)-parseDate(a.date))||(new Date(b.createdAt||b.date)-new Date(a.createdAt||a.date))).slice(0,limit);
+}
+
+// ═══════════════════════════════════════
+// COMPUTED
+// ═══════════════════════════════════════
+function freeBalance() { return (S.bankBalance||0) - totalPockets(); }
+
+function getUpcomingItems(days=14) {
+  const t=today(), limit=new Date(t); limit.setDate(t.getDate()+days);
+  const items=[];
+  S.paychecks.forEach(p=>{
+    if(p.received) return;
+    const d=parseDate(p.date);
+    if(d>=t&&d<=limit) items.push({type:'income',id:p.id,name:'Cheque nómina',amount:p.amount,date:p.date,days:daysUntil(p.date),note:p.note,category:p.category});
+  });
+  for(let i=0;i<=1;i++){
+    const cm=new Date(t.getFullYear(),t.getMonth()+i,1);
+    S.bills.forEach(b=>{
+      if(!b.active) return;
+      const due=getBillDueDate(b,cm), dk=fmtISO(due);
+      if(due>=t&&due<=limit&&!isBillPaid(b.id,dk))
+        items.push({type:'bill',id:b.id,name:b.name,emoji:b.emoji,amount:b.amount,date:dk,days:daysUntil(dk),dateKey:dk});
+    });
+  }
+  S.oneTimePayments.forEach(o=>{
+    if(o.paid) return;
+    const d=parseDate(o.dueDate);
+    if(d>=t&&d<=limit) items.push({type:'onetime',id:o.id,name:o.name,amount:o.amount,date:o.dueDate,days:daysUntil(o.dueDate)});
+  });
+  S.expenses.forEach(e=>{
+    if(e.paid) return;
+    const date=e.dueDate||e.date;
+    const d=parseDate(date);
+    if(d>=t&&d<=limit) items.push({type:'expense',id:e.id,name:e.name,amount:e.amount,date,days:daysUntil(date)});
+  });
+  // recurring loan payments
+  S.loans.forEach(l=>{
+    if(!l.recurring||!l.recurring.nextDate) return;
+    const d=parseDate(l.recurring.nextDate);
+    if(d>=t&&d<=limit) items.push({type:'loan',id:l.id,name:`Cobrar a ${l.personName}`,amount:l.recurring.amount,date:l.recurring.nextDate,days:daysUntil(l.recurring.nextDate)});
+  });
+  S.borrowedLoans.forEach(l=>{
+    if(l.paid) return;
+    const d=parseDate(l.dueDate);
+    if(d>=t&&d<=limit) items.push({type:'borrowed',id:l.id,name:`Pagar préstamo a ${l.personName}`,amount:l.amount,date:l.dueDate,days:daysUntil(l.dueDate)});
+  });
+  Object.entries(S.calendarNotes||{}).forEach(([date,notes])=>{
+    const d=parseDate(date);
+    if(d>=t&&d<=limit) (notes||[]).filter(n=>!n.done).forEach(n=>items.push({type:'task',id:n.id,name:n.text,amount:0,date,dateKey:date,days:daysUntil(date)}));
+  });
+  items.sort((a,b)=>a.days-b.days);
+  return items;
+}
+
+// ═══════════════════════════════════════
+// HEADER
+// ═══════════════════════════════════════
+function updateHeaderBalance() {
+  const bal = freeBalance();
+  const wrap = document.getElementById('headerBalanceWrap');
+  const el = document.getElementById('headerBalance');
+  const lbl = document.getElementById('headerBalanceLabel');
+  if(wrap) wrap.classList.toggle('hidden', currentView==='home');
+  if(el) { el.textContent=(bal<0?'-':'')+fmt(Math.abs(bal)); el.className=`text-lg font-bold leading-none ${bal>=0?'text-indigo-600':'text-red-500'}`; }
+  if(lbl) lbl.textContent = S.lastActionTime ? `Últ. act. ${fmtActionTime(S.lastActionTime)}` : 'Balance libre';
+}
+
+// ═══════════════════════════════════════
+// HOME
+// ═══════════════════════════════════════
+function renderHome() {
+  const bal=freeBalance(), pkt=totalPockets();
+  const upcoming=getUpcomingItems(14);
+  const pay14=upcoming.filter(x=>['bill','onetime','expense','borrowed'].includes(x.type)).reduce((s,x)=>s+x.amount,0);
+  const owedToMe=S.loans.reduce((s,l)=>s+Math.max(0,(l.totalAmount||0)-loanPaid(l)),0);
+  const t=today(), mk=monthKey(t);
+  const monthPayments=getMonthPayments(mk).filter(x=>x.kind!=='loan');
+  const paidAmt=monthPayments.filter(x=>x.paid).reduce((s,x)=>s+x.amount,0);
+  const totalMo=monthPayments.reduce((s,x)=>s+x.amount,0);
+  const pct=totalMo>0?Math.round(paidAmt/totalMo*100):0;
+  const hour=new Date().getHours();
+  const greet=hour<12?'Buenos días':hour<18?'Buenas tardes':'Buenas noches';
+
+  let html=`
+  <div class="flex justify-between items-center">
+    <div><p class="text-slate-400 text-sm">${greet} 👋</p><h2 class="text-xl font-bold text-slate-800 mt-0.5">Tu resumen</h2></div>
+    <div class="text-right"><div class="text-xs text-slate-400">Hoy</div><div class="text-sm font-semibold text-slate-600">${fmtDateLong(isoToday())}</div></div>
+  </div>
+
+  <div class="grid grid-cols-3 gap-2">
+    <div class="bg-gradient-to-br from-indigo-50 via-violet-50 to-blue-50 border border-indigo-100 rounded-2xl p-4" style="box-shadow:0 4px 20px rgba(99,102,241,0.10)">
+      <div class="text-indigo-400 text-[10px] font-bold uppercase tracking-wide">Saldo</div>
+      <div class="text-xl font-extrabold leading-tight ${bal>=0?'text-indigo-700':'text-red-500'}">${bal<0?'-':''}${fmt(Math.abs(bal))}</div>
+      <div class="text-[11px] text-slate-400 truncate">${fmt(pkt)} bolsillos</div>
+    </div>
+    <div class="card p-4">
+      <div class="text-indigo-400 text-[10px] font-bold uppercase tracking-wide">Pagar 14d</div>
+      <div class="text-xl font-extrabold leading-tight text-red-500">${fmt(pay14)}</div>
+      <div class="text-[11px] text-slate-400 truncate">${upcoming.filter(x=>['bill','onetime','expense','borrowed'].includes(x.type)).length} pagos</div>
+    </div>
+    <div class="card p-4">
+      <div class="text-indigo-400 text-[10px] font-bold uppercase tracking-wide">Me deben</div>
+      <div class="text-xl font-extrabold leading-tight text-green-600">${fmt(owedToMe)}</div>
+      <div class="text-[11px] text-slate-400 truncate">${S.loans.length} personas</div>
+    </div>
+  </div>
+
+  ${lastUndoAction?`<div class="card p-3 flex items-center justify-between border border-amber-100 bg-amber-50"><div><div class="text-sm font-bold text-amber-700">Última acción</div><div class="text-xs text-amber-600">${lastUndoAction.label}</div></div><button onclick="undoLastAction()" class="bg-white text-amber-700 border border-amber-200 text-xs font-bold px-3 py-2 rounded-xl">Deshacer</button></div>`:''}
+
+  <div class="card p-4">
+    <div class="flex justify-between items-center mb-2">
+      <span class="font-semibold text-indigo-700 text-sm">FACTURAS ${['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'][t.getMonth()]} 1-${new Date(t.getFullYear(),t.getMonth()+1,0).getDate()}</span>
+      <span class="text-xs font-semibold text-indigo-400">${fmt(paidAmt)} / ${fmt(totalMo)}</span>
+    </div>
+    <div class="w-full bg-indigo-50 rounded-full h-3">
+      <div class="bg-gradient-to-r from-indigo-400 to-violet-400 h-3 rounded-full transition-all" style="width:${pct}%"></div>
+    </div>
+    <div class="text-xs text-indigo-300 mt-1 font-medium">${pct}% pagado</div>
+  </div>
+
+  <h3 class="font-bold text-indigo-700 text-xs uppercase tracking-wide">Próximos 14 días</h3>`;
+
+  if(!upcoming.length) {
+    html+=`<div class="card p-4 text-center text-indigo-300 text-sm">Sin pagos próximos 🎉</div>`;
+  } else {
+    upcoming.forEach(item=>{
+      const status=getStatusInfo(item.days);
+      const icon=item.type==='income'?'💵':item.type==='loan'?'🤝':item.type==='task'?'📝':(item.emoji||'📌');
+      const color=item.type==='income'?'text-green-600':item.type==='task'?'text-slate-500':'text-indigo-700';
+      let actionBtn;
+      if(item.type==='income') actionBtn=`<button onclick="openModal('confirmReceive','${item.id}')" class="text-xs bg-green-50 text-green-700 font-semibold px-3 py-1 rounded-full">Recibido ✓</button>`;
+      else if(item.type==='bill') actionBtn=`<button onclick="openModal('confirmPay','${item.id}','${item.dateKey}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Pagar ✓</button>`;
+      else if(item.type==='onetime') actionBtn=`<button onclick="openModal('confirmPayOnce','${item.id}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Pagar ✓</button>`;
+      else if(item.type==='expense') actionBtn=`<button onclick="markExpensePaid('${item.id}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Pagar ✓</button>`;
+      else if(item.type==='borrowed') actionBtn=`<button onclick="markBorrowedPaid('${item.id}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Pagar ✓</button>`;
+      else if(item.type==='task') actionBtn=`<div class="flex gap-1 justify-end"><button onclick="completeCalendarNote('${item.dateKey}','${item.id}')" class="text-xs bg-green-50 text-green-700 font-semibold px-2 py-1 rounded-full">Completar</button><button onclick="openModal('rescheduleCalendarNote','${item.dateKey}','${item.id}')" class="text-xs bg-slate-100 text-slate-600 font-semibold px-2 py-1 rounded-full">Mover</button></div>`;
+      else actionBtn=`<button onclick="openModal('addLoanPayment','${item.id}')" class="text-xs bg-purple-50 text-purple-700 font-semibold px-3 py-1 rounded-full">Registrar</button>`;
+      html+=`<div class="card p-3.5 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg ${item.type==='income'?'bg-green-50':'bg-indigo-50'}">${icon}</div>
+        <div class="flex-1 min-w-0">
+          <div class="font-semibold text-slate-800 text-sm truncate">${item.name}</div>
+          <div class="flex items-center gap-2 mt-0.5">
+            <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">${item.type==='task'?'Tarea':'Pago'}</span>
+            <span class="text-xs ${status.cls} px-2 py-0.5 rounded-full font-medium">${status.label}</span>
+            <span class="text-xs text-slate-400">${fmtDate(item.date)}</span>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="font-bold ${color} text-sm">${item.type==='task'?'Tarea':`${item.type==='income'?'+':'-'}${fmt(item.amount)}`}</div>
+          <div class="mt-1">${actionBtn}</div>
+        </div>
+      </div>`;
+    });
+  }
+
+  html+=`<div class="card p-4">
+    <h3 class="font-semibold text-indigo-700 text-sm mb-3">⚡ Gasto rápido</h3>
+    <div class="flex gap-2">
+      <input type="text" id="qName" placeholder="Descripción" class="flex-1 border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2 text-sm">
+      <input type="number" id="qAmt" placeholder="$0" class="w-20 border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2 text-sm">
+      <button onclick="startQuickExpense()" class="btn-primary px-3 py-2 text-sm">+</button>
+    </div>
+  </div>`;
+  const tx=getTransactions(6);
+  html+=`<div class="card p-4"><div class="font-semibold text-indigo-700 text-sm mb-3">Transacciones</div>${tx.length?tx.map(t=>`<div class="flex items-center justify-between py-2 border-t border-slate-50"><div><div class="text-sm font-semibold text-slate-700">${t.name}</div><div class="text-xs text-slate-400">${t.type} · ${fmtDate(t.date)}</div></div><div class="font-bold ${t.sign==='+'?'text-green-600':'text-red-500'}">${t.sign}${fmt(t.amount)}</div></div>`).join(''):`<div class="text-sm text-indigo-300 text-center py-3">Sin historial todavía.</div>`}</div>`;
+
+  document.getElementById('homeContent').innerHTML=html;
+  decorateMoneyInputs();
+}
+
+// ═══════════════════════════════════════
+// CHEQUES
+// ═══════════════════════════════════════
+function renderChecks() {
+  const active=[...S.paychecks].filter(p=>!p.received).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
+  const tx=getTransactions(12).filter(t=>t.sign==='+');
+  const allIncome=getTransactions(9999).filter(t=>t.sign==='+');
+  const totalIn=allIncome.reduce((s,t)=>s+t.amount,0);
+  const now=today(), thisMonth=monthKey(now), prevDate=new Date(now.getFullYear(),now.getMonth()-1,1), prevMonth=monthKey(prevDate);
+  const monthNames=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+  const thisIn=allIncome.filter(t=>monthKey(parseDate(t.date))===thisMonth).reduce((s,t)=>s+t.amount,0);
+  const prevIn=allIncome.filter(t=>monthKey(parseDate(t.date))===prevMonth).reduce((s,t)=>s+t.amount,0);
+  const incoming14=active.filter(p=>daysUntil(p.date)>=0&&daysUntil(p.date)<=14);
+  const groups={};
+  active.forEach(p=>{const key=paycheckSourceLabel(p); (groups[key]||(groups[key]=[])).push(p);});
+  const groupCards=Object.entries(groups).filter(([,items])=>items.length>1);
+  if(!groupCards.some(([k])=>k===selectedIncomeCategory)) selectedIncomeCategory='';
+  const selectedItems=(groups[selectedIncomeCategory]||[]).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
+  let html=`<div class="grid grid-cols-3 gap-2 mb-4">
+    <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">Al día</div><div class="text-lg font-extrabold text-green-600">${fmt(totalIn)}</div></div>
+    <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">${monthNames[now.getMonth()]}</div><div class="text-lg font-extrabold text-green-600">${fmt(thisIn)}</div></div>
+    <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">${monthNames[prevDate.getMonth()]}</div><div class="text-lg font-extrabold text-green-600">${fmt(prevIn)}</div></div>
+  </div>
+  <div class="card p-4 mb-4">
+    <div class="font-semibold text-indigo-700 text-sm mb-3">Próximos ingresos</div>
+    ${incoming14.length?incoming14.map(p=>`<div class="flex justify-between py-2 border-t border-slate-50"><div><div class="text-sm font-semibold text-slate-700">${paycheckSourceLabel(p)}</div><div class="text-xs text-slate-400">${fmtDate(p.date)} · ${p.paymentType==='unico'?'único':(p.paymentType||'recurrente')}</div></div><div class="font-bold text-green-600">+${fmt(p.amount)}</div></div>`).join(''):`<div class="text-sm text-indigo-300 text-center py-3">Sin ingresos próximos.</div>`}
+  </div>
+  ${groupCards.length?`<div class="font-bold text-indigo-700 text-xs uppercase tracking-wide mb-2">Fuente de ingresos</div><div class="grid grid-cols-2 gap-2 mb-4">${groupCards.map(([cat,items])=>{
+    const received=S.paychecks.filter(p=>p.received&&paycheckSourceLabel(p)===cat).reduce((s,p)=>s+p.amount,0);
+    const sample=items[0];
+    return `<button onclick="selectIncomeCategory('${encodeURIComponent(cat)}')" class="card p-3 text-left ${selectedIncomeCategory===cat?'ring-2 ring-indigo-300':''}"><div class="text-xs text-slate-400">${paycheckFreqLabel(sample)}</div><div class="font-bold text-indigo-700">${cat}</div><div class="text-xs text-slate-500">Por pago: ${fmt(sample.amount)}</div><div class="text-xs text-green-600 font-semibold">Recibido: ${fmt(received)}</div></button>`;
+  }).join('')}</div>`:''}
+  ${selectedItems.length?`<div class="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-3 mb-4"><div class="font-bold text-indigo-700 text-xs uppercase tracking-wide mb-2">Detalle · ${selectedIncomeCategory}</div>`:''}`;
+  selectedItems.forEach(p=>{
+    const d=daysUntil(p.date);
+    let badge;
+    if(d<0) badge=`<span class="status-overdue text-xs font-bold px-2.5 py-0.5 rounded-full">Pasado</span>`;
+    else if(d===0) badge=`<span class="status-due-soon text-xs font-bold px-2.5 py-0.5 rounded-full">Hoy 🎉</span>`;
+    else if(d<=7) badge=`<span class="status-due-soon text-xs font-bold px-2.5 py-0.5 rounded-full">En ${d}d</span>`;
+    else badge=`<span class="status-upcoming text-xs font-bold px-2.5 py-0.5 rounded-full">${fmtDate(p.date)}</span>`;
+    html+=`<div class="card p-4 mb-2">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-xl">💵</div>
+        <div class="flex-1"><div class="flex flex-wrap gap-1.5 items-center"><span class="font-semibold text-slate-800">Cheque nómina</span>${badge}</div>
+        <div class="text-xs text-slate-400 mt-0.5">${fmtDateLong(p.date)} · ${p.paymentType==='unico'?'único':(p.paymentType||'recurrente')} · ${methodLabel(p.method||'deposito')}${p.note?' · '+p.note:''}</div></div>
+        <div class="font-bold text-green-600">+${fmt(p.amount)}</div>
+      </div>
+      <div class="flex gap-2 mt-3 pt-3 border-t border-slate-50">
+        <button onclick="openModal('confirmReceive','${p.id}')" class="flex-1 bg-green-600 text-white text-sm font-bold py-2 rounded-xl">✓ Marcar recibido</button>
+        <button onclick="openModal('editPaycheck','${p.id}')" class="bg-slate-100 text-slate-600 text-sm px-4 py-2 rounded-xl">Editar</button>
+        <button onclick="deletePaycheck('${p.id}')" class="bg-red-50 text-red-400 text-sm px-3 py-2 rounded-xl">Borrar</button>
+      </div>
+    </div>`;
+  });
+  if(selectedItems.length) html+=`</div>`;
+  html+=`<div class="font-bold text-indigo-700 text-xs uppercase tracking-wide mt-4 mb-2">Historias de ingresos</div>`;
+  html+=tx.length?tx.map(t=>`<div class="card p-3 mb-2 flex justify-between"><div><div class="text-sm font-semibold text-slate-700">${t.name}</div><div class="text-xs text-slate-400">${t.type} · ${fmtDate(t.date)}</div></div><div class="font-bold text-green-600">+${fmt(t.amount)}</div></div>`).join(''):`<div class="card p-4 text-center text-indigo-300 text-sm">Sin ingresos registrados.</div>`;
+  document.getElementById('checksList').innerHTML=html;
+}
+
+function selectIncomeCategory(cat) {
+  const next=decodeURIComponent(cat);
+  selectedIncomeCategory=selectedIncomeCategory===next?'':next;
+  renderChecks();
+}
+
+// ═══════════════════════════════════════
+// FACTURAS TABS
+// ═══════════════════════════════════════
+function facturaAddAction() {
+  const actions={monthly:'addBill',onetime:'addOneTime',gastos:'addExpense',bolsillos:'addPocket',prestamos:'addLoan'};
+  openModal(actions[currentTab]||'addBill');
+}
+
+function renderBills() {
+  const t=today(), mk=monthKey(t);
+  let html='';
+
+  if(currentTab==='monthly') {
+    const sorted=[...S.bills].sort((a,b)=>a.dueDay-b.dueDay);
+    const total=sorted.filter(b=>b.active).reduce((s,b)=>s+b.amount,0);
+    const paid=sorted.filter(b=>{const dk=fmtISO(getBillDueDate(b,t));return b.active&&isBillPaid(b.id,dk);}).reduce((s,b)=>s+b.amount,0);
+    html+=`<div class="card p-3.5 mb-3 flex justify-between items-center"><span class="text-sm text-slate-500 font-medium">Total mes actual</span><div><span class="text-sm text-green-600 font-bold">${fmt(paid)}</span><span class="text-slate-300 mx-1">/</span><span class="text-sm text-slate-600 font-bold">${fmt(total)}</span></div></div>`;
+    sorted.forEach(b=>{
+      const due=getBillDueDate(b,t), dk=fmtISO(due);
+      const isPaid=isBillPaid(b.id,dk);
+      const days=daysUntil(dk);
+      const status=isPaid?{cls:'status-paid',label:'✓ Pagada'}:getStatusInfo(days);
+      html+=`<div class="card p-4 mb-2.5 ${!b.active?'opacity-40':''}">
+        <div class="flex items-center gap-3">
+          <div class="text-2xl">${b.emoji}</div>
+          <div class="flex-1"><div class="flex items-center gap-2 flex-wrap"><span class="font-semibold text-slate-800">${b.name}</span><span class="${status.cls} text-xs font-bold px-2.5 py-0.5 rounded-full">${status.label}</span></div>
+          <div class="text-xs text-slate-400 mt-0.5">Día ${b.dueDay} · ${freqLabel(b.frequency)} · ${b.category}</div></div>
+          <div class="font-bold text-slate-800">${fmt(b.amount)}</div>
+        </div>
+        <div class="flex gap-2 mt-3 pt-3 border-t border-slate-50">
+          ${!isPaid
+            ?`<button onclick="openModal('confirmPay','${b.id}','${dk}')" class="flex-1 btn-primary py-2 text-sm">✓ Pagar</button>`
+            :`<button onclick="unmarkBillPaid('${b.id}','${dk}')" class="flex-1 bg-slate-100 text-slate-500 text-sm py-2 rounded-xl">↩ Deshacer</button>`
+          }
+          <button onclick="openModal('editBill','${b.id}')" class="bg-slate-100 text-slate-600 text-sm px-4 py-2 rounded-xl">✏️</button>
+          <button onclick="deleteBill('${b.id}')" class="bg-red-50 text-red-400 text-sm px-3 py-2 rounded-xl">🗑</button>
+        </div>
+      </div>`;
+    });
+  }
+
+  else if(currentTab==='onetime') {
+    const pend=S.oneTimePayments.filter(o=>!o.paid), done=S.oneTimePayments.filter(o=>o.paid);
+    if(!S.oneTimePayments.length) html=`<div class="text-center text-indigo-300 py-8">Sin pagos únicos.</div>`;
+    if(pend.length) {
+      html+=`<p class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Pendientes</p>`;
+      pend.forEach(o=>{
+        const days=daysUntil(o.dueDate), status=getStatusInfo(days);
+        html+=`<div class="card p-4 mb-2.5">
+          <div class="flex items-center gap-3"><div class="text-2xl">📌</div>
+          <div class="flex-1"><div class="font-semibold text-slate-800">${o.name}</div>
+          <div class="flex gap-2 mt-0.5"><span class="${status.cls} text-xs font-bold px-2.5 py-0.5 rounded-full">${status.label}</span><span class="text-xs text-slate-400">${fmtDate(o.dueDate)}</span></div></div>
+          <div class="font-bold text-slate-800">${fmt(o.amount)}</div></div>
+          <div class="flex gap-2 mt-3 pt-3 border-t border-slate-50">
+            <button onclick="openModal('confirmPayOnce','${o.id}')" class="flex-1 btn-primary py-2 text-sm">✓ Pagar</button>
+            <button onclick="openModal('editOneTime','${o.id}')" class="bg-slate-100 text-slate-600 text-sm px-4 py-2 rounded-xl">✏️</button>
+            <button onclick="deleteOneTime('${o.id}')" class="bg-red-50 text-red-400 text-sm px-3 py-2 rounded-xl">🗑</button>
+          </div>
+        </div>`;
+      });
+    }
+    if(done.length) {
+      html+=`<p class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2 mt-4">Completados</p>`;
+      done.forEach(o=>{
+        html+=`<div class="card p-3.5 mb-2 opacity-50 flex items-center gap-3">
+          <div class="text-xl">✅</div><div class="flex-1"><div class="line-through text-slate-600 text-sm">${o.name}</div>
+          <div class="text-xs text-slate-400">${fmtDate(o.dueDate)} · ${fmt(o.paidAmount||o.amount)} pagado</div></div>
+          <button onclick="unmarkOneTimePaid('${o.id}')" class="text-xs text-slate-400 underline">Deshacer</button>
+        </div>`;
+      });
+    }
+    html+=`<button onclick="openModal('addOneTime')" class="w-full mt-3 border-2 border-dashed border-indigo-200 text-indigo-400 font-semibold py-3 rounded-2xl text-sm">+ Agregar pago único</button>`;
+  }
+
+  else if(currentTab==='gastos') {
+    const exps=[...S.expenses].sort((a,b)=>new Date(b.date)-new Date(a.date));
+    if(!exps.length) html=`<div class="text-center text-indigo-300 py-8">Sin gastos registrados.</div>`;
+    else {
+      const total=exps.reduce((s,e)=>s+e.amount,0);
+      html+=`<div class="card p-3.5 mb-3 flex justify-between"><span class="text-sm text-slate-500">Total</span><span class="text-sm font-bold text-red-500">-${fmt(total)}</span></div>`;
+      exps.forEach(e=>{
+        html+=`<div class="card p-3.5 mb-2 flex items-center gap-3">
+          <div class="text-xl">${catEmoji(e.category)}</div>
+          <div class="flex-1"><div class="font-semibold text-slate-800 text-sm">${e.name}</div><div class="text-xs text-slate-400">${fmtDate(e.date)} · ${e.category||'otros'}</div></div>
+          <div class="flex items-center gap-2"><div class="font-bold text-red-500 text-sm">-${fmt(e.amount)}</div>
+          <button onclick="deleteExpense('${e.id}')" class="text-slate-300 text-xl leading-none">×</button></div>
+        </div>`;
+      });
+    }
+    html+=`<button onclick="openModal('addExpense')" class="w-full mt-3 border-2 border-dashed border-indigo-200 text-indigo-400 font-semibold py-3 rounded-2xl text-sm">+ Agregar gasto</button>`;
+  }
+
+  else if(currentTab==='bolsillos') {
+    const total=totalPockets();
+    if(!S.pockets.length) html=`<div class="text-center text-indigo-300 py-8 space-y-2"><div class="text-4xl">💼</div><div>Sin bolsillos todavía.</div><div class="text-xs">Un bolsillo es dinero apartado con un propósito (emergencias, vacaciones, etc.)</div></div>`;
+    else {
+      html+=`<div class="card p-3.5 mb-3 flex justify-between items-center"><span class="text-sm text-slate-500">Total en bolsillos</span><span class="text-sm font-bold text-indigo-600">${fmt(total)}</span></div>`;
+      S.pockets.forEach(pk=>{
+        const pct=pk.target>0?Math.min(100,Math.round((pk.saved||0)/pk.target*100)):0;
+        html+=`<div class="card p-4 mb-2.5">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-xl">${pk.emoji||'💼'}</div>
+            <div class="flex-1"><div class="font-semibold text-slate-800">${pk.name}</div>
+            <div class="text-xs text-slate-400">${fmt(pk.saved||0)} guardado${pk.target?` / meta ${fmt(pk.target)}`:''}  </div></div>
+            <div class="text-right"><div class="text-lg font-bold text-indigo-600">${fmt(pk.saved||0)}</div>${pk.target?`<div class="text-xs text-slate-400">${pct}%</div>`:''}</div>
+          </div>
+          ${pk.target?`<div class="mt-2"><div class="w-full bg-indigo-50 rounded-full h-2"><div class="bg-gradient-to-r from-indigo-400 to-violet-400 h-2 rounded-full" style="width:${pct}%"></div></div></div>`:''}
+          <div class="flex gap-2 mt-3 pt-3 border-t border-slate-50">
+            <button onclick="openModal('editPocket','${pk.id}')" class="flex-1 bg-indigo-50 text-indigo-700 font-semibold text-sm py-2 rounded-xl">Ajustar saldo</button>
+            <button onclick="deletePocket('${pk.id}')" class="bg-red-50 text-red-400 text-sm px-3 py-2 rounded-xl">🗑</button>
+          </div>
+        </div>`;
+      });
+    }
+    html+=`<button onclick="openModal('addPocket')" class="w-full mt-3 border-2 border-dashed border-indigo-200 text-indigo-400 font-semibold py-3 rounded-2xl text-sm">+ Nuevo bolsillo</button>`;
+  }
+
+  else if(currentTab==='prestamos') {
+    if(!S.loans.length) html=`<div class="text-center text-indigo-300 py-8 space-y-2"><div class="text-4xl">🤝</div><div>Sin préstamos registrados.</div></div>`;
+    else {
+      S.loans.forEach(l=>{
+        const paid=loanPaid(l), pend=l.totalAmount-paid, pct=Math.min(100,Math.round(paid/l.totalAmount*100));
+        const isDone=pend<=0;
+        html+=`<div class="card p-4 mb-2.5 ${isDone?'opacity-60':''}">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-xl">👤</div>
+            <div class="flex-1"><div class="font-semibold text-slate-800">${l.personName}</div>
+            <div class="text-xs text-slate-400">${fmt(paid)} cobrado / ${fmt(l.totalAmount)} total${l.recurring?` · ${freqLabel(l.recurring.freq)}`:''}</div></div>
+            <div class="text-right"><div class="font-bold ${isDone?'text-green-600':'text-purple-600'}">${isDone?'✅':'-'+fmt(pend)}</div><div class="text-xs text-slate-400">pendiente</div></div>
+          </div>
+          <div class="mt-2"><div class="w-full bg-purple-50 rounded-full h-2"><div class="bg-gradient-to-r from-purple-400 to-indigo-400 h-2 rounded-full" style="width:${pct}%"></div></div></div>
+          ${(l.payments||[]).length?`<div class="mt-2 space-y-1">${l.payments.slice(-3).reverse().map(p=>`<div class="text-xs text-slate-400 flex justify-between"><span>${fmtDate(p.date)}${p.note?' · '+p.note:''}</span><span class="text-green-600 font-semibold">+${fmt(p.amount)}</span></div>`).join('')}</div>`:''}
+          ${l.note?`<div class="text-xs text-slate-400 mt-1 italic">${l.note}</div>`:''}
+          <div class="flex gap-2 mt-3 pt-3 border-t border-slate-50">
+            ${!isDone?`<button onclick="openModal('addLoanPayment','${l.id}')" class="flex-1 bg-purple-50 text-purple-700 font-semibold text-sm py-2 rounded-xl">+ Registrar abono</button>`:''}
+            <button onclick="openModal('editLoan','${l.id}')" class="bg-slate-100 text-slate-600 text-sm px-4 py-2 rounded-xl">✏️</button>
+            <button onclick="deleteLoan('${l.id}')" class="bg-red-50 text-red-400 text-sm px-3 py-2 rounded-xl">🗑</button>
+          </div>
+        </div>`;
+      });
+    }
+    html+=`<button onclick="openModal('addLoan')" class="w-full mt-3 border-2 border-dashed border-purple-200 text-purple-400 font-semibold py-3 rounded-2xl text-sm">+ Registrar préstamo</button>`;
+  }
+
+  document.getElementById('billsContent').innerHTML=html;
+}
+
+function catEmoji(c) { return {gasolina:'⛽',comida:'🍔',supermercado:'🛒',restaurante:'🍽️',entretenimiento:'🎮',salud:'💊',ropa:'👕',transporte:'🚗',otros:'💸'}[c]||'💸'; }
+
+// ═══════════════════════════════════════
+// PLAN
+// ═══════════════════════════════════════
+function facturaAddAction() {
+  const actions={monthly:'addFinanceChoice',gastos:'addExpense',bolsillos:'addPocket',prestamos:'addLoan'};
+  openModal(actions[currentTab]||'addBill');
+}
+
+function setFinanceMonth(month) {
+  finMonth=month;
+  renderBills();
+}
+
+function renderBills() {
+  const t=today();
+  let html='';
+
+  if(currentTab==='monthly') {
+    const months=[];
+    for(let i=-2;i<=5;i++) months.push(new Date(t.getFullYear(),t.getMonth()+i,1));
+    html+=`<div class="tabs-scroll mb-3">${months.map(d=>{
+      const key=monthKey(d), active=key===finMonth;
+      return `<button onclick="setFinanceMonth('${key}')" class="${active?'bg-indigo-600 text-white':'bg-white text-indigo-500 border border-indigo-100'} rounded-lg px-5 py-2 text-xs font-bold whitespace-nowrap">${['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPT','OCT','NOV','DIC'][d.getMonth()]}</button>`;
+    }).join('')}</div>`;
+    const payments=getMonthPayments(finMonth);
+    const paid=payments.filter(p=>p.paid).reduce((s,p)=>s+p.amount,0);
+    const total=payments.reduce((s,p)=>s+p.amount,0);
+    const [yy,mm]=finMonth.split('-').map(Number);
+    const lastDay=new Date(yy,mm,0).getDate();
+    html+=`<div class="card p-4 mb-3">
+      <div class="flex justify-between items-center">
+        <div><div class="text-xs text-indigo-400 font-bold uppercase">Pagos ${['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'][mm-1]} 1-${lastDay}</div><div class="text-sm text-slate-400 mt-0.5">${payments.length} movimientos programados</div></div>
+        <div class="text-right"><div class="text-lg font-bold text-slate-800">${fmt(total)}</div><div class="text-xs text-green-600 font-semibold">${fmt(paid)} pagado</div></div>
+      </div>
+    </div>`;
+    if(!payments.length) html+=`<div class="text-center text-indigo-300 py-8">Este mes todavía no tiene pagos.</div>`;
+    payments.forEach(item=>{
+      const status=item.paid?{cls:'status-paid',label:'Pagado'}:getStatusInfo(daysUntil(item.date));
+      let action=`<button onclick="openModal('confirmPay','${item.id}','${item.date}')" class="flex-1 btn-primary py-2 text-sm">Pagar</button>`;
+      if(item.kind==='onetime') action=`<button onclick="openModal('confirmPayOnce','${item.id}')" class="flex-1 btn-primary py-2 text-sm">Pagar</button>`;
+      if(item.kind==='expense') action=item.paid?`<button onclick="unmarkExpensePaid('${item.id}')" class="flex-1 bg-slate-100 text-slate-500 text-sm py-2 rounded-xl">Deshacer</button>`:`<button onclick="markExpensePaid('${item.id}')" class="flex-1 btn-primary py-2 text-sm">Marcar pagado</button>`;
+      if(item.kind==='loan') action=`<button onclick="openModal('addLoanPayment','${item.id}')" class="flex-1 bg-purple-50 text-purple-700 font-semibold text-sm py-2 rounded-xl">Registrar abono</button>`;
+      if(item.kind==='borrowed') action=item.paid?`<button onclick="unmarkBorrowedPaid('${item.id}')" class="flex-1 bg-slate-100 text-slate-500 text-sm py-2 rounded-xl">Deshacer</button>`:`<button onclick="markBorrowedPaid('${item.id}')" class="flex-1 btn-primary py-2 text-sm">Pagar</button>`;
+      html+=`<div class="card p-4 mb-2.5">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-indigo-50 flex items-center justify-center text-xl">${item.emoji}</div>
+          <div class="flex-1 min-w-0"><div class="flex items-center gap-2 flex-wrap"><span class="font-semibold text-slate-800">${item.name}</span><span class="${status.cls} text-xs font-bold px-2.5 py-0.5 rounded-full">${status.label}</span></div>
+          <div class="text-xs text-slate-400 mt-0.5">${fmtDate(item.date)} · ${item.category||'pago'}</div></div>
+          <div class="font-bold ${item.kind==='loan'?'text-green-600':'text-slate-800'}">${item.kind==='loan'?'+':'-'}${fmt(item.amount)}</div>
+        </div>
+        <div class="flex gap-2 mt-3 pt-3 border-t border-slate-50">
+          ${item.paid&&item.kind==='bill'?`<button onclick="unmarkBillPaid('${item.id}','${item.date}')" class="flex-1 bg-slate-100 text-slate-500 text-sm py-2 rounded-xl">Deshacer</button>`:action}
+          ${item.kind==='bill'?`<button onclick="openModal('editBill','${item.id}')" class="bg-slate-100 text-slate-600 text-sm px-4 py-2 rounded-xl">Editar</button>`:''}
+          ${item.kind==='onetime'?`<button onclick="openModal('editOneTime','${item.id}')" class="bg-slate-100 text-slate-600 text-sm px-4 py-2 rounded-xl">Editar</button>`:''}
+        </div>
+      </div>`;
+    });
+  }
+
+  else if(currentTab==='gastos') {
+    const exps=[...S.expenses].sort((a,b)=>new Date(b.date)-new Date(a.date));
+    const paidTotal=exps.filter(e=>e.paid).reduce((s,e)=>s+e.amount,0);
+    const pendingTotal=exps.filter(e=>!e.paid).reduce((s,e)=>s+e.amount,0);
+    html+=`<div class="grid grid-cols-2 gap-2 mb-3"><div class="card p-3"><div class="text-xs text-slate-400">Pagado</div><div class="font-bold text-red-500">-${fmt(paidTotal)}</div></div><div class="card p-3"><div class="text-xs text-slate-400">Pendiente</div><div class="font-bold text-amber-600">${fmt(pendingTotal)}</div></div></div>`;
+    if(!exps.length) html+=`<div class="text-center text-indigo-300 py-8">Sin gastos registrados.</div>`;
+    exps.forEach(e=>{
+      html+=`<div class="card p-3.5 mb-2 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-xl">${catEmoji(e.category)}</div>
+        <div class="flex-1"><div class="font-semibold text-slate-800 text-sm">${e.name}</div><div class="text-xs text-slate-400">${e.paid?'Pagado':'Por pagar'} · ${fmtDate(e.paid?e.paidDate||e.date:e.dueDate||e.date)} · ${e.category||'otros'}</div></div>
+        <div class="flex items-center gap-2"><div class="font-bold ${e.paid?'text-red-500':'text-amber-600'} text-sm">-${fmt(e.amount)}</div>
+        <button onclick="deleteExpense('${e.id}')" class="text-slate-300 text-xl leading-none">x</button></div>
+      </div>`;
+    });
+    html+=`<button onclick="openModal('addExpense')" class="w-full mt-3 border-2 border-dashed border-indigo-200 text-indigo-400 font-semibold py-3 rounded-2xl text-sm">+ Agregar gasto</button>`;
+  }
+
+  else if(currentTab==='bolsillos') {
+    const total=totalPockets(), disponible=freeBalance();
+    html+=`<div class="grid grid-cols-2 gap-2 mb-3"><div class="card p-3"><div class="text-xs text-slate-400">Disponible</div><div class="font-bold text-green-600">${fmt(disponible)}</div></div><div class="card p-3"><div class="text-xs text-slate-400">En bolsillos</div><div class="font-bold text-indigo-600">${fmt(total)}</div></div></div>`;
+    if(!S.pockets.length) html+=`<div class="text-center text-indigo-300 py-8 space-y-2"><div class="text-4xl">💼</div><div>Sin bolsillos todavía.</div><div class="text-xs">Crea categorías principales para separar dinero con propósito.</div></div>`;
+    S.pockets.forEach(pk=>{
+      const pct=pk.target>0?Math.min(100,Math.round((pk.saved||0)/pk.target*100)):0;
+      html+=`<div class="card p-4 mb-3 border border-indigo-50">
+        <div class="flex items-center gap-3">
+          <div class="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center text-2xl">${pk.emoji||'💼'}</div>
+          <div class="flex-1"><div class="font-bold text-slate-800">${pk.name}</div><div class="text-xs text-slate-400">${pk.target?`Meta ${fmt(pk.target)} · ${pct}%`:'Sin meta definida'}</div></div>
+          <div class="text-right"><div class="text-xl font-bold text-indigo-600">${fmt(pk.saved||0)}</div><div class="text-xs text-slate-400">guardado</div></div>
+        </div>
+        ${pk.target?`<div class="mt-3"><div class="w-full bg-indigo-50 rounded-full h-2.5"><div class="bg-gradient-to-r from-indigo-400 to-violet-400 h-2.5 rounded-full" style="width:${pct}%"></div></div></div>`:''}
+        <div class="flex gap-2 mt-3 pt-3 border-t border-slate-50">
+          <button onclick="openModal('movePocket','${pk.id}')" class="flex-1 bg-indigo-50 text-indigo-700 font-semibold text-sm py-2 rounded-xl">Mover dinero</button>
+          <button onclick="deletePocket('${pk.id}')" class="bg-red-50 text-red-400 text-sm px-3 py-2 rounded-xl">Borrar</button>
+        </div>
+      </div>`;
+    });
+    html+=`<button onclick="openModal('addPocket')" class="w-full mt-3 border-2 border-dashed border-indigo-200 text-indigo-400 font-semibold py-3 rounded-2xl text-sm">+ Nuevo bolsillo</button>`;
+  }
+
+  else if(currentTab==='prestamos') {
+    const total=S.loans.reduce((s,l)=>s+Math.max(0,l.totalAmount-loanPaid(l)),0);
+    html+=`<div class="card p-4 mb-3 bg-purple-50 border border-purple-100"><div class="text-xs text-purple-500 font-bold uppercase">Préstamos por cobrar</div><div class="text-2xl font-bold text-purple-700">${fmt(total)}</div><div class="text-xs text-purple-400 mt-1">Cuando registras un abono, entra al balance como ingreso.</div></div>`;
+    if(!S.loans.length) html+=`<div class="text-center text-indigo-300 py-8 space-y-2"><div class="text-4xl">🤝</div><div>Sin préstamos registrados.</div></div>`;
+    S.loans.forEach(l=>{
+      const paid=loanPaid(l), pend=l.totalAmount-paid, pct=Math.min(100,Math.round(paid/l.totalAmount*100));
+      const isDone=pend<=0;
+      html+=`<div class="card p-4 mb-2.5 ${isDone?'opacity-60':''}">
+        <div class="flex items-center gap-3">
+          <div class="w-14 h-14 rounded-2xl bg-purple-50 flex items-center justify-center text-2xl">👤</div>
+          <div class="flex-1"><div class="font-bold text-slate-800">${l.personName}</div><div class="text-xs text-slate-400">${sourceLabel(l.source)} · ${fmt(paid)} cobrado de ${fmt(l.totalAmount)}</div>${l.recurring?`<div class="text-xs text-purple-500 mt-0.5">Próximo pago ${fmtDate(l.recurring.nextDate)} · ${fmt(l.recurring.amount)}${l.recurring.totalPayments?` · ${l.recurring.totalPayments} pagos`:''}</div>`:''}</div>
+          <div class="text-right"><div class="font-bold ${isDone?'text-green-600':'text-purple-600'}">${isDone?'Listo':fmt(pend)}</div><div class="text-xs text-slate-400">pendiente</div></div>
+        </div>
+        <div class="mt-3"><div class="w-full bg-purple-50 rounded-full h-2"><div class="bg-gradient-to-r from-purple-400 to-indigo-400 h-2 rounded-full" style="width:${pct}%"></div></div></div>
+        ${(l.payments||[]).length?`<div class="mt-2 space-y-1">${l.payments.slice(-3).reverse().map(p=>`<div class="text-xs text-slate-400 flex justify-between"><span>${fmtDate(p.date)}${p.note?' · '+p.note:''}</span><span class="text-green-600 font-semibold">+${fmt(p.amount)}</span></div>`).join('')}</div>`:''}
+        ${l.note?`<div class="text-xs text-slate-400 mt-1 italic">${l.note}</div>`:''}
+        <div class="flex gap-2 mt-3 pt-3 border-t border-slate-50">
+          ${!isDone?`<button onclick="openModal('addLoanPayment','${l.id}')" class="flex-1 bg-purple-50 text-purple-700 font-semibold text-sm py-2 rounded-xl">+ Registrar abono</button>`:''}
+          <button onclick="openModal('editLoan','${l.id}')" class="bg-slate-100 text-slate-600 text-sm px-4 py-2 rounded-xl">Editar</button>
+          <button onclick="deleteLoan('${l.id}')" class="bg-red-50 text-red-400 text-sm px-3 py-2 rounded-xl">Borrar</button>
+        </div>
+      </div>`;
+    });
+    html+=`<button onclick="openModal('addLoan')" class="w-full mt-3 border-2 border-dashed border-purple-200 text-purple-400 font-semibold py-3 rounded-2xl text-sm">+ Registrar préstamo</button>`;
+  }
+
+  document.getElementById('billsContent').innerHTML=html;
+}
+
+function renderPocketsView() {
+  const prev=currentTab; currentTab='bolsillos'; renderBills(); currentTab=prev;
+  document.getElementById('pocketsContent').innerHTML=document.getElementById('billsContent').innerHTML;
+  document.getElementById('billsContent').innerHTML='';
+}
+
+function decorateMoneyInputs(root=document) {
+  const skip=['mDueDay','mTotalPayments','mRecCount','bankBalanceInput'];
+  root.querySelectorAll('input[type="number"]').forEach(input=>{
+    if(skip.includes(input.id)||input.closest('.money-wrap')) return;
+    const wrap=document.createElement('span');
+    wrap.className='money-wrap';
+    if(input.id==='qAmt') wrap.style.width='5rem';
+    input.parentNode.insertBefore(wrap,input);
+    wrap.appendChild(input);
+    const sign=document.createElement('span');
+    sign.className='money-sign';
+    sign.textContent='$';
+    wrap.appendChild(sign);
+  });
+}
+
+function renderPlan() {
+  const t=today();
+  let html=`<div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100 rounded-2xl p-4 mb-2 grid grid-cols-2 gap-2 text-xs">
+    <div class="bg-white rounded-xl p-2.5"><div class="text-red-400 font-bold">🔴 Mayo</div><div class="text-slate-500 mt-0.5">~$404 para vivir todo el mes</div></div>
+    <div class="bg-white rounded-xl p-2.5"><div class="text-amber-400 font-bold">🟡 Junio</div><div class="text-slate-500 mt-0.5">~$404 para vivir todo el mes</div></div>
+    <div class="bg-white rounded-xl p-2.5"><div class="text-green-500 font-bold">🟢 Julio</div><div class="text-slate-500 mt-0.5">3er cheque = oportunidad</div></div>
+    <div class="bg-white rounded-xl p-2.5"><div class="text-blue-500 font-bold">💙 Agosto+</div><div class="text-slate-500 mt-0.5">+$1,400/mes disponible</div></div>
+  </div>`;
+
+  const allPlans=[...PLAN_DATA, ...S.customPlans.map(p=>({...p,isCustom:true}))];
+  allPlans.sort((a,b)=>parseDate(a.date)-parseDate(b.date));
+
+  allPlans.forEach(p=>{
+    const dp=parseDate(p.date), isPast=dp<t, isNext=!isPast&&daysUntil(p.date)<=30;
+    const borderCls={tight:'plan-tight',ok:'plan-ok',great:'plan-great'}[p.color]||'plan-ok';
+    const bgHdr={tight:'bg-red-50',ok:'bg-amber-50',great:'bg-green-50'}[p.color]||'bg-amber-50';
+    const clr={tight:'text-red-600',ok:'text-amber-600',great:'text-green-600'}[p.color]||'text-amber-600';
+    const income=S.paychecks.find(pc=>pc.id===p.id);
+    const received=income&&income.received;
+    html+=`<div class="card overflow-hidden ${isPast&&received?'opacity-60':''} ${isNext?'ring-2 ring-indigo-300':''}">
+      <div class="${bgHdr} ${borderCls} px-4 py-3 flex justify-between items-start">
+        <div><div class="${clr} text-xs font-bold uppercase tracking-wide">${p.label}</div>
+        <div class="text-slate-600 text-sm font-semibold mt-0.5">${fmtDateLong(p.date)} · <span class="text-green-600 font-bold">+${fmt(p.amount||1742)}</span></div></div>
+        <div class="flex flex-col items-end gap-1">
+          ${received?'<span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">✓ Recibido</span>':''}
+          ${p.completed?'<span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">✅ Completado</span>':''}
+          ${isNext&&!received?'<span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-0.5 rounded-full">Próximo</span>':''}
+        </div>
+      </div>
+      <div class="px-4 py-3 space-y-1.5">
+        ${(p.items||[]).map(item=>{
+          const icons={pay:'💸',hold:'🔒',save:'🏦',critical:'🚨',done:'✅',free:'✨'};
+          const colors={pay:'text-red-500',hold:'text-slate-400',save:'text-blue-600',critical:'text-red-600 font-bold',done:'text-green-500',free:'text-green-600'};
+          if(item.amount===0) return `<div class="flex justify-between text-sm"><span class="text-slate-400 line-through">${item.name}</span><span class="text-green-500 text-xs font-semibold">Ya cubierto</span></div>`;
+          return `<div class="flex justify-between text-sm"><span class="text-slate-700">${icons[item.type]||'•'} ${item.name}</span><span class="${colors[item.type]||'text-slate-700'} font-semibold">${item.type==='hold'?'No resta':'-'+fmt(item.amount)}</span></div>`;
+        }).join('')}
+        ${(()=>{const living=(p.amount||1742)-(p.items||[]).filter(item=>item.type!=='hold').reduce((s,item)=>s+(item.amount||0),0);return `<div class="border-t border-slate-100 pt-2 flex justify-between items-center"><span class="text-sm font-semibold text-slate-600">Saldo despues de pagos</span><span class="font-bold ${(living>200)?'text-green-600':(living>50)?'text-amber-600':'text-red-500'}">${fmt(living)}</span></div>`;})()}
+      </div>
+      <div class="px-4 pb-3"><div class="bg-slate-50 rounded-xl p-3 text-xs text-slate-600">${p.note||''}</div></div>
+      ${p.isCustom?`<div class="px-4 pb-3 flex gap-2">
+        <button onclick="toggleCustomPlan('${p.id}')" class="flex-1 ${p.completed?'bg-slate-100 text-slate-500':'bg-green-50 text-green-700'} font-semibold text-sm py-2 rounded-xl">${p.completed?'↩ Reabrir':'✅ Completar'}</button>
+        <button onclick="openModal('editCustomPlan','${p.id}')" class="bg-slate-100 text-slate-600 text-sm px-3 py-2 rounded-xl">Editar</button>
+        <button onclick="deleteCustomPlan('${p.id}')" class="bg-red-50 text-red-400 text-sm px-3 py-2 rounded-xl">🗑</button>
+      </div>`:''}
+    </div>`;
+  });
+
+  document.getElementById('planContent').innerHTML=html;
+}
+
+// ═══════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════
+function confirmedBillPaid(billId, dateKey, amount, date) {
+  if(!isBillPaid(billId,dateKey)) S.paidBills.unshift({billId,dateKey,paidDate:date,paidAmount:parseFloat(amount)});
+  setLastAction(); closeModal(); renderCurrentView(); showToast('✅ Factura marcada como pagada');
+}
+function unmarkBillPaid(billId, dateKey) { S.paidBills=S.paidBills.filter(p=>!(p.billId===billId&&p.dateKey===dateKey)); save(); renderCurrentView(); updateHeaderBalance(); }
+function deleteBill(id) { if(!confirm('¿Eliminar?')) return; S.bills=S.bills.filter(x=>x.id!==id); save(); renderCurrentView(); }
+
+function confirmedReceived(id, amount, date, category) {
+  const p=S.paychecks.find(x=>x.id===id);
+  if(p) { p.received=true; p.amount=parseFloat(amount)||p.amount; p.receivedDate=date; p.category=category; }
+  setLastAction(); closeModal(); renderCurrentView(); showToast('✅ Cheque registrado como recibido');
+}
+function unmarkReceived(id) { const p=S.paychecks.find(x=>x.id===id); if(p){p.received=false;} save(); renderCurrentView(); updateHeaderBalance(); }
+function deletePaycheck(id) { if(!confirm('¿Eliminar?')) return; S.paychecks=S.paychecks.filter(x=>x.id!==id); save(); renderCurrentView(); }
+
+function confirmedPayOnce(id, amount, date) {
+  const o=S.oneTimePayments.find(x=>x.id===id);
+  if(o) { o.paid=true; o.paidDate=date; o.paidAmount=parseFloat(amount)||o.amount; }
+  setLastAction(); closeModal(); renderCurrentView(); showToast('✅ Pago completado');
+}
+function unmarkOneTimePaid(id) { const o=S.oneTimePayments.find(x=>x.id===id); if(o){o.paid=false;o.paidDate=null;o.paidAmount=null;} save(); renderCurrentView(); }
+function deleteOneTime(id) { if(!confirm('¿Eliminar?')) return; S.oneTimePayments=S.oneTimePayments.filter(x=>x.id!==id); save(); renderCurrentView(); }
+
+function deleteExpense(id) { S.expenses=S.expenses.filter(x=>x.id!==id); save(); renderCurrentView(); }
+function updateBankBalance(v) { S.bankBalance=parseFloat(v)||0; setLastAction(); updateHeaderBalance(); }
+
+function deletePocket(id) { if(!confirm('¿Eliminar bolsillo?')) return; S.pockets=S.pockets.filter(x=>x.id!==id); save(); renderCurrentView(); updateHeaderBalance(); }
+function deleteLoan(id) { if(!confirm('¿Eliminar préstamo?')) return; S.loans=S.loans.filter(x=>x.id!==id); save(); renderCurrentView(); }
+function deleteCustomPlan(id) { if(!confirm('¿Eliminar plan?')) return; S.customPlans=S.customPlans.filter(x=>x.id!==id); save(); renderCurrentView(); }
+function toggleCustomPlan(id) { const p=S.customPlans.find(x=>x.id===id); if(p) p.completed=!p.completed; save(); renderCurrentView(); }
+
+function calendarItemsForDate(dateKey) {
+  const items=[];
+  getMonthPayments(monthKey(parseDate(dateKey))).forEach(p=>{ if(p.date===dateKey) items.push(p); });
+  S.paychecks.forEach(p=>{ if(p.date===dateKey) items.push({kind:'income',name:'Cheque nómina',amount:p.amount,paid:p.received,emoji:'💵'}); });
+  const allPlans=[...PLAN_DATA, ...S.customPlans];
+  allPlans.forEach(p=>{ if(p.date===dateKey) items.push({kind:'plan',name:p.label,amount:p.amount||1742,paid:p.completed,emoji:'📋'}); });
+  return items;
+}
+
+function renderCalendar() {
+  if(!calDate) calDate=isoToday();
+  const base=parseDate(calDate), y=base.getFullYear(), m=base.getMonth();
+  const first=new Date(y,m,1), last=new Date(y,m+1,0), start=first.getDay();
+  const selected=calDate, notes=S.calendarNotes[selected]||[], dayItems=calendarItemsForDate(selected);
+  let html=`<div class="grid grid-cols-3 items-center mb-4">
+    <button onclick="changeCalendarMonth(-1)" class="bg-white text-indigo-500 border border-indigo-100 rounded-xl px-3 py-2 text-sm font-bold justify-self-start">‹</button>
+    <div class="text-center"><h2 class="text-3xl font-extrabold text-slate-800 leading-tight">${['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'][m]}</h2><p class="text-xs text-slate-400">Calendario ${y}</p></div>
+    <button onclick="changeCalendarMonth(1)" class="bg-white text-indigo-500 border border-indigo-100 rounded-xl px-3 py-2 text-sm font-bold justify-self-end">›</button>
+  </div>
+  <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400 mb-1">${['D','L','M','M','J','V','S'].map(d=>`<div>${d}</div>`).join('')}</div>
+  <div class="grid grid-cols-7 gap-1 mb-4">`;
+  for(let i=0;i<start;i++) html+=`<div></div>`;
+  for(let d=1;d<=last.getDate();d++){
+    const key=fmtISO(new Date(y,m,d)), isSel=key===selected, isToday=key===isoToday();
+    const count=calendarItemsForDate(key).length+(S.calendarNotes[key]||[]).length;
+    html+=`<button onclick="selectCalendarDate('${key}')" class="cal-day ${isSel?'ring-2 ring-indigo-400 bg-white':isToday?'cal-today':'bg-white text-slate-700'}"><span class="text-sm font-bold">${d}</span>${count?`<span class="w-1.5 h-1.5 rounded-full ${isSel||isToday?'bg-indigo-300':'bg-indigo-500'} mt-0.5"></span>`:''}</button>`;
+  }
+  html+=`</div>
+  <div class="card p-4">
+    <div class="flex justify-between items-center mb-3"><div><div class="font-bold text-slate-800">${fmtDateLong(selected)}</div><div class="text-xs text-slate-400">Pagos, notas y tareas</div></div><button onclick="openModal('addCalendarNote','${selected}')" class="btn-primary text-xs px-3 py-2">+ Nota</button></div>`;
+  if(!dayItems.length&&!notes.length) html+=`<div class="text-center text-indigo-300 py-6 text-sm">Nada programado para este día.</div>`;
+  dayItems.forEach(item=>{html+=`<div class="flex items-center gap-3 py-2 border-t border-slate-50"><div class="text-xl">${item.emoji||'📌'}</div><div class="flex-1"><div class="text-sm font-semibold text-slate-800">${item.name}</div><div class="text-xs text-slate-400">${item.paid?'Completado':'Pendiente'}</div></div><div class="font-bold ${item.kind==='income'||item.kind==='loan'?'text-green-600':'text-red-500'}">${item.kind==='income'||item.kind==='loan'?'+':'-'}${fmt(item.amount)}</div></div>`;});
+  notes.forEach(n=>{html+=`<div class="flex items-center gap-3 py-2 border-t border-slate-50"><button onclick="completeCalendarNote('${selected}','${n.id}')" class="w-6 h-6 rounded-full ${n.done?'bg-green-100 text-green-600':'bg-slate-100 text-slate-300'} text-xs font-bold">${n.done?'✓':''}</button><div class="flex-1 text-sm ${n.done?'line-through text-slate-400':'text-slate-700'}">${n.text}</div><button onclick="openModal('rescheduleCalendarNote','${selected}','${n.id}')" class="text-xs bg-slate-100 text-slate-600 font-semibold px-2 py-1 rounded-full">Reprogramar</button><button onclick="deleteCalendarNote('${selected}','${n.id}')" class="text-slate-300 text-lg">x</button></div>`;});
+  html+=`</div>`;
+  document.getElementById('calContent').innerHTML=html;
+}
+
+function changeCalendarMonth(delta) {
+  const d=parseDate(calDate||isoToday());
+  d.setMonth(d.getMonth()+delta);
+  calDate=fmtISO(new Date(d.getFullYear(),d.getMonth(),1));
+  renderCalendar();
+}
+function selectCalendarDate(dateKey) { calDate=dateKey; renderCalendar(); }
+function saveCalendarNote(dateKey) {
+  const text=document.getElementById('mNoteText').value.trim();
+  if(!text){showToast('Escribe una nota');return;}
+  if(!S.calendarNotes[dateKey]) S.calendarNotes[dateKey]=[];
+  S.calendarNotes[dateKey].unshift({id:uid(),text,done:false});
+  save(); closeModal(); renderCalendar(); showToast('Nota agregada');
+}
+function completeCalendarNote(dateKey,id) { const n=(S.calendarNotes[dateKey]||[]).find(x=>x.id===id); if(n){n.done=true;setUndoAction('Tarea marcada como completada','task',[dateKey,id]);} save(); renderCurrentView(); showToast('Tarea completada'); }
+function toggleCalendarNote(dateKey,id) { const n=(S.calendarNotes[dateKey]||[]).find(x=>x.id===id); if(n)n.done=!n.done; save(); renderCurrentView(); }
+function rescheduleCalendarNote(oldDate,id,newDate) {
+  if(!newDate){showToast('Selecciona una fecha');return;}
+  const list=S.calendarNotes[oldDate]||[];
+  const note=list.find(x=>x.id===id);
+  if(!note) return;
+  S.calendarNotes[oldDate]=list.filter(x=>x.id!==id);
+  if(!S.calendarNotes[newDate]) S.calendarNotes[newDate]=[];
+  S.calendarNotes[newDate].unshift({...note,done:false});
+  calDate=newDate;
+  save(); closeModal(); renderCurrentView(); showToast('Tarea reprogramada');
+}
+function deleteCalendarNote(dateKey,id) { S.calendarNotes[dateKey]=(S.calendarNotes[dateKey]||[]).filter(x=>x.id!==id); save(); renderCalendar(); }
+
+function addQuickExpense() {
+  const n=document.getElementById('qName').value.trim(), a=parseFloat(document.getElementById('qAmt').value);
+  if(!n||!a){showToast('❌ Escribe nombre y monto');return;}
+  S.expenses.unshift({id:uid(),name:n,amount:a,date:isoToday(),category:'otros'});
+  setLastAction(); document.getElementById('qName').value=''; document.getElementById('qAmt').value=''; showToast('✅ Gasto registrado');
+  renderCurrentView();
+}
+
+// ═══════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════
+function startQuickExpense() {
+  const n=document.getElementById('qName').value.trim(), a=parseFloat(document.getElementById('qAmt').value);
+  if(!n||!a){showToast('Escribe nombre y monto');return;}
+  openModal('addExpense', null, {name:n, amount:a});
+}
+
+function setUndoAction(label,type,args) { lastUndoAction={label,type,args}; }
+function undoLastAction() {
+  if(!lastUndoAction) return;
+  const {type,args}=lastUndoAction;
+  lastUndoAction=null;
+  if(type==='bill') unmarkBillPaid(args[0],args[1]);
+  else if(type==='income') unmarkReceived(args[0]);
+  else if(type==='onetime') unmarkOneTimePaid(args[0]);
+  else if(type==='expense') unmarkExpensePaid(args[0]);
+  else if(type==='borrowed') unmarkBorrowedPaid(args[0]);
+  else if(type==='task') { const n=(S.calendarNotes[args[0]]||[]).find(x=>x.id===args[1]); if(n)n.done=false; save(); renderCurrentView(); updateHeaderBalance(); }
+  showToast('Acción deshecha');
+}
+
+function confirmedBillPaid(billId, dateKey, amount, date) {
+  const paidAmount=parseFloat(amount)||0;
+  if(!isBillPaid(billId,dateKey)) {
+    S.paidBills.unshift({billId,dateKey,paidDate:date,paidAmount,createdAt:new Date().toISOString()});
+    adjustBalance(-paidAmount);
+    setUndoAction('Pago de factura marcado como pagado','bill',[billId,dateKey]);
+  }
+  setLastAction(); closeModal(); renderCurrentView(); showToast('Factura marcada como pagada');
+}
+function unmarkBillPaid(billId, dateKey) {
+  const paid=S.paidBills.find(p=>p.billId===billId&&p.dateKey===dateKey);
+  if(paid) adjustBalance(paid.paidAmount||0);
+  S.paidBills=S.paidBills.filter(p=>!(p.billId===billId&&p.dateKey===dateKey));
+  save(); renderCurrentView(); updateHeaderBalance();
+}
+function confirmedReceived(id, amount, date, category) {
+  const p=S.paychecks.find(x=>x.id===id);
+  if(p) {
+    const newAmount=parseFloat(amount)||p.amount;
+    if(!p.received) adjustBalance(newAmount);
+    p.received=true; p.amount=newAmount; p.receivedDate=date; p.receivedAt=new Date().toISOString(); p.category=category;
+    setUndoAction('Ingreso marcado como recibido','income',[id]);
+  }
+  setLastAction(); closeModal(); renderCurrentView(); showToast('Cheque registrado como recibido');
+}
+function unmarkReceived(id) {
+  const p=S.paychecks.find(x=>x.id===id);
+  if(p&&p.received){adjustBalance(-(p.amount||0));p.received=false;}
+  save(); renderCurrentView(); updateHeaderBalance();
+}
+function confirmedPayOnce(id, amount, date) {
+  const o=S.oneTimePayments.find(x=>x.id===id);
+  if(o) {
+    const paidAmount=parseFloat(amount)||o.amount;
+    if(!o.paid) adjustBalance(-paidAmount);
+    o.paid=true; o.paidDate=date; o.paidAt=new Date().toISOString(); o.paidAmount=paidAmount;
+    setUndoAction('Pago único marcado como pagado','onetime',[id]);
+  }
+  setLastAction(); closeModal(); renderCurrentView(); showToast('Pago completado');
+}
+function unmarkOneTimePaid(id) {
+  const o=S.oneTimePayments.find(x=>x.id===id);
+  if(o){if(o.paid) adjustBalance(o.paidAmount||o.amount);o.paid=false;o.paidDate=null;o.paidAmount=null;}
+  save(); renderCurrentView(); updateHeaderBalance();
+}
+function markExpensePaid(id) {
+  const e=S.expenses.find(x=>x.id===id);
+  if(!e||e.paid) return;
+  e.paid=true; e.paidDate=isoToday(); e.paidAt=new Date().toISOString(); e.date=e.paidDate;
+  adjustBalance(-(e.amount||0));
+  setUndoAction('Gasto marcado como pagado','expense',[id]);
+  setLastAction(); renderCurrentView(); showToast('Gasto pagado');
+}
+function unmarkExpensePaid(id) {
+  const e=S.expenses.find(x=>x.id===id);
+  if(!e||!e.paid) return;
+  e.paid=false; e.dueDate=e.dueDate||e.date; e.paidDate=null;
+  adjustBalance(e.amount||0);
+  setLastAction(); renderCurrentView(); showToast('Gasto marcado como pendiente');
+}
+function markBorrowedPaid(id) {
+  const l=S.borrowedLoans.find(x=>x.id===id); if(!l||l.paid) return;
+  l.paid=true; l.paidDate=isoToday(); l.paidAt=new Date().toISOString(); adjustBalance(-(l.amount||0));
+  setUndoAction('Préstamo marcado como pagado','borrowed',[id]);
+  setLastAction(); renderCurrentView(); showToast('Préstamo pagado');
+}
+function unmarkBorrowedPaid(id) {
+  const l=S.borrowedLoans.find(x=>x.id===id); if(!l||!l.paid) return;
+  l.paid=false; l.paidDate=null; adjustBalance(l.amount||0);
+  setLastAction(); renderCurrentView(); showToast('Pago deshecho');
+}
+function deleteExpense(id) {
+  const e=S.expenses.find(x=>x.id===id);
+  if(e&&e.paid) adjustBalance(e.amount||0);
+  S.expenses=S.expenses.filter(x=>x.id!==id);
+  save(); renderCurrentView(); updateHeaderBalance();
+}
+
+function openModal(type, id, extra) {
+  const content=document.getElementById('modalContent');
+  let html='';
+
+  if(type==='confirmPay') {
+    const b=S.bills.find(x=>x.id===id);
+    if(!b) return;
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">Confirmar pago</h3>
+    <p class="text-sm text-slate-500 mb-4">${b.emoji} ${b.name}</p>
+    <div class="space-y-3">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Monto pagado ($)</label>
+      <input type="number" id="mAmt" value="${b.amount}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold text-lg"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Fecha de pago</label>
+      <input type="date" id="mDate" value="${isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <button onclick="confirmedBillPaid('${id}','${extra}',document.getElementById('mAmt').value,document.getElementById('mDate').value)" class="w-full btn-primary py-3">Confirmar pago ✓</button>
+    </div>`;
+  }
+
+  else if(type==='confirmReceive') {
+    const p=S.paychecks.find(x=>x.id===id);
+    if(!p) return;
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">Confirmar recepción</h3>
+    <p class="text-sm text-slate-500 mb-4">💵 Cheque nómina</p>
+    <div class="space-y-3">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Monto recibido ($)</label>
+      <input type="number" id="mAmt" value="${p.amount}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold text-lg"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Fecha</label>
+      <input type="date" id="mDate" value="${p.date}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría / Origen</label>
+      <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+        ${['trabajo','deuda','persona','otro',...S.incomeCategories].map(c=>`<option value="${c}" ${p.category===c?'selected':''}>${catLabel(c)}</option>`).join('')}
+      </select></div>
+      <button onclick="confirmedReceived('${id}',document.getElementById('mAmt').value,document.getElementById('mDate').value,document.getElementById('mCat').value)" class="w-full btn-primary py-3">Confirmar ✓</button>
+    </div>`;
+  }
+
+  else if(type==='confirmPayOnce') {
+    const o=S.oneTimePayments.find(x=>x.id===id);
+    if(!o) return;
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">Confirmar pago</h3>
+    <p class="text-sm text-slate-500 mb-4">📌 ${o.name}</p>
+    <div class="space-y-3">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Monto pagado ($)</label>
+      <input type="number" id="mAmt" value="${o.amount}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold text-lg"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Fecha</label>
+      <input type="date" id="mDate" value="${isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <button onclick="confirmedPayOnce('${id}',document.getElementById('mAmt').value,document.getElementById('mDate').value)" class="w-full btn-primary py-3">Confirmar ✓</button>
+    </div>`;
+  }
+
+  else if(type==='addFinanceChoice') {
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">Agregar pago</h3>
+    <div class="space-y-2">
+      <button onclick="openModal('addBill')" class="w-full card p-4 text-left"><div class="font-bold text-indigo-700">Factura recurrente</div><div class="text-xs text-slate-400">Pago que se repite cada mes o cada periodo.</div></button>
+      <button onclick="openModal('addOneTime')" class="w-full card p-4 text-left"><div class="font-bold text-indigo-700">Pago único</div><div class="text-xs text-slate-400">Un pago con una sola fecha.</div></button>
+      <button onclick="openModal('addBorrowedLoan')" class="w-full card p-4 text-left"><div class="font-bold text-indigo-700">Préstamo recibido</div><div class="text-xs text-slate-400">Dinero que alguien te prestó y debes devolver.</div></button>
+    </div>`;
+  }
+
+  else if(type==='addBill'||type==='editBill') {
+    const b=type==='editBill'?S.bills.find(x=>x.id===id):null;
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${b?'Editar':'Nueva'} factura</h3>
+    <div class="space-y-3">
+      <div class="flex gap-3">
+        <div class="w-20"><label class="text-xs font-bold text-slate-500 uppercase">Emoji</label>
+        <input type="text" id="mEmoji" value="${b?b.emoji:'💳'}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-center text-xl"></div>
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Nombre</label>
+        <input type="text" id="mName" value="${b?b.name:''}" placeholder="ej. Netflix" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      </div>
+      <div class="flex gap-3">
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Monto ($)</label>
+        <input type="number" id="mAmount" value="${b?b.amount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Día del mes</label>
+        <input type="number" id="mDueDay" value="${b?b.dueDay:''}" min="1" max="31" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      </div>
+      <div class="flex gap-3">
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Frecuencia</label>
+        <select id="mFreq" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+          ${['monthly','biweekly','weekly'].map(f=>`<option value="${f}" ${b&&b.frequency===f?'selected':''}>${freqLabel(f)}</option>`).join('')}
+        </select></div>
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
+        <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+          ${['vivienda','seguro','servicios','deuda','suscripción','otros'].map(c=>`<option value="${c}" ${b&&b.category===c?'selected':''}>${c}</option>`).join('')}
+        </select></div>
+      </div>
+      <div class="bg-indigo-50 rounded-xl p-3">
+        <label class="text-xs font-bold text-indigo-700 uppercase">Duración</label>
+        <select id="mTermType" onchange="document.getElementById('termCountWrap').classList.toggle('hidden', this.value!=='term')" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm">
+          <option value="indefinite" ${!b||b.termType!=='term'?'selected':''}>Pagos indefinidos</option>
+          <option value="term" ${b&&b.termType==='term'?'selected':''}>Con término</option>
+        </select>
+        <div id="termCountWrap" class="${b&&b.termType==='term'?'':'hidden'} mt-2"><label class="text-xs text-indigo-600">Cantidad de pagos</label>
+        <input type="number" id="mTotalPayments" value="${b&&b.totalPayments?b.totalPayments:''}" min="1" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"></div>
+      </div>
+      <button onclick="saveBill(${b?`'${id}'`:'null'})" class="w-full btn-primary py-3">${b?'Guardar cambios':'Agregar factura'}</button>
+    </div>`;
+  }
+
+  else if(type==='addPaycheck'||type==='editPaycheck') {
+    const p=type==='editPaycheck'?S.paychecks.find(x=>x.id===id):null;
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${p?'Editar':'Agregar'} cheque</h3>
+    <div class="space-y-3">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Fecha</label>
+      <input type="date" id="mDate" value="${p?p.date:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Monto neto ($)</label>
+      <input type="number" id="mAmount" value="${p?p.amount:1742}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
+      <select id="mCat" onchange="updatePaycheckPersonFields()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+        ${['trabajo','persona','otro'].map(c=>`<option value="${c}" ${(!p&&c==='trabajo')||p&&p.category===c?'selected':''}>${catLabel(c)}</option>`).join('')}
+      </select></div>
+      <div id="workWrap" class="${!p||p.category==='trabajo'?'':'hidden'}"><label class="text-xs font-bold text-slate-500 uppercase">Trabajo</label>
+      <input id="mWorkName" value="${p&&p.category==='trabajo'&&p.sourceName?p.sourceName:''}" placeholder="Nombre del trabajo" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div id="personWrap" class="${p&&p.category==='persona'?'':'hidden'} space-y-2">
+        <label class="text-xs font-bold text-slate-500 uppercase">Persona</label>
+        <select id="mPersonSelect" onchange="updatePaycheckPersonFields()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5">
+          ${peopleNames().map(name=>`<option value="${name}" ${p&&p.personName===name?'selected':''}>${name}</option>`).join('')}
+          <option value="new" ${p&&p.personName&&!peopleNames().includes(p.personName)?'selected':''}>Agregar persona</option>
+        </select>
+        <input id="mPersonNew" value="${p&&p.personName&&!peopleNames().includes(p.personName)?p.personName:''}" placeholder="Nombre de la persona" class="${p&&p.personName&&!peopleNames().includes(p.personName)?'':'hidden'} w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5">
+      </div>
+      <div id="otherWrap" class="${p&&p.category==='otro'?'':'hidden'}"><label class="text-xs font-bold text-slate-500 uppercase">Otro ingreso</label>
+      <input id="mOtherName" value="${p&&p.category==='otro'&&p.sourceName?p.sourceName:''}" placeholder="Describe el ingreso" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div class="flex gap-3">
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Tipo</label><select id="mPayType" onchange="updatePaycheckRecurringFields()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"><option value="recurrente" ${!p||p.paymentType==='recurrente'?'selected':''}>Recurrente</option><option value="unico" ${p&&p.paymentType==='unico'?'selected':''}>Único</option></select></div>
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Método</label><select id="mMethod" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"><option value="deposito" ${p&&p.method==='deposito'?'selected':''}>Depósito</option><option value="efectivo" ${p&&p.method==='efectivo'?'selected':''}>Efectivo</option><option value="transferencia" ${p&&p.method==='transferencia'?'selected':''}>Transferencia</option></select></div>
+      </div>
+      <div id="recWrap" class="${p&&p.paymentType==='unico'?'hidden':''} bg-indigo-50 border border-indigo-100 rounded-xl p-3 space-y-2">
+        <div class="flex gap-2">
+          <div class="flex-1"><label class="text-xs text-indigo-500 font-bold uppercase">Cada cuánto</label><select id="mRecFreq" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"><option value="weekly" ${p&&p.recurrenceFreq==='weekly'?'selected':''}>Semanal</option><option value="biweekly" ${!p||!p.recurrenceFreq||p.recurrenceFreq==='biweekly'?'selected':''}>Quincenal</option><option value="monthly" ${p&&p.recurrenceFreq==='monthly'?'selected':''}>Mensual</option></select></div>
+          <div class="flex-1"><label class="text-xs text-indigo-500 font-bold uppercase">Duración</label><select id="mRecTerm" onchange="updatePaycheckRecurringFields()" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"><option value="indefinite" ${!p||p.recurrenceTerm!=='term'?'selected':''}>Indefinido</option><option value="term" ${p&&p.recurrenceTerm==='term'?'selected':''}>Con término</option></select></div>
+        </div>
+        <div id="recCountWrap" class="${p&&p.recurrenceTerm==='term'?'':'hidden'}"><label class="text-xs text-indigo-500 font-bold uppercase">Cantidad de pagos</label><input type="number" id="mRecCount" min="1" value="${p&&p.recurrenceCount?p.recurrenceCount:1}" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"></div>
+      </div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Nota (opcional)</label>
+      <input type="text" id="mNote" value="${p?p.note:''}" placeholder="ej. 🟢 TERCER CHEQUE" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <button onclick="savePaycheck(${p?`'${id}'`:'null'})" class="w-full btn-primary py-3">${p?'Guardar':'Agregar'}</button>
+    </div>`;
+  }
+
+  else if(type==='addOneTime'||type==='editOneTime') {
+    const o=type==='editOneTime'?S.oneTimePayments.find(x=>x.id===id):null;
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${o?'Editar':'Nuevo'} pago único</h3>
+    <div class="space-y-3">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Descripción</label>
+      <input type="text" id="mName" value="${o?o.name:''}" placeholder="ej. Reparación carro" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div class="flex gap-3">
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Monto ($)</label>
+        <input type="number" id="mAmount" value="${o?o.amount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Fecha</label>
+        <input type="date" id="mDate" value="${o?o.dueDate:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      </div>
+      <button onclick="saveOneTime(${o?`'${id}'`:'null'})" class="w-full btn-primary py-3">${o?'Guardar':'Agregar'}</button>
+    </div>`;
+  }
+
+  else if(type==='addExpense') {
+    const q=extra||{};
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">Registrar gasto</h3>
+    <div class="space-y-3">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Descripción</label>
+      <input type="text" id="mName" value="${q.name||''}" placeholder="ej. Gasolina" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div class="flex gap-3">
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Monto ($)</label>
+        <input type="number" id="mAmount" value="${q.amount||''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Fecha</label>
+        <input type="date" id="mDate" value="${isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      </div>
+      <div class="bg-indigo-50 rounded-xl p-3">
+        <div class="flex items-center justify-between">
+          <div><label class="text-xs font-bold text-indigo-700 uppercase">Ya se pago</label><div class="text-xs text-indigo-400"><span class="font-bold">Sí</span> = restar ahora · <span class="font-bold">No</span> = pendiente</div></div>
+          <label class="toggle"><input type="checkbox" id="mPaid" checked onchange="document.getElementById('expenseDueWrap').classList.toggle('hidden', this.checked)"><span class="slider"></span></label>
+        </div>
+        <div id="expenseDueWrap" class="hidden mt-3"><label class="text-xs text-indigo-600">Fecha esperada de pago</label>
+        <input type="date" id="mDueDate" value="${isoToday()}" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"></div>
+      </div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
+      <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+        ${['gasolina','comida','supermercado','restaurante','entretenimiento','salud','ropa','transporte','otros'].map(c=>`<option value="${c}">${c}</option>`).join('')}
+      </select></div>
+      <button onclick="saveExpense()" class="w-full btn-primary py-3">Registrar gasto</button>
+    </div>`;
+  }
+
+  else if(type==='addPocket'||type==='editPocket') {
+    const pk=type==='editPocket'?S.pockets.find(x=>x.id===id):null;
+    const available=availableForPocket(pk?pk.id:null);
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${pk?'Editar':'Nuevo'} bolsillo</h3>
+    <div class="space-y-3">
+      <div class="flex gap-3">
+        <div class="w-20"><label class="text-xs font-bold text-slate-500 uppercase">Emoji</label>
+        <input type="text" id="mEmoji" value="${pk?pk.emoji:'💼'}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-center text-xl"></div>
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Nombre</label>
+        <input type="text" id="mName" value="${pk?pk.name:''}" placeholder="ej. Fondo emergencia" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      </div>
+      <div class="flex gap-3">
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Saldo actual ($)</label>
+        <input type="number" id="mSaved" value="${pk?pk.saved:''}" placeholder="0" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold text-lg"></div>
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Meta ($) — opcional</label>
+        <input type="number" id="mTarget" value="${pk&&pk.target?pk.target:''}" placeholder="0" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      </div>
+      <p class="text-xs text-slate-400">Disponible para este bolsillo: <span class="font-bold text-green-600">${fmt(available)}</span>. El saldo se resta del balance libre.</p>
+      <button onclick="savePocket(${pk?`'${id}'`:'null'})" class="w-full btn-primary py-3">${pk?'Guardar':'Crear bolsillo'}</button>
+    </div>`;
+  }
+
+  else if(type==='movePocket') {
+    const pk=S.pockets.find(x=>x.id===id); if(!pk) return;
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">Mover dinero</h3>
+    <p class="text-sm text-slate-500 mb-4">${pk.name} · disponible ${fmt(freeBalance())}</p>
+    <div class="space-y-3">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Monto a mover al bolsillo</label>
+      <input type="number" id="mAmount" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <button onclick="moveMoneyToPocket('${id}')" class="w-full btn-primary py-3">Mover dinero</button>
+    </div>`;
+  }
+
+  else if(type==='addLoan'||type==='editLoan') {
+    const l=type==='editLoan'?S.loans.find(x=>x.id===id):null;
+    const hasRec=l&&l.recurring;
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${l?'Editar':'Nuevo'} préstamo</h3>
+    <div class="space-y-3">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Nombre de la persona</label>
+      <input type="text" id="mName" value="${l?l.personName:''}" placeholder="ej. Carlos" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Monto total prestado ($)</label>
+      <input type="number" id="mAmount" value="${l?l.totalAmount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold text-lg"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">De donde salio el dinero</label>
+      <select id="mSource" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1" ${l?'disabled':''}>
+        <option value="balance" ${!l||!l.source||l.source.type==='balance'?'selected':''}>Balance libre (${fmt(freeBalance())})</option>
+        ${S.pockets.map(p=>`<option value="pocket:${p.id}" ${l&&l.source&&l.source.id===p.id?'selected':''}>${p.name} (${fmt(p.saved||0)})</option>`).join('')}
+      </select></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Notas</label>
+      <input type="text" id="mNote" value="${l?l.note:''}" placeholder="ej. Préstamo de tarjeta" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div class="bg-purple-50 rounded-xl p-3">
+        <div class="flex items-center justify-between mb-2">
+          <label class="text-xs font-bold text-purple-700 uppercase">Pagos recurrentes</label>
+          <label class="toggle"><input type="checkbox" id="mRecurring" ${hasRec?'checked':''} onchange="toggleRecurringFields()"><span class="slider"></span></label>
+        </div>
+        <div id="recurringFields" class="${hasRec?'':'hidden'} space-y-2 mt-2">
+          <div class="flex gap-2">
+            <div class="flex-1"><label class="text-xs text-purple-600">Monto c/pago ($)</label>
+            <input type="number" id="mRecAmt" value="${hasRec?l.recurring.amount:''}" class="w-full border border-purple-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"></div>
+            <div class="flex-1"><label class="text-xs text-purple-600">Frecuencia</label>
+            <select id="mRecFreq" class="w-full border border-purple-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm">
+              ${['weekly','biweekly','monthly'].map(f=>`<option value="${f}" ${hasRec&&l.recurring.freq===f?'selected':''}>${freqLabel(f)}</option>`).join('')}
+            </select></div>
+          </div>
+          <div><label class="text-xs text-purple-600">Próxima fecha</label>
+          <input type="date" id="mRecNext" value="${hasRec?l.recurring.nextDate:isoToday()}" class="w-full border border-purple-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"></div>
+          <div><label class="text-xs text-purple-600">Cantidad de pagos (opcional)</label>
+          <input type="number" id="mRecCount" value="${hasRec&&l.recurring.totalPayments?l.recurring.totalPayments:''}" class="w-full border border-purple-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"></div>
+        </div>
+      </div>
+      <button onclick="saveLoan(${l?`'${id}'`:'null'})" class="w-full btn-primary py-3">${l?'Guardar':'Registrar préstamo'}</button>
+    </div>`;
+  }
+
+  else if(type==='addBorrowedLoan') {
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">Préstamo recibido</h3>
+    <div class="space-y-3">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Persona</label><input id="mName" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1" placeholder="Nombre"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Monto ($)</label><input type="number" id="mAmount" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Fecha de pago</label><input type="date" id="mDate" value="${isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Cantidad de pagos</label><input type="number" id="mPayments" value="1" min="1" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Descripción opcional</label><input id="mDesc" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <button onclick="saveBorrowedLoan()" class="w-full btn-primary py-3">Guardar préstamo</button>
+    </div>`;
+  }
+
+  else if(type==='addLoanPayment') {
+    const l=S.loans.find(x=>x.id===id);
+    if(!l) return;
+    const paid=loanPaid(l), pend=l.totalAmount-paid;
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">Registrar abono</h3>
+    <p class="text-sm text-slate-500 mb-4">👤 ${l.personName} · pendiente ${fmt(pend)}</p>
+    <div class="space-y-3">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Monto del abono ($)</label>
+      <input type="number" id="mAmt" value="${l.recurring?l.recurring.amount:''}" placeholder="${fmt(pend)}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold text-lg"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Fecha</label>
+      <input type="date" id="mDate" value="${isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Nota (opcional)</label>
+      <input type="text" id="mNote" placeholder="ej. Transferencia" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <button onclick="saveLoanPayment('${id}')" class="w-full btn-primary py-3">Registrar abono</button>
+    </div>`;
+  }
+
+  else if(type==='addCustomPlan') {
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">Crear plan personalizado</h3>
+    <div class="space-y-3">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Título</label>
+      <input type="text" id="mLabel" placeholder="ej. Plan septiembre" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div class="flex gap-3">
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Fecha del cheque</label>
+        <input type="date" id="mDate" value="${isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Color</label>
+        <select id="mColor" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+          <option value="tight">🔴 Ajustado</option><option value="ok" selected>🟡 Normal</option><option value="great">🟢 Bueno</option>
+        </select></div>
+      </div>
+      <div id="customPlanItems" class="space-y-2">
+        <label class="text-xs font-bold text-slate-500 uppercase">Pagos</label>
+      </div>
+      <button onclick="addCustomPlanItemRow()" class="w-full border-2 border-dashed border-indigo-200 text-indigo-400 font-semibold py-2 rounded-xl text-sm">+ Agregar pago</button>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Nota</label>
+      <textarea id="mNote" rows="2" placeholder="Instrucciones o recordatorios..." class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2 mt-1 text-sm resize-none"></textarea></div>
+      <button onclick="saveCustomPlan()" class="w-full btn-primary py-3">Guardar plan</button>
+    </div>`;
+  }
+
+  else if(type==='editCustomPlan') {
+    const plan=S.customPlans.find(x=>x.id===id);
+    if(!plan) return;
+    _customPlanItems=[...(plan.items||[])];
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">Editar plan</h3>
+    <div class="space-y-3">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Titulo</label>
+      <input type="text" id="mLabel" value="${plan.label}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div class="flex gap-3"><div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Fecha</label>
+      <input type="date" id="mDate" value="${plan.date}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Ingreso ($)</label>
+      <input type="number" id="mPlanAmount" value="${plan.amount||1742}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div></div>
+      <select id="mColor" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5"><option value="tight" ${plan.color==='tight'?'selected':''}>Ajustado</option><option value="ok" ${plan.color==='ok'?'selected':''}>Normal</option><option value="great" ${plan.color==='great'?'selected':''}>Bueno</option></select>
+      <div id="customPlanItems" class="space-y-2"><label class="text-xs font-bold text-slate-500 uppercase">Pagos</label></div>
+      <button onclick="addCustomPlanItemRow()" class="w-full border-2 border-dashed border-indigo-200 text-indigo-400 font-semibold py-2 rounded-xl text-sm">+ Agregar pago</button>
+      <textarea id="mNote" rows="2" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2 mt-1 text-sm resize-none">${plan.note||''}</textarea>
+      <button onclick="saveCustomPlan('${id}')" class="w-full btn-primary py-3">Guardar cambios</button>
+    </div>`;
+  }
+
+  else if(type==='addCalendarNote') {
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">Agregar nota o tarea</h3>
+    <p class="text-sm text-slate-500 mb-4">${fmtDateLong(id)}</p>
+    <div class="space-y-3">
+      <textarea id="mNoteText" rows="5" placeholder="Nota, tarea o lista..." class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm resize-none"></textarea>
+      <button onclick="saveCalendarNote('${id}')" class="w-full btn-primary py-3">Guardar</button>
+    </div>`;
+  }
+
+  else if(type==='rescheduleCalendarNote') {
+    const n=(S.calendarNotes[id]||[]).find(x=>x.id===extra);
+    if(!n) return;
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">Reprogramar tarea</h3>
+    <p class="text-sm text-slate-500 mb-4">${n.text}</p>
+    <div class="space-y-3">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Nueva fecha</label>
+      <input type="date" id="mDate" value="${id}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <button onclick="rescheduleCalendarNote('${id}','${extra}',document.getElementById('mDate').value)" class="w-full btn-primary py-3">Reprogramar</button>
+    </div>`;
+  }
+
+  else if(type==='addIncomeCategory') {
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">Nueva categoría</h3>
+    <div class="space-y-3"><input id="mName" placeholder="ej. Trabajo extra" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5">
+    <button onclick="saveIncomeCategory()" class="w-full btn-primary py-3">Guardar</button></div>`;
+  }
+
+  document.getElementById('modalContent').innerHTML=html;
+  if(type==='editCustomPlan') {
+    const rows=[..._customPlanItems];
+    _customPlanItems=[];
+    rows.forEach(x=>addCustomPlanItemRow(x.name,x.amount,x.type));
+  }
+  decorateMoneyInputs(document.getElementById('modalContent'));
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+let _customPlanItems=[];
+function addCustomPlanItemRow(name='',amount='',type='pay') {
+  _customPlanItems.push({name,amount,type});
+  const idx=_customPlanItems.length-1;
+  const row=document.createElement('div');
+  row.className='flex gap-2 items-center'; row.dataset.idx=idx;
+  row.innerHTML=`<input type="text" placeholder="Nombre" value="${name}" onchange="_customPlanItems[${idx}].name=this.value" class="flex-1 border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2 text-sm">
+    <input type="number" placeholder="$" value="${amount}" onchange="_customPlanItems[${idx}].amount=parseFloat(this.value)||0" class="w-20 border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2 text-sm">
+    <select onchange="_customPlanItems[${idx}].type=this.value" class="border border-indigo-100 bg-indigo-50 rounded-xl px-2 py-2 text-sm">
+      ${[['pay','Pagar'],['save','Ahorrar'],['hold','No pagar']].map(([v,l])=>`<option value="${v}" ${type===v?'selected':''}>${l}</option>`).join('')}
+    </select>
+    <button onclick="_customPlanItems[${idx}].name='';_customPlanItems[${idx}].amount=0;this.parentElement.remove()" class="text-red-400 text-lg">×</button>`;
+  document.getElementById('customPlanItems').appendChild(row);
+}
+
+function toggleRecurringFields() {
+  const el=document.getElementById('recurringFields');
+  el&&el.classList.toggle('hidden');
+}
+
+function updatePaycheckRecurringFields() {
+  const type=document.getElementById('mPayType'), rec=document.getElementById('recWrap'), term=document.getElementById('mRecTerm'), count=document.getElementById('recCountWrap');
+  if(rec&&type) rec.classList.toggle('hidden', type.value!=='recurrente');
+  if(count&&term) count.classList.toggle('hidden', term.value!=='term');
+}
+
+function updatePaycheckPersonFields() {
+  const cat=document.getElementById('mCat'), wrap=document.getElementById('personWrap'), work=document.getElementById('workWrap'), other=document.getElementById('otherWrap'), sel=document.getElementById('mPersonSelect'), input=document.getElementById('mPersonNew');
+  if(wrap&&cat) wrap.classList.toggle('hidden', cat.value!=='persona');
+  if(work&&cat) work.classList.toggle('hidden', cat.value!=='trabajo');
+  if(other&&cat) other.classList.toggle('hidden', cat.value!=='otro');
+  if(input&&sel) input.classList.toggle('hidden', sel.value!=='new');
+}
+
+function nextPaycheckDate(date, freq, step) {
+  const d=parseDate(date);
+  if(freq==='monthly') d.setMonth(d.getMonth()+step);
+  else d.setDate(d.getDate()+({weekly:7,biweekly:14}[freq]||14)*step);
+  return fmtISO(d);
+}
+
+function closeModal() { document.getElementById('modalOverlay').classList.add('hidden'); _customPlanItems=[]; }
+function closeModalOutside(e) { if(e.target.id==='modalOverlay') closeModal(); }
+
+// ═══════════════════════════════════════
+// SAVE ACTIONS
+// ═══════════════════════════════════════
+function saveBill(id) {
+  const name=document.getElementById('mName').value.trim(), amount=parseFloat(document.getElementById('mAmount').value);
+  const dueDay=parseInt(document.getElementById('mDueDay').value), emoji=document.getElementById('mEmoji').value.trim()||'💳';
+  const category=document.getElementById('mCat').value, frequency=document.getElementById('mFreq').value;
+  const termType=document.getElementById('mTermType')?document.getElementById('mTermType').value:'indefinite';
+  const totalPayments=termType==='term'?(parseInt(document.getElementById('mTotalPayments').value)||1):null;
+  if(!name||!amount||!dueDay){showToast('❌ Completa los campos');return;}
+  if(id){const b=S.bills.find(x=>x.id===id);if(b)Object.assign(b,{name,amount,dueDay,emoji,category,frequency,termType,totalPayments});}
+  else S.bills.unshift({id:uid(),name,amount,dueDay,emoji,category,frequency,termType,totalPayments,active:true});
+  save(); closeModal(); renderCurrentView(); showToast('✅ Factura guardada');
+}
+
+function savePaycheck(id) {
+  const date=document.getElementById('mDate').value, amount=parseFloat(document.getElementById('mAmount').value);
+  const category=document.getElementById('mCat').value, note=document.getElementById('mNote').value.trim();
+  const paymentType=document.getElementById('mPayType')?document.getElementById('mPayType').value:'recurrente', method=document.getElementById('mMethod')?document.getElementById('mMethod').value:'deposito';
+  const recurrenceFreq=document.getElementById('mRecFreq')?document.getElementById('mRecFreq').value:null;
+  const recurrenceTerm=document.getElementById('mRecTerm')?document.getElementById('mRecTerm').value:'indefinite';
+  const recurrenceCount=paymentType==='recurrente'&&recurrenceTerm==='term'?(parseInt(document.getElementById('mRecCount').value)||1):null;
+  const personSelect=document.getElementById('mPersonSelect');
+  const personName=category==='persona'?(personSelect&&personSelect.value==='new'?document.getElementById('mPersonNew').value.trim():(personSelect?personSelect.value:'')):'';
+  const sourceName=category==='trabajo'?(document.getElementById('mWorkName').value.trim()||'Trabajo'):category==='otro'?(document.getElementById('mOtherName').value.trim()||'Otro'):'';
+  if(!date||!amount){showToast('❌ Completa fecha y monto');return;}
+  if(category==='persona'&&!personName){showToast('Selecciona o agrega una persona');return;}
+  if(id){const p=S.paychecks.find(x=>x.id===id);if(p)Object.assign(p,{date,amount,category,note,paymentType,method,recurrenceFreq,recurrenceTerm,recurrenceCount,personName,sourceName});}
+  else {
+    const base={amount,received:false,category,note,paymentType,method,recurrenceFreq,recurrenceTerm,recurrenceCount,personName,sourceName};
+    if(paymentType==='recurrente'&&recurrenceTerm==='term'&&recurrenceCount>1) {
+      const rows=Array.from({length:recurrenceCount},(_,i)=>({id:uid(),date:nextPaycheckDate(date,recurrenceFreq,i),...base}));
+      S.paychecks.unshift(...rows);
+    } else S.paychecks.unshift({id:uid(),date,...base});
+  }
+  save(); closeModal(); renderCurrentView(); showToast('✅ Cheque guardado');
+}
+
+function saveOneTime(id) {
+  const name=document.getElementById('mName').value.trim(), amount=parseFloat(document.getElementById('mAmount').value), dueDate=document.getElementById('mDate').value;
+  if(!name||!amount||!dueDate){showToast('❌ Completa los campos');return;}
+  if(id){const o=S.oneTimePayments.find(x=>x.id===id);if(o)Object.assign(o,{name,amount,dueDate});}
+  else S.oneTimePayments.unshift({id:uid(),name,amount,dueDate,paid:false,paidDate:null,paidAmount:null});
+  save(); closeModal(); renderCurrentView(); showToast('✅ Guardado');
+}
+
+function saveExpense() {
+  const name=document.getElementById('mName').value.trim(), amount=parseFloat(document.getElementById('mAmount').value);
+  const date=document.getElementById('mDate').value, category=document.getElementById('mCat').value;
+  if(!name||!amount){showToast('❌ Completa los campos');return;}
+  const paid=document.getElementById('mPaid')?document.getElementById('mPaid').checked:true;
+  const dueDate=document.getElementById('mDueDate')?document.getElementById('mDueDate').value:(date||isoToday());
+  S.expenses.unshift({id:uid(),name,amount,date:date||isoToday(),category,paid,dueDate:paid?(date||isoToday()):dueDate,paidDate:paid?(date||isoToday()):null,paidAt:paid?new Date().toISOString():null,createdAt:new Date().toISOString()});
+  if(paid) adjustBalance(-amount);
+  setLastAction(); closeModal(); renderCurrentView(); showToast('✅ Gasto registrado');
+}
+
+function savePocket(id) {
+  const name=document.getElementById('mName').value.trim(), emoji=document.getElementById('mEmoji').value.trim()||'💼';
+  const saved=parseFloat(document.getElementById('mSaved').value)||0, target=parseFloat(document.getElementById('mTarget').value)||0;
+  if(!name){showToast('❌ Escribe un nombre');return;}
+  if(saved>availableForPocket(id)){showToast('No hay suficiente balance libre');return;}
+  if(id){const p=S.pockets.find(x=>x.id===id);if(p)Object.assign(p,{name,emoji,saved,target});}
+  else S.pockets.unshift({id:uid(),name,emoji,saved,target});
+  setLastAction(); closeModal(); renderCurrentView(); showToast('✅ Bolsillo guardado');
+}
+
+function saveLoan(id) {
+  const personName=document.getElementById('mName').value.trim(), totalAmount=parseFloat(document.getElementById('mAmount').value);
+  const note=document.getElementById('mNote').value.trim();
+  if(!personName||!totalAmount){showToast('❌ Completa los campos');return;}
+  const isRec=document.getElementById('mRecurring').checked;
+  let recurring=null;
+  if(isRec){recurring={freq:document.getElementById('mRecFreq').value,amount:parseFloat(document.getElementById('mRecAmt').value)||0,nextDate:document.getElementById('mRecNext').value,totalPayments:parseInt(document.getElementById('mRecCount').value)||null};}
+  if(id){const l=S.loans.find(x=>x.id===id);if(l)Object.assign(l,{personName,totalAmount,note,recurring});}
+  else {
+    const raw=document.getElementById('mSource').value;
+    const source=raw.startsWith('pocket:')?{type:'pocket',id:raw.split(':')[1]}:{type:'balance',id:null};
+    if(source.type==='balance' && totalAmount>freeBalance()){showToast('No hay suficiente balance libre');return;}
+    if(source.type==='pocket'){const p=S.pockets.find(x=>x.id===source.id); if(!p||totalAmount>(p.saved||0)){showToast('No hay suficiente dinero en ese bolsillo');return;}}
+    adjustSource(source,-totalAmount);
+    S.loans.unshift({id:uid(),personName,totalAmount,note,source,payments:[],recurring});
+  }
+  save(); closeModal(); renderCurrentView(); showToast('✅ Préstamo guardado');
+}
+
+function saveBorrowedLoan() {
+  const personName=document.getElementById('mName').value.trim(), amount=parseFloat(document.getElementById('mAmount').value), dueDate=document.getElementById('mDate').value;
+  const description=document.getElementById('mDesc').value.trim();
+  const paymentsCount=parseInt(document.getElementById('mPayments').value)||1;
+  if(!personName||!amount||!dueDate){showToast('Completa persona, monto y fecha');return;}
+  S.borrowedLoans.unshift({id:uid(),personName,amount,dueDate,description,paymentsCount,paid:false,createdDate:isoToday(),createdAt:new Date().toISOString()});
+  adjustBalance(amount); setLastAction(); closeModal(); renderCurrentView(); showToast('Préstamo recibido guardado');
+}
+
+function saveIncomeCategory() {
+  const name=document.getElementById('mName').value.trim();
+  if(!name){showToast('Escribe el nombre');return;}
+  S.incomeCategories.unshift(name); save(); closeModal(); renderChecks(); showToast('Categoría creada');
+}
+
+function moveMoneyToPocket(id) {
+  const pk=S.pockets.find(x=>x.id===id), amount=parseFloat(document.getElementById('mAmount').value);
+  if(!pk||!amount){showToast('Escribe el monto');return;}
+  if(amount>freeBalance()){showToast('No hay suficiente balance disponible');return;}
+  pk.saved=(pk.saved||0)+amount; setLastAction(); closeModal(); renderPocketsView(); updateHeaderBalance(); showToast('Dinero movido');
+}
+
+function saveLoanPayment(loanId) {
+  const amount=parseFloat(document.getElementById('mAmt').value), date=document.getElementById('mDate').value, note=document.getElementById('mNote').value.trim();
+  if(!amount){showToast('❌ Escribe el monto');return;}
+  const l=S.loans.find(x=>x.id===loanId);
+  if(!l) return;
+  l.payments.unshift({id:uid(),amount,date,note,createdAt:new Date().toISOString()});
+  adjustBalance(amount);
+  if(l.recurring&&l.recurring.nextDate) {
+    const d=parseDate(l.recurring.nextDate), freqDays={weekly:7,biweekly:14,monthly:30}[l.recurring.freq]||30;
+    d.setDate(d.getDate()+freqDays); l.recurring.nextDate=fmtISO(d);
+  }
+  setLastAction(); closeModal(); renderCurrentView(); showToast('✅ Abono registrado');
+}
+
+function saveCustomPlan(id=null) {
+  const label=document.getElementById('mLabel').value.trim(), date=document.getElementById('mDate').value;
+  const color=document.getElementById('mColor').value, living=document.getElementById('mLiving')?(parseFloat(document.getElementById('mLiving').value)||0):0;
+  const amount=document.getElementById('mPlanAmount')?(parseFloat(document.getElementById('mPlanAmount').value)||1742):1742;
+  const note=document.getElementById('mNote').value.trim();
+  if(!label||!date){showToast('❌ Completa título y fecha');return;}
+  const items=_customPlanItems.filter(x=>x.name&&x.amount>0);
+  if(id){const p=S.customPlans.find(x=>x.id===id); if(p) Object.assign(p,{label,date,color,living,note,items,amount});}
+  else S.customPlans.unshift({id:uid(),label,date,color,living,note,items,amount,completed:false,isCustom:true});
+  save(); closeModal(); renderCurrentView(); showToast('✅ Plan creado');
+}
+
+// ═══════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════
+function showView(view) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active','text-indigo-600'));
+  const idx={home:0,cheques:1,facturas:2,cal:3,bolsillos:4,plan:5}[view];
+  const btns=document.querySelectorAll('.nav-btn');
+  if(idx!==undefined){btns[idx].classList.add('active','text-indigo-600');}
+  currentView=view; updateHeaderBalance(); renderCurrentView(); window.scrollTo(0,0);
+}
+
+function renderCurrentView() {
+  if(currentView==='home') renderHome();
+  else if(currentView==='cheques') renderChecks();
+  else if(currentView==='facturas') renderBills();
+  else if(currentView==='cal') renderCalendar();
+  else if(currentView==='bolsillos') renderPocketsView();
+  else if(currentView==='plan') renderPlan();
+  else if(currentView==='config'){const el=document.getElementById('bankBalanceInput');if(el)el.value=S.bankBalance||'';decorateMoneyInputs();}
+}
+
+function switchTab(tab,btn) {
+  currentTab=tab;
+  document.querySelectorAll('.pill-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderBills();
+}
+
+// ═══════════════════════════════════════
+// MISC
+// ═══════════════════════════════════════
+function showToast(msg) {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.remove('hidden');
+  setTimeout(()=>el.classList.add('hidden'),2200);
+}
+
+function exportData() {
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`bearagenda-${isoToday()}.json`;a.click();
+}
+
+function confirmReset(){if(confirm('¿Reiniciar todo?')){localStorage.removeItem(SK);location.reload();}}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+  load();
+
+  const { data } = await supabase.auth.getUser();
+
+  if (data && data.user) {
+    CURRENT_USER = data.user;
+    await loadCloudData();
+    document.getElementById('authScreen').classList.add('hidden');
+  }
+
+  updateHeaderBalance();
+  renderHome();
+});
+async function signupUser() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value.trim();
+  const msg = document.getElementById('authMsg');
+
+  if (!email || !password) {
+    msg.textContent = 'Escribe email y password.';
+    return;
+  }
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password
+  });
+
+  if (error) {
+    msg.textContent = error.message;
+    return;
+  }
+
+  msg.textContent = 'Cuenta creada. Revisa si Supabase pide confirmar email.';
+}
+
+async function loginUser() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value.trim();
+  const msg = document.getElementById('authMsg');
+
+  if (!email || !password) {
+    msg.textContent = 'Escribe email y password.';
+    return;
+  }
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    msg.textContent = error.message;
+    return;
+  }
+
+  CURRENT_USER = data.user;
+  await loadCloudData();
+  document.getElementById('authScreen').classList.add('hidden');
+  renderCurrentView();
+}
+
+async function logoutUser() {
+  await supabase.auth.signOut();
+  CURRENT_USER = null;
+  location.reload();
+}
+</script>
+</body>
+</html>
+
