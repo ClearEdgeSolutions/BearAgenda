@@ -428,6 +428,8 @@ let analysisMonth = '';
 let houseTab = 'payments';
 let houseSyncStatus = 'local';
 let houseSyncMessage = '';
+let houseFollowupSyncTimer1 = null;
+let houseFollowupSyncTimer2 = null;
 let selectedIncomeCategory = '';
 let calDate = null;
 let lastUndoAction = null;
@@ -625,6 +627,7 @@ async function saveHouse(attempt=0) {
     }
     houseSyncStatus='cloud';
     houseSyncMessage='Casa sincronizada';
+    scheduleHouseFollowupSync();
   } catch(e) {
     houseSyncStatus='error';
     houseSyncMessage=e.message||'No se pudo guardar Casa en la nube';
@@ -669,6 +672,13 @@ async function refreshHouseData(showResult=true) {
   await loadHouseCloud();
   if(currentView==='casa') renderHouse();
   if(showResult) showToast(houseSyncStatus==='cloud'?'Casa sincronizada':`Casa local: ${houseSyncMessage}`);
+}
+
+function scheduleHouseFollowupSync() {
+  clearTimeout(houseFollowupSyncTimer1);
+  clearTimeout(houseFollowupSyncTimer2);
+  houseFollowupSyncTimer1=setTimeout(()=>refreshHouseData(false),900);
+  houseFollowupSyncTimer2=setTimeout(()=>refreshHouseData(false),2400);
 }
 
 function profileDisplayName() {
