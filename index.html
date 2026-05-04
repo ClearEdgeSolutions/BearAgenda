@@ -11,8 +11,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="BearAgenda">
   <!-- Favicon + iOS home screen icon -->
-  <link rel="icon" type="image/png" href="logo sin texto.png">
-  <link rel="apple-touch-icon" href="logo sin texto.png">
+  <link rel="icon" type="image/png" href="logo-icon.png">
+  <link rel="apple-touch-icon" href="logo-icon.png">
   <!-- PWA manifest -->
   <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -63,7 +63,7 @@
     .month-carousel::-webkit-scrollbar { display:none; }
     .m-active { background:#4f46e5; color:white; font-size:14px; font-weight:800; padding:8px 20px; border-radius:12px; white-space:nowrap; scroll-snap-align:center; flex-shrink:0; border:none; }
     .m-inactive { background:white; color:#6366f1; font-size:11px; font-weight:700; padding:7px 14px; border-radius:10px; white-space:nowrap; scroll-snap-align:center; flex-shrink:0; border:1px solid #e0e7ff; }
-    .header-title { position:absolute; left:86px; right:106px; text-align:center; pointer-events:none; }
+    .header-title { position:absolute; left:50%; right:auto; transform:translateX(-50%); width:min(52vw,220px); text-align:center; pointer-events:none; }
     .module-title-inline { display:none !important; }
     .origin-badge { display:inline-flex; align-items:center; gap:3px; border-radius:999px; padding:2px 7px; font-size:10px; font-weight:800; background:#eef2ff; color:#4f46e5; border:1px solid #c7d2fe; }
     .shopping-item-input { outline:none; background:transparent; width:100%; }
@@ -74,7 +74,7 @@
     .finance-month-nav h2 { font-size:1.875rem; line-height:1.05; font-weight:800; color:#1e293b; }
     .summary-range { white-space:nowrap; line-height:1.1; font-size:9px; }
     @media (max-width:390px) {
-      .header-title { left:64px; right:96px; font-size:14px; }
+      .header-title { left:50%; right:auto; transform:translateX(-50%); width:48vw; font-size:14px; }
       #headerBalanceWrap { max-width:74px; }
       #headerBalance { font-size:14px; }
       #headerBalanceLabel { font-size:8px; }
@@ -100,8 +100,8 @@
         <div id="headerBalanceLabel" class="hidden"></div>
         <div id="headerBalance" class="text-lg font-bold leading-none text-indigo-600">$0</div>
       </div>
-      <div class="w-14 h-14 rounded-2xl bg-white overflow-hidden flex items-center justify-center shrink-0">
-        <img src="logo sin texto.png" alt="BearAgenda" class="w-full h-full object-contain block" style="transform:scale(1.32);transform-origin:center center;">
+      <div class="rounded-2xl bg-white overflow-hidden flex items-center justify-center shrink-0 -mr-1" style="width:58px;height:58px;">
+        <img src="logo-icon.png" alt="BearAgenda" class="w-full h-full object-contain block">
       </div>
     </div>
   </div>
@@ -112,7 +112,7 @@
   <div id="authLoading" class="hidden flex-col items-center justify-center text-center">
     <div class="relative mb-5 w-32 h-32 flex items-center justify-center">
       <div class="absolute inset-0 rounded-[2rem] border-4 border-indigo-100" style="border-top-color:#6366f1;border-right-color:#818cf8;animation:spin 0.9s cubic-bezier(.4,0,.2,1) infinite"></div>
-      <img src="logo sin texto.png" alt="BearAgenda" class="w-24 h-24 rounded-3xl object-contain mx-auto relative z-10" style="box-shadow:0 8px 32px rgba(79,70,229,0.25)">
+      <img src="logo-icon.png" alt="BearAgenda" class="w-28 h-28 rounded-3xl object-contain mx-auto relative z-10" style="box-shadow:0 8px 32px rgba(79,70,229,0.25)">
     </div>
     <p class="text-slate-600 font-semibold text-sm">Cargando tu cuenta...</p>
     <p class="text-slate-400 text-xs mt-1">BearAgenda</p>
@@ -121,7 +121,7 @@
   <!-- Formulario de login (visible por defecto) -->
   <div id="authForm" class="bg-white rounded-3xl p-6 w-full max-w-sm" style="box-shadow:0 20px 60px rgba(79,70,229,0.18)">
     <div class="text-center mb-6">
-      <img src="logo sin texto.png" alt="BearAgenda"
+      <img src="logo-icon.png" alt="BearAgenda"
         class="w-32 h-32 rounded-3xl object-contain mx-auto mb-3"
         style="box-shadow:0 8px 32px rgba(79,70,229,0.2);transform:scale(1.0)">
       <h2 class="hidden text-2xl font-extrabold text-slate-800">BearAgenda</h2>
@@ -1120,7 +1120,18 @@ function homeNoPayButton(item) {
   const kind={bill:'bill',onetime:'onetime',expense:'expense',borrowed:'borrowed',house:'house'}[item.type];
   const payload=[kind,item.id,item.paymentId||'',item.date||item.dateKey||''].join(':');
   const label=item.type==='house'?'No abonar':'No pagar';
-  return `<button onclick="openModal('skipPayment','${payload}')" class="text-xs bg-amber-50 text-amber-700 font-semibold px-2 py-1 rounded-full">${label}</button>`;
+  return homeActionIcon(`openModal('skipPayment','${payload}')`,'no',label);
+}
+
+function homeActionIcon(onclick, kind, label) {
+  const yes=kind==='yes';
+  const cls=yes
+    ? 'bg-green-50 text-green-700 border-green-100'
+    : 'bg-rose-50 text-rose-600 border-rose-100';
+  const path=yes
+    ? '<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>'
+    : '<path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18"/>';
+  return `<button onclick="${onclick}" title="${label}" aria-label="${label}" class="inline-flex items-center justify-center w-9 h-9 shrink-0 rounded-xl border ${cls}" style="box-shadow:0 4px 12px rgba(15,23,42,.04)"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.6" viewBox="0 0 24 24">${path}</svg></button>`;
 }
 
 // ═══════════════════════════════════════
@@ -1203,12 +1214,12 @@ function renderHome() {
       const icon=itemIcon(item.type==='income'?'income':item.type==='loan'?'loan':item.type==='task'?'task':item.type==='shopping'?'task':item.type==='house'?'house':item.type==='borrowed'?'borrowed':item.type, item.category||'');
       const color=item.type==='income'?'text-green-600':item.type==='task'?'text-slate-500':'text-indigo-700';
       let actionBtn;
-      if(item.type==='income') actionBtn=`<div class="flex gap-1 justify-end flex-wrap"><button onclick="openModal('confirmReceive','${item.id}')" class="text-xs bg-green-50 text-green-700 font-semibold px-3 py-1 rounded-full">Recibido ✓</button><button onclick="openModal('skipIncomePayment','${item.id}')" class="text-xs bg-amber-50 text-amber-700 font-semibold px-2 py-1 rounded-full">No recibido</button></div>`;
-      else if(item.type==='bill') actionBtn=`<div class="flex gap-1 justify-end flex-wrap"><button onclick="openModal('confirmPay','${item.id}','${item.dateKey}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Pagar ✓</button>${homeNoPayButton(item)}</div>`;
-      else if(item.type==='onetime') actionBtn=`<div class="flex gap-1 justify-end flex-wrap"><button onclick="openModal('confirmPayOnce','${item.id}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Pagar ✓</button>${homeNoPayButton(item)}</div>`;
-      else if(item.type==='expense') actionBtn=`<div class="flex gap-1 justify-end flex-wrap"><button onclick="markExpensePaid('${item.id}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Pagar ✓</button>${homeNoPayButton(item)}</div>`;
-      else if(item.type==='borrowed') actionBtn=`<div class="flex gap-1 justify-end flex-wrap"><button onclick="markBorrowedPaid('${item.id}','${item.paymentId||''}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Pagar ✓</button>${homeNoPayButton(item)}</div>`;
-      else if(item.type==='house') actionBtn=`<div class="flex gap-1 justify-end flex-wrap"><button onclick="openModal('addHousePayment','${item.id}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Abonar ✓</button>${homeNoPayButton(item)}</div>`;
+      if(item.type==='income') actionBtn=`<div class="flex gap-1.5 justify-end">${homeActionIcon(`openModal('confirmReceive','${item.id}')`,'yes','Recibido')}${homeActionIcon(`openModal('skipIncomePayment','${item.id}')`,'no','No recibido')}</div>`;
+      else if(item.type==='bill') actionBtn=`<div class="flex gap-1.5 justify-end">${homeActionIcon(`openModal('confirmPay','${item.id}','${item.dateKey}')`,'yes','Pagar')}${homeNoPayButton(item)}</div>`;
+      else if(item.type==='onetime') actionBtn=`<div class="flex gap-1.5 justify-end">${homeActionIcon(`openModal('confirmPayOnce','${item.id}')`,'yes','Pagar')}${homeNoPayButton(item)}</div>`;
+      else if(item.type==='expense') actionBtn=`<div class="flex gap-1.5 justify-end">${homeActionIcon(`markExpensePaid('${item.id}')`,'yes','Pagar')}${homeNoPayButton(item)}</div>`;
+      else if(item.type==='borrowed') actionBtn=`<div class="flex gap-1.5 justify-end">${homeActionIcon(`markBorrowedPaid('${item.id}','${item.paymentId||''}')`,'yes','Pagar')}${homeNoPayButton(item)}</div>`;
+      else if(item.type==='house') actionBtn=`<div class="flex gap-1.5 justify-end">${homeActionIcon(`openModal('addHousePayment','${item.id}')`,'yes','Abonar')}${homeNoPayButton(item)}</div>`;
       else if(item.type==='shopping') actionBtn=`<div class="flex gap-1 justify-end"><button onclick="completeShoppingList('${item.id}',true)" class="text-xs bg-green-50 text-green-700 font-semibold px-2 py-1 rounded-full">Completar</button><button onclick="openModal('shoppingListDetail','${item.id}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-2 py-1 rounded-full">Abrir</button></div>`;
       else if(item.type==='task') actionBtn=`<div class="flex gap-1 justify-end"><button onclick="completeCalendarNote('${item.dateKey}','${item.id}')" class="text-xs bg-green-50 text-green-700 font-semibold px-2 py-1 rounded-full">Completar</button><button onclick="openModal('rescheduleCalendarNote','${item.dateKey}','${item.id}')" class="text-xs bg-slate-100 text-slate-600 font-semibold px-2 py-1 rounded-full">Mover</button></div>`;
       else actionBtn=`<button onclick="openModal('addLoanPayment','${item.id}')" class="text-xs bg-purple-50 text-purple-700 font-semibold px-3 py-1 rounded-full">Registrar</button>`;
@@ -1217,9 +1228,9 @@ function renderHome() {
         <div class="flex-1 min-w-0">
           <div class="font-semibold text-slate-800 text-sm truncate">${item.name}</div>
           <div class="flex items-center gap-2 mt-0.5">
-            <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">${item.type==='income'?'Ingreso':item.type==='task'?'Tarea':item.type==='shopping'?'Compras':'Pago'}</span>
+            <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">${item.type==='income'?'Ingreso':item.type==='task'?'Tarea':item.type==='shopping'?'Compras':'Pago'}</span>
             <span class="inline-flex items-center justify-center w-8 h-6 shrink-0 rounded-full text-[10px] font-extrabold whitespace-nowrap ${urgentCls}">${Math.max(0,item.days)}D</span>
-            <span class="text-xs text-slate-600 font-semibold">${fmtDate(item.date)}</span>
+            <span class="text-xs text-slate-600 font-semibold whitespace-nowrap">${fmtDate(item.date)}</span>
           </div>
         </div>
         <div class="text-right">
