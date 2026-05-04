@@ -67,11 +67,17 @@
     .module-title-inline { display:none !important; }
     .origin-badge { display:inline-flex; align-items:center; gap:3px; border-radius:999px; padding:2px 7px; font-size:10px; font-weight:800; background:#eef2ff; color:#4f46e5; border:1px solid #c7d2fe; }
     .shopping-item-input { outline:none; background:transparent; width:100%; }
+    .mobile-fab-add { }
+    .finance-month-nav { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:10px; }
     @media (max-width:390px) {
       .header-title { left:64px; right:96px; font-size:14px; }
       #headerBalanceWrap { max-width:74px; }
       #headerBalance { font-size:14px; }
       #headerBalanceLabel { font-size:8px; }
+    }
+    @media (max-width:640px) {
+      .mobile-fab-add { position:fixed; right:16px; bottom:86px; z-index:35; box-shadow:0 12px 28px rgba(79,70,229,.24); }
+      .mobile-fab-add::first-letter { font-size:16px; }
     }
   </style>
 </head>
@@ -87,7 +93,7 @@
     <div id="headerTitle" class="header-title text-base font-extrabold text-slate-800 truncate">Inicio</div>
     <div class="flex items-center gap-3 h-full">
       <div id="headerBalanceWrap" class="flex flex-col items-end gap-0.5">
-        <div id="headerBalanceLabel" class="text-[10px] text-indigo-400 font-semibold uppercase tracking-wide">Balance libre</div>
+        <div id="headerBalanceLabel" class="hidden"></div>
         <div id="headerBalance" class="text-lg font-bold leading-none text-indigo-600">$0</div>
       </div>
       <div class="w-14 h-14 rounded-2xl bg-white overflow-hidden flex items-center justify-center shrink-0">
@@ -139,7 +145,7 @@
     <div class="px-4 py-5">
       <div class="flex items-center justify-end mb-4">
         <h2 class="module-title-inline text-lg font-bold text-slate-800">Ingresos</h2>
-        <button onclick="openModal('addPaycheck')" class="btn-primary text-sm px-4 py-2.5 shrink-0">+ Agregar ingreso</button>
+        <button onclick="openModal('addPaycheck')" class="btn-primary text-sm px-4 py-2.5 shrink-0 mobile-fab-add">+ Agregar ingreso</button>
       </div>
       <div id="checksList" class="space-y-2.5"></div>
     </div>
@@ -165,9 +171,8 @@
   </div>
   <div id="view-bolsillos" class="view">
     <div class="px-4 py-5">
-      <div class="flex items-center justify-end mb-4">
+      <div class="hidden">
         <h2 class="module-title-inline text-lg font-bold text-slate-800">Bolsillos</h2>
-        <button onclick="openModal('addPocket')" class="btn-primary text-sm px-4 py-2.5 shrink-0">+ Crear bolsillo</button>
       </div>
       <div id="pocketsContent"></div>
     </div>
@@ -197,7 +202,7 @@
         </div>
         <div class="flex gap-2">
           <button onclick="refreshHouseData()" class="bg-indigo-50 text-indigo-600 font-bold text-sm px-3 py-2.5 rounded-xl">↻</button>
-          <button id="houseAddBtn" onclick="houseAddAction()" class="btn-primary text-sm px-4 py-2.5 shrink-0">+ Agregar pago</button>
+          <button id="houseAddBtn" onclick="houseAddAction()" class="btn-primary text-sm px-4 py-2.5 shrink-0 mobile-fab-add">+ Agregar pago</button>
         </div>
       </div>
       <div id="houseContent" class="space-y-3"></div>
@@ -467,6 +472,7 @@ let houseFollowupSyncTimer1 = null;
 let houseFollowupSyncTimer2 = null;
 let selectedIncomeCategory = '';
 let incomeTab = 'active';
+let incomeMonth = '';
 let calDate = null;
 let lastUndoAction = null;
 
@@ -668,6 +674,7 @@ function load() {
   loadHouseLocal();
   finMonth = monthKey(today());
   analysisMonth = finMonth;
+  incomeMonth = finMonth;
 }
 
 function loadHouseLocal() {
@@ -1018,7 +1025,7 @@ function getUpcomingItems(days=14) {
   S.oneTimePayments.forEach(o=>{
     if(o.paid) return;
     const d=parseDate(o.dueDate);
-    if(d>=t&&d<=limit) items.push({type:'onetime',id:o.id,name:o.name,amount:o.amount,date:o.dueDate,days:daysUntil(o.dueDate)});
+    if(d>=t&&d<=limit) items.push({type:'onetime',id:o.id,name:o.name,amount:o.amount,date:o.dueDate,days:daysUntil(o.dueDate),category:o.category||'único'});
   });
   S.expenses.forEach(e=>{
     if(e.paid) return;
@@ -1057,8 +1064,34 @@ function getUpcomingItems(days=14) {
     const d=parseDate(list.date);
     if(d>=t&&d<=limit) items.push({type:'shopping',id:list.id,name:`Compras: ${list.title}`,amount:0,date:list.date,days:daysUntil(list.date),pending});
   });
+  [monthKey(t),monthKey(new Date(t.getFullYear(),t.getMonth()+1,1))].forEach(m=>{
+    getMonthPayments(m).forEach(p=>{
+      const d=parseDate(p.date);
+      if(p.paid || p.kind==='loan' || d<t || d>limit) return;
+      const type=p.kind==='bill'?'bill':p.kind==='onetime'?'onetime':p.kind==='expense'?'expense':p.kind==='borrowed'?'borrowed':p.kind==='house'?'house':p.kind;
+      items.push({type,id:p.id,paymentId:p.paymentId,name:p.kind==='house'?`Casa: ${p.name}`:p.name,amount:p.amount,date:p.date,dateKey:p.date,days:daysUntil(p.date),emoji:p.emoji,category:p.category});
+    });
+  });
+  const seen=new Set(), unique=[];
+  items.forEach(item=>{
+    const key=[item.type,item.id,item.paymentId||'',item.date||item.dateKey||''].join('|');
+    if(seen.has(key)) return;
+    seen.add(key); unique.push(item);
+  });
+  items.length=0; items.push(...unique);
   items.sort((a,b)=>a.days-b.days);
   return items;
+}
+
+function homeNoPayButton(item) {
+  if(!item || !['bill','onetime','expense','borrowed','house'].includes(item.type)) return '';
+  if(item.type==='house') {
+    const h=(H.items||[]).find(x=>x.id===item.id);
+    if(!h || h.assignedTo!==currentHousePerson()) return '';
+  }
+  const kind={bill:'bill',onetime:'onetime',expense:'expense',borrowed:'borrowed',house:'house'}[item.type];
+  const payload=[kind,item.id,item.paymentId||'',item.date||item.dateKey||''].join(':');
+  return `<button onclick="openModal('skipPayment','${payload}')" class="text-xs bg-amber-50 text-amber-700 font-semibold px-2 py-1 rounded-full">No pagar</button>`;
 }
 
 // ═══════════════════════════════════════
@@ -1071,7 +1104,7 @@ function updateHeaderBalance() {
   const lbl = document.getElementById('headerBalanceLabel');
   if(wrap) wrap.classList.toggle('hidden', currentView==='home');
   if(el) { el.textContent=(bal<0?'-':'')+fmt(Math.abs(bal)); el.className=`text-lg font-bold leading-none ${bal>=0?'text-indigo-600':'text-red-500'}`; }
-  if(lbl) lbl.textContent = S.lastActionTime ? `Últ. act. ${fmtActionTime(S.lastActionTime)}` : 'Balance libre';
+  if(lbl) lbl.textContent = 'Balance libre';
 }
 
 // ═══════════════════════════════════════
@@ -1083,7 +1116,7 @@ function renderHome() {
   const pay14=upcoming.filter(x=>['bill','onetime','expense','borrowed','house'].includes(x.type)).reduce((s,x)=>s+x.amount,0);
   const owedToMe=S.loans.reduce((s,l)=>s+Math.max(0,(l.totalAmount||0)-loanPaid(l)),0);
   const t=today(), mk=monthKey(t);
-  const monthPayments=getMonthPayments(mk).filter(x=>x.kind!=='loan'&&!x.houseRef);
+  const monthPayments=getMonthPayments(mk).filter(x=>x.kind!=='loan');
   const paidAmt=monthPayments.filter(x=>x.paid).reduce((s,x)=>s+x.amount,0);
   const totalMo=monthPayments.reduce((s,x)=>s+x.amount,0);
   const pct=totalMo>0?Math.round(paidAmt/totalMo*100):0;
@@ -1096,6 +1129,7 @@ function renderHome() {
     <p class="text-xl font-extrabold text-slate-800 leading-tight">${greet}${name?', ':''}<span class="text-indigo-600">${name||''}</span></p>
     <p class="text-sm text-slate-400 mt-1">Así van tus cuentas</p>
     <div class="text-xs text-slate-400 mt-1"><span class="font-bold uppercase tracking-wide text-indigo-400">Hoy</span> <span class="font-semibold text-slate-600">${fmtDateLong(isoToday())}</span></div>
+    ${S.lastActionTime?`<div class="text-[11px] text-indigo-400 mt-1 font-semibold">Actualizado ${fmtActionTime(S.lastActionTime)}</div>`:''}
   </div>
 
   <div class="grid grid-cols-3 gap-2">
@@ -1140,12 +1174,12 @@ function renderHome() {
       const color=item.type==='income'?'text-green-600':item.type==='task'?'text-slate-500':'text-indigo-700';
       let actionBtn;
       if(item.type==='income') actionBtn=`<button onclick="openModal('confirmReceive','${item.id}')" class="text-xs bg-green-50 text-green-700 font-semibold px-3 py-1 rounded-full">Recibido ✓</button>`;
-      else if(item.type==='bill') actionBtn=`<button onclick="openModal('confirmPay','${item.id}','${item.dateKey}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Pagar ✓</button>`;
-      else if(item.type==='onetime') actionBtn=`<button onclick="openModal('confirmPayOnce','${item.id}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Pagar ✓</button>`;
-      else if(item.type==='expense') actionBtn=`<button onclick="markExpensePaid('${item.id}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Pagar ✓</button>`;
-      else if(item.type==='borrowed') actionBtn=`<button onclick="markBorrowedPaid('${item.id}','${item.paymentId||''}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Pagar ✓</button>`;
-      else if(item.type==='house') actionBtn=`<button onclick="openModal('addHousePayment','${item.id}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Abonar ✓</button>`;
-      else if(item.type==='shopping') actionBtn=`<button onclick="openModal('shoppingListDetail','${item.id}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Abrir</button>`;
+      else if(item.type==='bill') actionBtn=`<div class="flex gap-1 justify-end flex-wrap"><button onclick="openModal('confirmPay','${item.id}','${item.dateKey}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Pagar ✓</button>${homeNoPayButton(item)}</div>`;
+      else if(item.type==='onetime') actionBtn=`<div class="flex gap-1 justify-end flex-wrap"><button onclick="openModal('confirmPayOnce','${item.id}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Pagar ✓</button>${homeNoPayButton(item)}</div>`;
+      else if(item.type==='expense') actionBtn=`<div class="flex gap-1 justify-end flex-wrap"><button onclick="markExpensePaid('${item.id}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Pagar ✓</button>${homeNoPayButton(item)}</div>`;
+      else if(item.type==='borrowed') actionBtn=`<div class="flex gap-1 justify-end flex-wrap"><button onclick="markBorrowedPaid('${item.id}','${item.paymentId||''}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Pagar ✓</button>${homeNoPayButton(item)}</div>`;
+      else if(item.type==='house') actionBtn=`<div class="flex gap-1 justify-end flex-wrap"><button onclick="openModal('addHousePayment','${item.id}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Abonar ✓</button>${homeNoPayButton(item)}</div>`;
+      else if(item.type==='shopping') actionBtn=`<div class="flex gap-1 justify-end"><button onclick="completeShoppingList('${item.id}',true)" class="text-xs bg-green-50 text-green-700 font-semibold px-2 py-1 rounded-full">Completar</button><button onclick="openModal('shoppingListDetail','${item.id}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-2 py-1 rounded-full">Abrir</button></div>`;
       else if(item.type==='task') actionBtn=`<div class="flex gap-1 justify-end"><button onclick="completeCalendarNote('${item.dateKey}','${item.id}')" class="text-xs bg-green-50 text-green-700 font-semibold px-2 py-1 rounded-full">Completar</button><button onclick="openModal('rescheduleCalendarNote','${item.dateKey}','${item.id}')" class="text-xs bg-slate-100 text-slate-600 font-semibold px-2 py-1 rounded-full">Mover</button></div>`;
       else actionBtn=`<button onclick="openModal('addLoanPayment','${item.id}')" class="text-xs bg-purple-50 text-purple-700 font-semibold px-3 py-1 rounded-full">Registrar</button>`;
       html+=`<div class="card p-3.5 flex items-center gap-3">
@@ -1153,9 +1187,9 @@ function renderHome() {
         <div class="flex-1 min-w-0">
           <div class="font-semibold text-slate-800 text-sm truncate">${item.name}</div>
           <div class="flex items-center gap-2 mt-0.5">
-            <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">${item.type==='task'?'Tarea':item.type==='shopping'?'Compras':'Pago'}</span>
+            <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">${item.type==='income'?'Ingreso':item.type==='task'?'Tarea':item.type==='shopping'?'Compras':'Pago'}</span>
             <span class="text-xs ${status.cls} px-2 py-0.5 rounded-full font-medium">${status.label}</span>
-            <span class="text-xs text-slate-400">${fmtDate(item.date)}</span>
+            <span class="text-xs text-slate-600 font-semibold">${fmtDate(item.date)}</span>
           </div>
         </div>
         <div class="text-right">
@@ -1199,7 +1233,7 @@ function saveShoppingListMeta(listId) {
   save(); closeModal(); calDate=date; renderCurrentView(); showToast('Lista actualizada');
 }
 
-function completeShoppingList(listId) {
+function completeShoppingList(listId, stay=false) {
   const list=(S.shoppingLists||[]).find(x=>x.id===listId);
   if(!list) return;
   const done=!list.completed;
@@ -1207,7 +1241,10 @@ function completeShoppingList(listId) {
   list.completed=done;
   list.items=(list.items||[]).map(item=>({...item,done,updatedAt:now}));
   list.updatedAt=now;
-  save(); openModal('shoppingListDetail',listId); renderCurrentView(); showToast(done?'Lista completada':'Lista reabierta');
+  save();
+  if(stay) renderCurrentView();
+  else { openModal('shoppingListDetail',listId); renderCurrentView(); }
+  showToast(done?'Lista completada':'Lista reabierta');
 }
 
 function updateHeaderTitle() {
@@ -1243,7 +1280,6 @@ function deleteShoppingList(listId) {
   S.shoppingLists=(S.shoppingLists||[]).filter(x=>x.id!==listId);
   save(); closeModal(); renderCurrentView(); showToast('Lista borrada');
 }
-
 // ═══════════════════════════════════════
 // CHEQUES
 // ═══════════════════════════════════════
@@ -1251,7 +1287,9 @@ function renderChecks() {
   const active=[...S.paychecks].filter(p=>!p.received).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
   const tx=getTransactions(12).filter(t=>t.sign==='+');
   const allIncome=getTransactions(9999).filter(t=>t.sign==='+');
-  const now=today(), thisMonth=monthKey(now);
+  if(!incomeMonth) incomeMonth=monthKey(today());
+  const [iy,im]=incomeMonth.split('-').map(Number);
+  const now=today(), thisMonth=incomeMonth;
   const thisYear=now.getFullYear();
   const yearIn=allIncome.filter(t=>parseDate(t.date).getFullYear()===thisYear).reduce((s,t)=>s+t.amount,0);
   const thisIn=allIncome.filter(t=>monthKey(parseDate(t.date))===thisMonth).reduce((s,t)=>s+t.amount,0);
@@ -1260,7 +1298,12 @@ function renderChecks() {
   S.paychecks.forEach(p=>{const key=paycheckSourceLabel(p); (groups[key]||(groups[key]=[])).push(p);});
   const groupCards=Object.entries(groups).sort(([a],[b])=>a.localeCompare(b));
   if(!incomeTab) incomeTab='active';
-  let html=`<div class="grid grid-cols-3 gap-2 mb-4">
+  let html=`<div class="finance-month-nav mb-3">
+    <button onclick="changeIncomeMonth(-1)" class="bg-white text-indigo-500 border border-indigo-100 rounded-xl px-3 py-2 text-sm font-bold">‹</button>
+    <div class="text-center"><h2 class="text-2xl font-extrabold text-slate-800 leading-tight">${['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'][im-1]}</h2><p class="text-xs text-slate-400">Ingresos ${iy}</p></div>
+    <button onclick="changeIncomeMonth(1)" class="bg-white text-indigo-500 border border-indigo-100 rounded-xl px-3 py-2 text-sm font-bold">›</button>
+  </div>
+  <div class="grid grid-cols-3 gap-2 mb-4">
     <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">Este año</div><div class="text-lg font-extrabold text-green-600">${fmt(yearIn)}</div></div>
     <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">Este mes</div><div class="text-lg font-extrabold text-green-600">${fmt(thisIn)}</div></div>
     <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">Pagado a hoy</div><div class="text-lg font-extrabold text-green-600">${fmt(paidToToday)}</div></div>
@@ -1293,9 +1336,17 @@ function renderChecks() {
     });
   } else {
     html+=`<div class="font-bold text-indigo-700 text-xs uppercase tracking-wide mb-2">Historial de pagos recibidos</div>`;
-    html+=tx.length?tx.map(t=>`<button onclick="showToast('${t.name}: ${fmt(t.amount)}')" class="w-full text-left card p-3 mb-2 flex justify-between"><div><div class="text-sm font-semibold text-slate-700">${t.name}</div><div class="text-xs text-slate-400">${t.type} · ${fmtDate(t.date)}</div></div><div class="font-bold text-green-600">+${fmt(t.amount)}</div></button>`).join(''):`<div class="card p-4 text-center text-indigo-300 text-sm">Sin ingresos registrados.</div>`;
+    const monthTx=tx.filter(t=>txMonthMatches(t.date,incomeMonth));
+    html+=monthTx.length?monthTx.map(t=>`<button onclick="showToast('${t.name}: ${fmt(t.amount)}')" class="w-full text-left card p-3 mb-2 flex justify-between"><div><div class="text-sm font-semibold text-slate-700">${t.name}</div><div class="text-xs text-slate-400">${t.type} · ${fmtDate(t.date)}</div></div><div class="font-bold text-green-600">+${fmt(t.amount)}</div></button>`).join(''):`<div class="card p-4 text-center text-indigo-300 text-sm">Sin ingresos registrados en este mes.</div>`;
   }
   document.getElementById('checksList').innerHTML=html;
+}
+
+function changeIncomeMonth(delta) {
+  const d=parseDate(`${incomeMonth||monthKey(today())}-01`);
+  d.setMonth(d.getMonth()+delta);
+  incomeMonth=monthKey(d);
+  renderChecks();
 }
 
 function incomeRow(p, received=false, canAct=true) {
@@ -1311,7 +1362,6 @@ function incomeRow(p, received=false, canAct=true) {
       <div class="flex gap-2 mt-2">
         ${canAct?(received?`<button onclick="unmarkReceived('${p.id}');closeModal()" class="flex-1 bg-slate-100 text-slate-600 text-sm font-bold py-2 rounded-xl">Deshacer recibido</button>`:`<button onclick="receiveIncomeAndRefresh('${p.id}')" class="flex-1 bg-green-600 text-white text-sm font-bold py-2 rounded-xl">✓ Marcar recibido</button><button onclick="openModal('skipIncomePayment','${p.id}')" class="bg-amber-50 text-amber-700 text-sm font-bold px-3 py-2 rounded-xl">No recibido</button>`):`<div class="flex-1 text-xs text-slate-400 py-2">Informativo</div>`}
         ${canAct?`<button onclick="openModal('editPaycheck','${p.id}')" class="bg-slate-100 text-slate-600 text-sm px-4 py-2 rounded-xl">Editar</button>`:''}
-        ${canAct?`<button onclick="deletePaycheck('${p.id}')" class="bg-red-50 text-red-400 text-sm px-3 py-2 rounded-xl">Borrar</button>`:''}
       </div>
     </div>`;
 }
@@ -1448,6 +1498,12 @@ function setFinanceMonth(month) {
   finMonth=month;
   renderBills();
 }
+function changeFinanceMonth(delta) {
+  const d=parseDate(`${finMonth||monthKey(today())}-01`);
+  d.setMonth(d.getMonth()+delta);
+  finMonth=monthKey(d);
+  renderBills();
+}
 
 function renderBills() {
   const t=today();
@@ -1455,15 +1511,15 @@ function renderBills() {
 
   if(currentTab==='monthly') {
     const [fy,fm]=finMonth.split('-').map(Number);
-    const selectedMonthDate=new Date(fy,fm-1,1);
-    const months=[new Date(fy,fm-2,1), selectedMonthDate, new Date(fy,fm,1)];
-    html+=`<div class="flex items-center gap-2 mb-3"><div id="monthCarousel" class="month-carousel flex-1 mb-0">${months.map(d=>{
-      const key=monthKey(d), active=key===finMonth;
-      return `<button onclick="setFinanceMonth('${key}')" class="${active?'m-active':'m-inactive'}">${['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPT','OCT','NOV','DIC'][d.getMonth()]}</button>`;
-    }).join('')}</div><button onclick="facturaAddAction()" class="btn-primary text-sm px-4 py-2.5 shrink-0">${financeAddLabel()}</button></div>`;
+    html+=`<div class="finance-month-nav mb-3">
+      <button onclick="changeFinanceMonth(-1)" class="bg-white text-indigo-500 border border-indigo-100 rounded-xl px-3 py-2 text-sm font-bold">‹</button>
+      <div class="text-center"><h2 class="text-2xl font-extrabold text-slate-800 leading-tight">${['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'][fm-1]}</h2><p class="text-xs text-slate-400">Finanzas ${fy}</p></div>
+      <button onclick="changeFinanceMonth(1)" class="bg-white text-indigo-500 border border-indigo-100 rounded-xl px-3 py-2 text-sm font-bold">›</button>
+    </div>
+    <div class="flex justify-end mb-3"><button onclick="facturaAddAction()" class="btn-primary text-sm px-4 py-2.5 shrink-0 mobile-fab-add">${financeAddLabel()}</button></div>`;
     const payments=getMonthPayments(finMonth);
-    const paid=payments.filter(p=>p.paid&&!p.houseRef).reduce((s,p)=>s+p.amount,0);
-    const total=payments.filter(p=>!p.houseRef).reduce((s,p)=>s+p.amount,0);
+    const paid=payments.filter(p=>p.paid&&p.kind!=='loan').reduce((s,p)=>s+p.amount,0);
+    const total=payments.filter(p=>p.kind!=='loan').reduce((s,p)=>s+p.amount,0);
     const [yy,mm]=finMonth.split('-').map(Number);
     const lastDay=new Date(yy,mm,0).getDate();
     html+=`<div class="card p-4 mb-3">
@@ -1504,7 +1560,7 @@ function renderBills() {
   }
 
   else if(currentTab==='gastos') {
-    html+=`<div class="flex justify-end mb-3"><button onclick="facturaAddAction()" class="btn-primary text-sm px-4 py-2.5">${financeAddLabel()}</button></div>`;
+    html+=`<div class="flex justify-end mb-3"><button onclick="facturaAddAction()" class="btn-primary text-sm px-4 py-2.5 mobile-fab-add">${financeAddLabel()}</button></div>`;
     const exps=[...S.expenses].sort((a,b)=>new Date(b.date)-new Date(a.date));
     const paidTotal=exps.filter(e=>e.paid).reduce((s,e)=>s+e.amount,0);
     const pendingTotal=exps.filter(e=>!e.paid).reduce((s,e)=>s+e.amount,0);
@@ -1524,7 +1580,6 @@ function renderBills() {
   }
 
   else if(currentTab==='bolsillos') {
-    html+=`<div class="flex justify-end mb-3"><button onclick="facturaAddAction()" class="btn-primary text-sm px-4 py-2.5">${financeAddLabel()}</button></div>`;
     const total=totalPockets(), disponible=freeBalance();
     html+=`<div class="grid grid-cols-2 gap-2 mb-3"><div class="card p-3"><div class="text-xs text-slate-400">Disponible</div><div class="font-bold text-green-600">${fmt(disponible)}</div></div><div class="card p-3"><div class="text-xs text-slate-400">En bolsillos</div><div class="font-bold text-indigo-600">${fmt(total)}</div></div></div>`;
     if(!S.pockets.length) html+=`<div class="text-center text-indigo-300 py-8 space-y-2"><div class="flex justify-center"><svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div><div>Sin bolsillos todavía.</div><div class="text-xs">Crea categorías principales para separar dinero con propósito.</div></div>`;
@@ -1547,7 +1602,7 @@ function renderBills() {
   }
 
   else if(currentTab==='prestamos') {
-    html+=`<div class="flex justify-end mb-3"><button onclick="facturaAddAction()" class="btn-primary text-sm px-4 py-2.5">${financeAddLabel()}</button></div>`;
+    html+=`<div class="flex justify-end mb-3"><button onclick="facturaAddAction()" class="btn-primary text-sm px-4 py-2.5 mobile-fab-add">${financeAddLabel()}</button></div>`;
     const total=S.loans.reduce((s,l)=>s+Math.max(0,l.totalAmount-loanPaid(l)),0);
     html+=`<div class="card p-4 mb-3 bg-purple-50 border border-purple-100"><div class="text-xs text-purple-500 font-bold uppercase">Préstamos por cobrar</div><div class="text-2xl font-bold text-purple-700">${fmt(total)}</div><div class="text-xs text-purple-400 mt-1">Cuando registras un abono, entra al balance como ingreso.</div></div>`;
     if(!S.loans.length) html+=`<div class="text-center text-indigo-300 py-8 space-y-2"><div class="flex justify-center">${itemIcon('loan','')}</div><div>Sin préstamos registrados.</div></div>`;
@@ -1739,15 +1794,7 @@ function monthTitle(key) {
 function spendByCategory(month) {
   const rows={};
   const add=(cat,amount)=>{ rows[cat]=(rows[cat]||0)+(amount||0); };
-  S.paidBills.forEach(p=>{
-    const date=p.paidDate||p.dateKey;
-    if(!txMonthMatches(date,month)) return;
-    const b=S.bills.find(x=>x.id===p.billId);
-    add((b&&b.category)||'facturas', p.paidAmount||(b&&b.amount)||0);
-  });
-  S.oneTimePayments.filter(o=>o.paid&&txMonthMatches(o.paidDate||o.dueDate,month)).forEach(o=>add('pagos únicos',o.paidAmount||o.amount));
-  S.expenses.filter(e=>e.paid&&txMonthMatches(e.paidDate||e.date,month)).forEach(e=>add(e.category||'otros',e.amount));
-  S.borrowedLoans.filter(l=>l.paid&&txMonthMatches(l.paidDate||l.dueDate,month)).forEach(l=>add('préstamos recibidos',l.amount));
+  getMonthPayments(month).filter(p=>p.kind!=='loan').forEach(p=>add(p.category||p.kind||'pagos',p.amount||0));
   return Object.entries(rows).map(([name,amount])=>({name,amount})).sort((a,b)=>b.amount-a.amount);
 }
 
@@ -1765,16 +1812,20 @@ function pieChart(rows, total) {
 }
 
 function renderAnalysis() {
-  const months=analysisMonths();
-  if(!analysisMonth||!months.includes(analysisMonth)) analysisMonth=months[0]||monthKey(today());
+  if(!analysisMonth) analysisMonth=monthKey(today());
+  const [ay,am]=analysisMonth.split('-').map(Number);
   const incomes=getTransactions(9999).filter(t=>t.sign==='+'&&txMonthMatches(t.date,analysisMonth));
-  const expenses=getTransactions(9999).filter(t=>t.sign==='-'&&txMonthMatches(t.date,analysisMonth));
+  const expenses=getMonthPayments(analysisMonth).filter(p=>p.kind!=='loan');
   const incomeTotal=incomes.reduce((s,t)=>s+t.amount,0);
   const expenseTotal=expenses.reduce((s,t)=>s+t.amount,0);
   const balance=incomeTotal-expenseTotal;
   const cats=spendByCategory(analysisMonth);
   const totalCats=cats.reduce((s,c)=>s+c.amount,0);
-  let html=`<div class="tabs-scroll mb-3">${months.map(m=>`<button onclick="setAnalysisMonth('${m}')" class="${m===analysisMonth?'bg-indigo-600 text-white':'bg-white text-indigo-500 border border-indigo-100'} rounded-lg px-4 py-2 text-xs font-bold whitespace-nowrap">${monthTitle(m)}</button>`).join('')}</div>`;
+  let html=`<div class="finance-month-nav mb-3">
+    <button onclick="changeAnalysisMonth(-1)" class="bg-white text-indigo-500 border border-indigo-100 rounded-xl px-3 py-2 text-sm font-bold">‹</button>
+    <div class="text-center"><h2 class="text-2xl font-extrabold text-slate-800 leading-tight">${['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'][am-1]}</h2><p class="text-xs text-slate-400">Análisis ${ay}</p></div>
+    <button onclick="changeAnalysisMonth(1)" class="bg-white text-indigo-500 border border-indigo-100 rounded-xl px-3 py-2 text-sm font-bold">›</button>
+  </div>`;
   html+=`<div class="grid grid-cols-3 gap-2">
     <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">Ingresos</div><div class="text-lg font-extrabold text-green-600">${fmt(incomeTotal)}</div></div>
     <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">Egresos</div><div class="text-lg font-extrabold text-red-500">${fmt(expenseTotal)}</div></div>
@@ -1787,13 +1838,20 @@ function renderAnalysis() {
       const colors=['bg-indigo-600','bg-emerald-500','bg-orange-500','bg-red-500','bg-cyan-500','bg-violet-500','bg-amber-500','bg-slate-500'];
       const pct=totalCats?Math.round(c.amount/totalCats*100):0;
       return `<div class="flex items-center justify-between text-sm"><div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full ${colors[i%colors.length]}"></span><span class="font-semibold text-slate-700 capitalize">${c.name}</span></div><div class="font-bold text-slate-800">${fmt(c.amount)} <span class="text-xs text-slate-400">(${pct}%)</span></div></div>`;
-    }).join(''):`<div class="text-sm text-indigo-300 text-center py-3">No hay egresos pagados en este mes.</div>`}</div>
+    }).join(''):`<div class="text-sm text-indigo-300 text-center py-3">No hay egresos en este mes.</div>`}</div>
   </div>`;
   document.getElementById('analysisContent').innerHTML=html;
 }
 
 function setAnalysisMonth(month) {
   analysisMonth=month;
+  renderAnalysis();
+}
+
+function changeAnalysisMonth(delta) {
+  const d=parseDate(`${analysisMonth||monthKey(today())}-01`);
+  d.setMonth(d.getMonth()+delta);
+  analysisMonth=monthKey(d);
   renderAnalysis();
 }
 
@@ -2293,19 +2351,19 @@ function openModal(type, id, extra) {
       const start=today(), fut=[];
       for(let i=0;i<6;i++){const d=getBillDueDate(b,new Date(start.getFullYear(),start.getMonth()+i,1)); const dk=fmtISO(d); if(d>=start&&!isBillPaid(b.id,dk)) fut.push(dk);}
       future=fut.map(d=>`<div class="flex justify-between py-2 border-t border-slate-50"><span>${fmtDate(d)}</span><span class="font-bold text-slate-700">${fmt(b.amount)}</span></div>`).join('');
-      actions=`<button onclick="openModal('confirmPay','${b.id}','${pdate}')" class="flex-1 btn-primary py-3">Pagar</button><button onclick="openModal('editBill','${b.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Editar</button>`;
+      actions=`<button onclick="openModal('confirmPay','${b.id}','${pdate}')" class="flex-1 btn-primary py-3">Pagar</button><button onclick="openModal('skipPayment','bill:${b.id}::${pdate}')" class="bg-amber-50 text-amber-700 font-semibold px-4 rounded-xl">No pagar</button><button onclick="openModal('editBill','${b.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Editar</button>`;
     } else if(kind==='onetime') {
       const o=S.oneTimePayments.find(x=>x.id===pid); if(!o) return;
       title=`${o.name}`; subtitle=`Pago único · ${o.paid?'Pagado':'Pendiente'} · ${fmtDate(o.paidDate||o.dueDate)}`; amount=o.paidAmount||o.amount;
       rows=o.paid?`<div class="flex justify-between py-2 border-t border-slate-50"><span>${fmtDate(o.paidDate||o.dueDate)}</span><span class="font-bold text-green-600">${fmt(o.paidAmount||o.amount)}</span></div>`:'';
       future=!o.paid?`<div class="flex justify-between py-2 border-t border-slate-50"><span>${fmtDate(o.dueDate)}</span><span class="font-bold text-slate-700">${fmt(o.amount)}</span></div>`:'';
-      actions=`<button onclick="openModal('confirmPayOnce','${o.id}')" class="flex-1 btn-primary py-3">Pagar</button><button onclick="openModal('editOneTime','${o.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Editar</button>`;
+      actions=o.paid?`<button onclick="unmarkOneTimePaid('${o.id}');closeModal()" class="flex-1 bg-slate-100 text-slate-600 font-semibold py-3 rounded-xl">Deshacer</button>`:`<button onclick="openModal('confirmPayOnce','${o.id}')" class="flex-1 btn-primary py-3">Pagar</button><button onclick="openModal('skipPayment','onetime:${o.id}::${o.dueDate}')" class="bg-amber-50 text-amber-700 font-semibold px-4 rounded-xl">No pagar</button><button onclick="openModal('editOneTime','${o.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Editar</button>`;
     } else if(kind==='expense') {
       const e=S.expenses.find(x=>x.id===pid); if(!e) return;
       title=`${e.name}`; subtitle=`Gasto · ${e.category||'otros'} · ${e.paid?'Pagado':'Pendiente'}`; amount=e.amount;
       rows=e.paid?`<div class="flex justify-between py-2 border-t border-slate-50"><span>${fmtDate(e.paidDate||e.date)}</span><span class="font-bold text-red-500">${fmt(e.amount)}</span></div>`:'';
       future=!e.paid?`<div class="flex justify-between py-2 border-t border-slate-50"><span>${fmtDate(e.dueDate||e.date)}</span><span class="font-bold text-slate-700">${fmt(e.amount)}</span></div>`:'';
-      actions=e.paid?`<button onclick="unmarkExpensePaid('${e.id}');closeModal()" class="flex-1 bg-slate-100 text-slate-600 font-semibold py-3 rounded-xl">Deshacer</button>`:`<button onclick="markExpensePaid('${e.id}');closeModal()" class="flex-1 btn-primary py-3">Marcar pagado</button>`;
+      actions=e.paid?`<button onclick="unmarkExpensePaid('${e.id}');closeModal()" class="flex-1 bg-slate-100 text-slate-600 font-semibold py-3 rounded-xl">Deshacer</button>`:`<button onclick="markExpensePaid('${e.id}');closeModal()" class="flex-1 btn-primary py-3">Marcar pagado</button><button onclick="openModal('skipPayment','expense:${e.id}::${e.dueDate||e.date}')" class="bg-amber-50 text-amber-700 font-semibold px-4 rounded-xl">No pagar</button>`;
     } else if(kind==='borrowed') {
       const l=S.borrowedLoans.find(x=>x.id===pid); if(!l) return;
       const inst=borrowedInstallments(l);
@@ -2313,7 +2371,7 @@ function openModal(type, id, extra) {
       title=`Préstamo de ${l.personName}`; subtitle=`Cuota ${p?.number||1} de ${l.paymentsCount||1} · ${freqLabel(l.frequency)} · ${l.description||'Sin descripción'}`; amount=p?.amount||l.perPayment||l.amount;
       rows=inst.filter(x=>x.paid).map(x=>`<div class="flex justify-between py-2 border-t border-slate-50"><span>${fmtDate(x.paidDate||x.date)} · cuota ${x.number}</span><span class="font-bold text-red-500">${fmt(x.amount)}</span></div>`).join('');
       future=inst.filter(x=>!x.paid).map(x=>`<div class="flex justify-between py-2 border-t border-slate-50"><span>${fmtDate(x.date)} · cuota ${x.number}</span><span class="font-bold text-slate-700">${fmt(x.amount)}</span></div>`).join('');
-      actions=p&&p.paid?`<button onclick="unmarkBorrowedPaid('${l.id}','${p.id}');closeModal()" class="flex-1 bg-slate-100 text-slate-600 font-semibold py-3 rounded-xl">Deshacer</button>`:`<button onclick="markBorrowedPaid('${l.id}','${p?p.id:''}');closeModal()" class="flex-1 btn-primary py-3">Pagar cuota</button>`;
+      actions=p&&p.paid?`<button onclick="unmarkBorrowedPaid('${l.id}','${p.id}');closeModal()" class="flex-1 bg-slate-100 text-slate-600 font-semibold py-3 rounded-xl">Deshacer</button>`:`<button onclick="markBorrowedPaid('${l.id}','${p?p.id:''}');closeModal()" class="flex-1 btn-primary py-3">Pagar cuota</button><button onclick="openModal('skipPayment','borrowed:${l.id}:${p?p.id:''}:${p?p.date:pdate}')" class="bg-amber-50 text-amber-700 font-semibold px-4 rounded-xl">No pagar</button>`;
     } else if(kind==='loan') {
       const l=S.loans.find(x=>x.id===pid); if(!l) return;
       title=`Cobrar a ${l.personName}`; subtitle=`Préstamo por cobrar`; amount=l.recurring&&l.recurring.amount?l.recurring.amount:l.totalAmount;
@@ -2326,13 +2384,14 @@ function openModal(type, id, extra) {
       title=`Casa: ${item.name}`; subtitle=`Origen: Casa · ${houseAssigneeLabel(item.assignedTo||'both')} · no duplica totales de Finanzas`; amount=left||item.amount||0;
       rows=(item.payments||[]).map(p=>`<div class="flex justify-between py-2 border-t border-slate-50"><span>${fmtDate(p.date)} · ${p.by||'Casa'}</span><span class="font-bold text-green-600">${fmt(p.amount)}</span></div>`).join('');
       future=left>0?`<div class="flex justify-between py-2 border-t border-slate-50"><span>${fmtDate(item.dueDate||pdate)} · pendiente</span><span class="font-bold text-slate-700">${fmt(left)}</span></div>`:'';
-      actions=left>0?`<button onclick="openModal('addHousePayment','${item.id}')" class="flex-1 btn-primary py-3">Abonar en Casa</button><button onclick="showView('casa');closeModal()" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Ver Casa</button>`:`<button onclick="showView('casa');closeModal()" class="flex-1 bg-slate-100 text-slate-600 font-semibold py-3 rounded-xl">Ver Casa</button>`;
+      const canNoPayHouse=(item.assignedTo||'both')===currentHousePerson();
+      actions=left>0?`<button onclick="openModal('addHousePayment','${item.id}')" class="flex-1 btn-primary py-3">Abonar en Casa</button>${canNoPayHouse?`<button onclick="openModal('skipPayment','house:${item.id}::${item.dueDate||pdate}')" class="bg-amber-50 text-amber-700 font-semibold px-4 rounded-xl">No pagar</button>`:''}<button onclick="showView('casa');closeModal()" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Ver Casa</button>`:`<button onclick="showView('casa');closeModal()" class="flex-1 bg-slate-100 text-slate-600 font-semibold py-3 rounded-xl">Ver Casa</button>`;
     }
     html=`<h3 class="text-lg font-bold text-slate-800 mb-1">${title}</h3><p class="text-sm text-slate-500 mb-4">${subtitle}</p>
     <div class="card p-4 mb-3"><div class="text-xs text-indigo-400 font-bold uppercase">Monto</div><div class="text-2xl font-extrabold text-slate-800">${fmt(amount)}</div></div>
     <div class="font-bold text-indigo-700 text-xs uppercase mb-2">Transacciones anteriores</div>${rows||'<div class="text-sm text-indigo-300 text-center py-3">Sin transacciones anteriores.</div>'}
     <div class="font-bold text-indigo-700 text-xs uppercase mt-4 mb-2">Futuro previsto</div>${future||'<div class="text-sm text-indigo-300 text-center py-3">Sin movimientos futuros previstos.</div>'}
-    <div class="flex gap-2 mt-4">${actions}</div>`;
+    <div class="flex flex-wrap gap-2 mt-4">${actions}</div>`;
   }
 
   else if(type==='confirmReceive') {
