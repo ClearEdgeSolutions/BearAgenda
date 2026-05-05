@@ -11,10 +11,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="BearAgenda">
   <!-- Favicon + iOS home screen icon -->
-  <link rel="icon" type="image/png" href="apple-touch-icon.png">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./apple-touch-icon.png?v=20260504">
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon-180.png?v=20260504">
+  <link rel="apple-touch-icon" sizes="1024x1024" href="./apple-touch-icon.png?v=20260504">
   <!-- PWA manifest -->
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest.json?v=20260504">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -95,8 +96,11 @@
     body.dark #sideMenuPanel { background: #1c1f28 !important; }
     body.dark #modalSheet { background: #1c1f28 !important; }
     body.dark .modal-bg { background: rgba(0,0,0,0.55) !important; }
-    /* logo — fondo blanco siempre, incluso en dark mode */
-    #headerLogoWrap { background: white !important; }
+    #headerLogoWrap { background: white !important; position: relative; }
+    #headerLogoWrap img { position: relative; z-index: 1; }
+    #authScreen.auth-loading-active { background: #fff !important; color: #475569; }
+    .auth-loader-logo { width: 5.9rem; height: 5.9rem; object-fit: contain; }
+    .auth-loader-ring { box-shadow: 0 10px 32px rgba(79,70,229,0.12); }
     /* backgrounds */
     body.dark .bg-indigo-50 { background: #1e2032 !important; }
     body.dark .bg-slate-100 { background: #23262f !important; }
@@ -154,6 +158,18 @@
     body.dark .plan-great { border-left-color: #6b9e80 !important; }
     /* auth */
     body.dark #authScreen { background: #13151b !important; color: #d8dce8; }
+    body.dark #authScreen.auth-loading-active { background: #fff !important; color: #475569 !important; }
+    body.dark #authScreen.auth-loading-active .text-slate-600 { color: #475569 !important; }
+    body.dark #authScreen.auth-loading-active .text-slate-400 { color: #94a3b8 !important; }
+    body.dark #headerLogoWrap { background: transparent !important; }
+    body.dark #headerLogoWrap::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: url("logo-dark-bear.png") center/contain no-repeat;
+      z-index: 0;
+      pointer-events: none;
+    }
     /* misc */
     body.dark .finance-month-nav h2 { color: #d8dce8 !important; }
     body.dark [style*="background: white"], body.dark [style*="background:white"] { background: #1c1f28 !important; }
@@ -182,13 +198,13 @@
     </div>
   </div>
 </header>
-<div id="authScreen" class="fixed inset-0 z-[999] flex items-center justify-center px-5" style="background:#eef2ff">
+<div id="authScreen" class="fixed inset-0 z-[999] flex items-center justify-center px-5" style="background:#fff">
 
   <!-- Pantalla de carga (visible mientras verifica sesión) -->
   <div id="authLoading" class="hidden flex-col items-center justify-center text-center">
     <div class="relative mb-5 w-32 h-32 flex items-center justify-center">
-      <div class="absolute inset-0 rounded-[2rem] border-4 border-indigo-100" style="border-top-color:#6366f1;border-right-color:#818cf8;animation:spin 0.9s cubic-bezier(.4,0,.2,1) infinite"></div>
-      <img src="logo sin texto.png" alt="BearAgenda" class="w-28 h-28 rounded-3xl object-contain mx-auto relative z-10" style="box-shadow:0 8px 32px rgba(79,70,229,0.25);transform:scale(1.45);transform-origin:center center;">
+      <div class="auth-loader-ring absolute inset-0 rounded-[2rem] border-4 border-indigo-100" style="border-top-color:#6366f1;border-right-color:#818cf8;animation:spin 0.95s cubic-bezier(.4,0,.2,1) infinite"></div>
+      <img src="logo sin texto.png" alt="BearAgenda" class="auth-loader-logo rounded-3xl mx-auto relative z-10">
     </div>
     <p class="text-slate-600 font-semibold text-sm">Cargando tu cuenta...</p>
     <p class="text-slate-400 text-xs mt-1">BearAgenda</p>
@@ -615,6 +631,7 @@ function normalizeBorrowedLoan(l) {
   if(!l.paymentsCount) l.paymentsCount = l.installmentsCount || 1;
   if(!l.frequency) l.frequency = 'monthly';
   if(l.frequency==='biweekly') l.frequency='every_two_weeks';
+  if(!l.emoji) l.emoji = 'bank';
   if(!l.perPayment) l.perPayment = (l.totalAmount||l.amount||0) / Math.max(1,l.paymentsCount||1);
   if(!l.dueDate && l.startDate) l.dueDate = l.startDate;
   if(!l.startDate) l.startDate = l.dueDate || isoToday();
@@ -675,8 +692,21 @@ function normalizeState() {
     if (!b.termType) b.termType = 'indefinite';
     if (b.totalPayments === undefined) b.totalPayments = null;
   });
-  S.paychecks.forEach(p => { if (!p.category) p.category = 'trabajo'; });
-  S.oneTimePayments.forEach(o => { if (o.paidAmount === undefined) o.paidAmount = null; });
+  S.paychecks.forEach(p => {
+    if (!p.category) p.category = 'trabajo';
+    if (!p.emoji) p.emoji = p.category==='persona' ? 'heart' : 'brief';
+    if (p.recurrenceFreq === 'biweekly') p.recurrenceFreq = 'every_two_weeks';
+  });
+  S.oneTimePayments.forEach(o => {
+    if (o.paidAmount === undefined) o.paidAmount = null;
+    if (!Array.isArray(o.payments)) o.payments = [];
+    if (!o.emoji) o.emoji = 'pin';
+    if (!o.frequency) o.frequency = 'once';
+    if (o.frequency === 'biweekly') o.frequency = 'every_two_weeks';
+    if (!o.termType) o.termType = o.frequency === 'once' ? 'term' : 'indefinite';
+    if (o.frequency === 'once' && !o.totalPayments) o.totalPayments = 1;
+    if (o.totalPayments === undefined) o.totalPayments = null;
+  });
   S.expenses.forEach(e => {
     if (e.paid === undefined) e.paid = true;
     if (!e.dueDate) e.dueDate = e.date;
@@ -685,6 +715,7 @@ function normalizeState() {
   S.loans.forEach(l => {
     if (!l.payments) l.payments = [];
     if (!l.source) l.source = {type:'balance',id:null};
+    if (!l.emoji) l.emoji = 'brief';
     if (l.recurring && l.recurring.totalPayments === undefined) l.recurring.totalPayments = null;
   });
   S.borrowedLoans.forEach(l => normalizeBorrowedLoan(l));
@@ -1022,7 +1053,13 @@ function isBillPaid(billId, dateKey) {
   return paid >= ((b&&b.amount)||0);
 }
 function billPaidAmount(billId,dateKey){return S.paidBills.filter(p=>p.billId===billId&&p.dateKey===dateKey).reduce((s,p)=>s+(p.paidAmount||0),0);}
-function oneTimePaidAmount(o){return o?(o.paidAmount||0):0;}
+function oneTimePaidAmount(o,dateKey=null){
+  if(!o) return 0;
+  const payments=Array.isArray(o.payments)?o.payments:[];
+  if(dateKey) return payments.filter(p=>p.dateKey===dateKey).reduce((s,p)=>s+(p.paidAmount||0),0) || (o.frequency==='once'?(o.paidAmount||0):0);
+  return payments.reduce((s,p)=>s+(p.paidAmount||0),0) || (o.paidAmount||0);
+}
+function isOneTimePaid(o,dateKey=null){ return oneTimePaidAmount(o,dateKey) >= ((o&&o.amount)||0); }
 function expensePaidAmount(e){return e?(e.paidAmount||(e.paid?e.amount:0)||0):0;}
 function totalPockets() { return S.pockets.reduce((s,p)=>s+(p.saved||0),0); }
 function loanPaid(loan) { return (loan.payments||[]).reduce((s,p)=>s+p.amount,0); }
@@ -1096,8 +1133,15 @@ function getMonthPayments(month=finMonth) {
     items.push({kind:'bill',id:b.id,date:dk,name:b.name,amount:left||b.amount,originalAmount:b.amount,paidAmount,emoji:b.emoji||'card',paid:left<=0,category:b.category,frequency:b.frequency});
   });
   S.oneTimePayments.forEach(o=>{
-    const paidAmount=oneTimePaidAmount(o), left=Math.max(0,(o.amount||0)-paidAmount);
-    if(monthKey(parseDate(o.dueDate))===month) items.push({kind:'onetime',id:o.id,date:o.dueDate,name:o.name,amount:left||o.amount,originalAmount:o.amount,paidAmount,emoji:'pin',paid:left<=0,category:o.category||'único'});
+    const freq=o.frequency||'once';
+    const rows=freq==='once'
+      ? [{date:o.dueDate,amount:o.amount,label:'Pago único'}]
+      : scheduledRows(o.dueDate,freq,o.amount,{totalPayments:o.termType==='term'?o.totalPayments:null,limit:240});
+    rows.forEach(row=>{
+      if(monthKey(parseDate(row.date))!==month) return;
+      const paidAmount=oneTimePaidAmount(o,row.date), left=Math.max(0,(o.amount||0)-paidAmount);
+      items.push({kind:'onetime',id:o.id,date:row.date,name:o.name,amount:left||o.amount,originalAmount:o.amount,paidAmount,emoji:o.emoji||'pin',paid:left<=0,category:o.category||'único',frequency:freq,termType:o.termType,totalPayments:o.totalPayments});
+    });
   });
   S.expenses.forEach(e=>{
     const d=e.paid ? (e.paidDate||e.date) : (e.dueDate||e.date);
@@ -1106,12 +1150,12 @@ function getMonthPayments(month=finMonth) {
   });
   S.loans.forEach(l=>{
     if(l.recurring&&l.recurring.nextDate&&monthKey(parseDate(l.recurring.nextDate))===month) {
-      items.push({kind:'loan',id:l.id,date:l.recurring.nextDate,name:`Cobrar a ${l.personName}`,amount:l.recurring.amount,emoji:'brief',paid:false,category:'préstamo'});
+      items.push({kind:'loan',id:l.id,date:l.recurring.nextDate,name:`Cobrar a ${l.personName}`,amount:l.recurring.amount,emoji:l.emoji||'brief',paid:false,category:'préstamo'});
     }
   });
   S.borrowedLoans.forEach(l=>{
     borrowedInstallments(l).forEach(p=>{
-      if(monthKey(parseDate(p.date))===month) items.push({kind:'borrowed',id:l.id,paymentId:p.id,date:p.date,name:`Pagar préstamo a ${l.personName} (${p.number}/${l.paymentsCount||1})`,amount:p.amount,emoji:'bank',paid:p.paid,category:`préstamo recibido · ${freqLabel(l.frequency)}`});
+      if(monthKey(parseDate(p.date))===month) items.push({kind:'borrowed',id:l.id,paymentId:p.id,date:p.date,name:`Pagar préstamo a ${l.personName} (${p.number}/${l.paymentsCount||1})`,amount:p.amount,emoji:l.emoji||'bank',paid:p.paid,category:`préstamo recibido · ${freqLabel(l.frequency)}`});
     });
   });
   const who=currentHousePerson();
@@ -1130,7 +1174,10 @@ function getTransactions(limit=8) {
   S.loanPayments=S.loans.flatMap(l=>(l.payments||[]).map(p=>({...p,person:l.personName})));
   S.loanPayments.forEach(p=>tx.push({date:p.date,createdAt:p.createdAt,type:'Ingreso',name:`Abono préstamo: ${p.person}`,amount:p.amount,sign:'+'}));
   S.paidBills.forEach(p=>{const b=S.bills.find(x=>x.id===p.billId); if(b) tx.push({date:p.paidDate||p.dateKey,createdAt:p.createdAt,type:'Pago',name:b.name,amount:p.paidAmount||b.amount,sign:'-'});});
-  S.oneTimePayments.filter(o=>o.paid).forEach(o=>tx.push({date:o.paidDate||o.dueDate,createdAt:o.paidAt,type:'Pago',name:o.name,amount:o.paidAmount||o.amount,sign:'-'}));
+  S.oneTimePayments.forEach(o=>{
+    if(Array.isArray(o.payments)&&o.payments.length) o.payments.forEach(p=>tx.push({date:p.paidDate||p.dateKey||o.dueDate,createdAt:p.paidAt,type:'Pago',name:o.name,amount:p.paidAmount||o.amount,sign:'-'}));
+    else if(o.paid) tx.push({date:o.paidDate||o.dueDate,createdAt:o.paidAt,type:'Pago',name:o.name,amount:o.paidAmount||o.amount,sign:'-'});
+  });
   S.expenses.filter(e=>e.paid).forEach(e=>tx.push({date:e.paidDate||e.date,createdAt:e.paidAt||e.createdAt,type:'Gasto',name:e.name,amount:e.amount,sign:'-'}));
   S.borrowedLoans.forEach(l=>borrowedInstallments(l).filter(p=>p.paid).forEach(p=>tx.push({date:p.paidDate||p.date,createdAt:p.paidAt,type:'Pago',name:`Pago préstamo a ${l.personName}`,amount:p.amount,sign:'-'})));
   (H.items||[]).forEach(item=>(item.payments||[]).forEach(p=>tx.push({date:p.date,createdAt:p.createdAt,type:'Casa',name:`Casa: ${item.name}`,amount:p.amount||0,sign:'-'})));
@@ -1148,7 +1195,7 @@ function getUpcomingItems(days=14) {
   S.paychecks.forEach(p=>{
     if(p.received) return;
     const d=parseDate(p.date);
-    if(d>=t&&d<=limit) items.push({type:'income',id:p.id,name:'Cheque nómina',amount:p.amount,date:p.date,days:daysUntil(p.date),note:p.note,category:p.category});
+    if(d>=t&&d<=limit) items.push({type:'income',id:p.id,name:'Cheque nómina',amount:p.amount,date:p.date,days:daysUntil(p.date),note:p.note,category:p.category,emoji:p.emoji||'brief'});
   });
   for(let i=0;i<=1;i++){
     const cm=new Date(t.getFullYear(),t.getMonth()+i,1);
@@ -1160,9 +1207,15 @@ function getUpcomingItems(days=14) {
     });
   }
   S.oneTimePayments.forEach(o=>{
-    if(o.paid) return;
-    const d=parseDate(o.dueDate);
-    if(d>=t&&d<=limit) items.push({type:'onetime',id:o.id,name:o.name,amount:o.amount,date:o.dueDate,days:daysUntil(o.dueDate),category:o.category||'único',emoji:'pin'});
+    const freq=o.frequency||'once';
+    const rows=freq==='once'
+      ? [{date:o.dueDate,amount:o.amount}]
+      : scheduledRows(o.dueDate,freq,o.amount,{totalPayments:o.termType==='term'?o.totalPayments:null,limit:120});
+    rows.forEach(row=>{
+      if(isOneTimePaid(o,row.date)) return;
+      const d=parseDate(row.date);
+      if(d>=t&&d<=limit) items.push({type:'onetime',id:o.id,name:o.name,amount:o.amount,date:row.date,days:daysUntil(row.date),category:o.category||'único',emoji:o.emoji||'pin'});
+    });
   });
   S.expenses.forEach(e=>{
     if(e.paid) return;
@@ -1174,12 +1227,12 @@ function getUpcomingItems(days=14) {
   S.loans.forEach(l=>{
     if(!l.recurring||!l.recurring.nextDate) return;
     const d=parseDate(l.recurring.nextDate);
-    if(d>=t&&d<=limit) items.push({type:'loan',id:l.id,name:`Cobrar a ${l.personName}`,amount:l.recurring.amount,date:l.recurring.nextDate,days:daysUntil(l.recurring.nextDate)});
+    if(d>=t&&d<=limit) items.push({type:'loan',id:l.id,name:`Cobrar a ${l.personName}`,amount:l.recurring.amount,date:l.recurring.nextDate,days:daysUntil(l.recurring.nextDate),emoji:l.emoji||'brief'});
   });
   S.borrowedLoans.forEach(l=>{
     borrowedInstallments(l).filter(p=>!p.paid).forEach(p=>{
       const d=parseDate(p.date);
-      if(d>=t&&d<=limit) items.push({type:'borrowed',id:l.id,paymentId:p.id,name:`Pagar préstamo a ${l.personName}`,amount:p.amount,date:p.date,days:daysUntil(p.date)});
+      if(d>=t&&d<=limit) items.push({type:'borrowed',id:l.id,paymentId:p.id,name:`Pagar préstamo a ${l.personName}`,amount:p.amount,date:p.date,days:daysUntil(p.date),emoji:l.emoji||'bank'});
     });
   });
   const who=currentHousePerson();
@@ -1477,7 +1530,7 @@ function renderChecks() {
       const next=futureItems[0];
       html+=`<button onclick="openModal('incomeSourceDetail','${encodeURIComponent(cat)}')" class="w-full text-left card p-4 mb-3">
         <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center">${itemIcon('income','')}</div>
+          <div class="w-12 h-12 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center">${renderStoredIcon(sample.emoji||'brief','income',sample.category||'')}</div>
           <div class="flex-1 min-w-0"><div class="font-bold text-slate-800">${cat}</div><div class="text-xs text-slate-400">${paycheckFreqLabel(sample)} · ${items.length} movimientos</div>${next?`<div class="text-xs text-green-600 mt-0.5">Siguiente ${fmtDate(next.date)} · ${fmt(next.amount)}</div>`:'<div class="text-xs text-slate-400 mt-0.5">Sin pagos futuros</div>'}</div>
           <div class="text-right"><div class="font-bold text-green-600">${fmt(sample.amount||0)}</div><div class="text-xs text-slate-400">por pago</div></div>
         </div>
@@ -1507,7 +1560,7 @@ function incomeRow(p, received=false, canAct=true) {
   const badge=received?`<span class="status-paid text-xs font-bold px-2.5 py-0.5 rounded-full">Recibido</span>`:d<0?`<span class="status-overdue text-xs font-bold px-2.5 py-0.5 rounded-full">Pasado</span>`:d===0?`<span class="status-due-soon text-xs font-bold px-2.5 py-0.5 rounded-full">Hoy</span>`:d<=7?`<span class="status-due-soon text-xs font-bold px-2.5 py-0.5 rounded-full">En ${d}d</span>`:`<span class="status-upcoming text-xs font-bold px-2.5 py-0.5 rounded-full">${fmtDate(p.date)}</span>`;
   return `<div class="border-t border-slate-50 py-2">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center">${itemIcon('income','')}</div>
+        <div class="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center">${renderStoredIcon(p.emoji||'brief','income',p.category||'')}</div>
         <div class="flex-1"><div class="flex flex-wrap gap-1.5 items-center"><span class="font-semibold text-slate-800">Cheque nómina</span>${badge}</div>
         <div class="text-xs text-slate-400 mt-0.5">${fmtDateLong(received?(p.receivedDate||p.date):p.date)} · ${p.paymentType==='unico'?'único':(p.paymentType||'recurrente')} · ${methodLabel(p.method||'deposito')}${p.note?' · '+p.note:''}</div></div>
         <div class="font-bold text-green-600">+${fmt(p.amount)}</div>
@@ -1663,6 +1716,9 @@ const EMOJI_TO_KEY = {
 };
 const ICON_KEYS = {
   finance:['card','home','shield','phone','light','drop','fire','wifi','bank','car','fuel','cart','food','game','film','music','health','paw','cut','receipt','book','tools','broom','gift','plane','bag','coin','pin','brief','chart','heart','box'],
+  income: ['brief','coin','bank','chart','receipt','card','heart','pin','gift','plane','tools','box'],
+  loan:   ['brief','bank','card','coin','chart','receipt','heart','pin','home','car','tools','box'],
+  borrowed:['bank','card','receipt','coin','brief','pin','home','car','tools','heart'],
   pocket: ['brief','coin','chart','home','car','plane','gift','paw','cart','health','book','tools','receipt','card','bag','pin','heart','box'],
   house:  ['home','drop','light','fire','wifi','cart','food','tools','broom','paw','car','receipt','bag','gift','chart','heart','pin','bed','box']
 };
@@ -1805,7 +1861,7 @@ function renderBills() {
     const renderPaymentCard=item=>{
       const status=item.paid?{cls:'status-paid',label:'Pagado'}:getStatusInfo(daysUntil(item.date));
       let action=`<button onclick="event.stopPropagation();openModal('confirmPay','${item.id}','${item.date}')" class="flex-1 btn-primary py-2 text-sm">Pagar</button>`;
-      if(item.kind==='onetime') action=`<button onclick="event.stopPropagation();openModal('confirmPayOnce','${item.id}')" class="flex-1 btn-primary py-2 text-sm">Pagar</button>`;
+      if(item.kind==='onetime') action=`<button onclick="event.stopPropagation();openModal('confirmPayOnce','${item.id}','${item.date}')" class="flex-1 btn-primary py-2 text-sm">Pagar</button>`;
       if(item.kind==='expense') action=item.paid?`<button onclick="event.stopPropagation();unmarkExpensePaid('${item.id}')" class="flex-1 bg-slate-100 text-slate-500 text-sm py-2 rounded-xl">Deshacer</button>`:`<button onclick="event.stopPropagation();markExpensePaid('${item.id}')" class="flex-1 btn-primary py-2 text-sm">Marcar pagado</button>`;
       if(item.kind==='loan') action=`<button onclick="event.stopPropagation();openModal('addLoanPayment','${item.id}')" class="flex-1 bg-purple-50 text-purple-700 font-semibold text-sm py-2 rounded-xl">Registrar abono</button>`;
       if(item.kind==='borrowed') action=item.paid?`<button onclick="event.stopPropagation();unmarkBorrowedPaid('${item.id}','${item.paymentId||''}')" class="flex-1 bg-slate-100 text-slate-500 text-sm py-2 rounded-xl">Deshacer</button>`:`<button onclick="event.stopPropagation();markBorrowedPaid('${item.id}','${item.paymentId||''}')" class="flex-1 btn-primary py-2 text-sm">Pagar</button>`;
@@ -1819,7 +1875,7 @@ function renderBills() {
           <div class="font-bold ${item.kind==='loan'?'text-green-600':'text-slate-800'}">${item.kind==='loan'?'+':'-'}${fmt(item.amount)}</div>
         </div>
         <div class="flex flex-wrap gap-2 mt-3 pt-3 border-t border-slate-50">
-          ${item.paid&&item.kind==='bill'?`<button onclick="event.stopPropagation();unmarkBillPaid('${item.id}','${item.date}')" class="flex-1 bg-slate-100 text-slate-500 text-sm py-2 rounded-xl">Deshacer</button>`:action}
+          ${item.paid&&item.kind==='bill'?`<button onclick="event.stopPropagation();unmarkBillPaid('${item.id}','${item.date}')" class="flex-1 bg-slate-100 text-slate-500 text-sm py-2 rounded-xl">Deshacer</button>`:item.paid&&item.kind==='onetime'?`<button onclick="event.stopPropagation();unmarkOneTimePaid('${item.id}','${item.date}')" class="flex-1 bg-slate-100 text-slate-500 text-sm py-2 rounded-xl">Deshacer</button>`:action}
           ${item.kind==='bill'?`<button onclick="event.stopPropagation();openModal('editBill','${item.id}')" class="bg-slate-100 text-slate-600 text-sm px-4 py-2 rounded-xl">Editar</button>`:''}
           ${item.kind==='onetime'?`<button onclick="event.stopPropagation();openModal('editOneTime','${item.id}')" class="bg-slate-100 text-slate-600 text-sm px-4 py-2 rounded-xl">Editar</button>`:''}
           ${item.kind==='expense'?`<button onclick="event.stopPropagation();openModal('editExpense','${item.id}')" class="bg-slate-100 text-slate-600 text-sm px-4 py-2 rounded-xl">Editar</button>`:''}
@@ -1839,21 +1895,22 @@ function renderBills() {
 
   else if(currentTab==='gastos') {
     html+=`<div class="flex justify-end mb-3"><button onclick="facturaAddAction()" class="btn-primary text-sm px-4 py-2.5 mobile-fab-add">${financeAddLabel()}</button></div>`;
-    const exps=[...S.expenses].filter(e=>monthKey(parseDate(e.paid?e.paidDate||e.date:e.dueDate||e.date))===finMonth).sort((a,b)=>parseDate(b.paid?b.paidDate||b.date:b.dueDate||b.date)-parseDate(a.paid?a.paidDate||a.date:a.dueDate||a.date));
-    const paidTotal=exps.filter(e=>e.paid).reduce((s,e)=>s+e.amount,0);
-    const totalBudget=exps.reduce((s,e)=>s+e.amount,0);
+    const historyItems=getMonthPayments(finMonth).filter(item=>item.kind!=='loan').sort((a,b)=>parseDate(b.date)-parseDate(a.date));
+    const paidTotal=historyItems.reduce((s,item)=>s+(item.paid?((item.paidAmount||0)||(item.originalAmount||item.amount||0)):0),0);
+    const totalBudget=historyItems.reduce((s,item)=>s+(item.originalAmount||item.amount||0),0);
     const pendingTotal=Math.max(0,totalBudget-paidTotal);
-    html+=`<div class="grid grid-cols-2 gap-2 mb-3"><div class="card p-3"><div class="text-xs text-slate-400">Pagado</div><div class="font-bold text-red-500">-${fmt(paidTotal)}</div></div><div class="card p-3"><div class="text-xs text-slate-400">Pendiente</div><div class="font-bold text-amber-600">${fmt(pendingTotal)}</div></div></div>`;
-    const realExps=exps.filter(e=>e.paid);
-    if(!realExps.length) html+=`<div class="text-center text-indigo-300 py-8">Sin transacciones de gastos en este mes.</div>`;
-    realExps.forEach(e=>{
-      html+=`<div class="card p-3.5 mb-2 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-red-50 text-red-400 flex items-center justify-center">${renderStoredIcon(e.emoji||catEmoji(e.category),'expense',e.category)}</div>
-        <div class="flex-1"><div class="font-semibold text-slate-800 text-sm">${e.name}</div><div class="text-xs text-slate-400">${e.paid?'Pagado':'Por pagar'} · ${fmtDate(e.paid?e.paidDate||e.date:e.dueDate||e.date)} · ${e.category||'otros'}</div></div>
-        <div class="flex items-center gap-2"><div class="font-bold ${e.paid?'text-red-500':'text-amber-600'} text-sm">-${fmt(e.amount)}</div>
-        ${!e.paid?`<button onclick="openModal('skipPayment','expense:${e.id}::${e.dueDate||e.date||isoToday()}')" class="bg-amber-50 text-amber-700 text-xs font-bold px-2 py-1 rounded-lg">No pagar</button>`:''}
-        <button onclick="openModal('editExpense','${e.id}')" class="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-lg">Editar</button>
-        <button onclick="deleteExpense('${e.id}')" class="text-slate-300 text-xl leading-none">x</button></div>
+    html+=`<div class="grid grid-cols-2 gap-2 mb-3"><div class="card p-3"><div class="text-xs text-slate-400">Pagado</div><div class="font-bold text-red-500">${fmt(paidTotal)}</div></div><div class="card p-3"><div class="text-xs text-slate-400">Pendiente</div><div class="font-bold text-amber-600">${fmt(pendingTotal)}</div></div></div>`;
+    if(!historyItems.length) html+=`<div class="text-center text-indigo-300 py-8">Sin pagos registrados en este mes.</div>`;
+    historyItems.forEach(item=>{
+      const paidValue=(item.paidAmount||0)||(item.paid?(item.originalAmount||item.amount||0):0);
+      const pendingValue=Math.max(0,(item.originalAmount||item.amount||0)-paidValue);
+      const status=item.paid?{cls:'status-paid',label:'Pagado'}:getStatusInfo(daysUntil(item.date));
+      html+=`<div onclick="openModal('paymentDetail','${item.kind}:${item.id}:${item.date}')" class="card p-3.5 mb-2">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl ${item.paid?'bg-green-50 text-green-600':'bg-red-50 text-red-400'} flex items-center justify-center">${renderStoredIcon(item.emoji,item.kind,item.category)}</div>
+          <div class="flex-1 min-w-0"><div class="flex items-center gap-1.5 flex-wrap"><span class="font-semibold text-slate-800 text-sm">${item.name}</span><span class="${status.cls} text-[10px] font-bold px-2 py-0.5 rounded-full">${status.label}</span></div><div class="text-xs text-slate-400">${fmtDate(item.date)} · ${item.category||'pago'}</div></div>
+          <div class="text-right"><div class="font-bold ${item.paid?'text-red-500':'text-amber-600'} text-sm">${item.paid?fmt(paidValue):fmt(pendingValue)}</div><div class="text-[10px] text-slate-400">${item.paid?'pagado':'pendiente'}</div></div>
+        </div>
       </div>`;
     });
     html+=`<button onclick="openModal('addExpense')" class="w-full mt-3 border-2 border-dashed border-indigo-200 text-indigo-400 font-semibold py-3 rounded-2xl text-sm">+ Agregar gasto</button>`;
@@ -1892,7 +1949,7 @@ function renderBills() {
       const isDone=pend<=0;
       html+=`<div onclick="openModal('loanDetail','${l.id}')" class="card p-4 mb-2.5 ${isDone?'opacity-60':''}">
         <div class="flex items-center gap-3">
-          <div class="w-14 h-14 rounded-2xl bg-purple-50 text-purple-400 flex items-center justify-center"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>
+          <div class="w-14 h-14 rounded-2xl bg-purple-50 text-purple-400 flex items-center justify-center">${renderStoredIcon(l.emoji||'brief','loan','')}</div>
           <div class="flex-1"><div class="font-bold text-slate-800">${l.personName}</div><div class="text-xs text-slate-400">${sourceLabel(l.source)} · ${fmt(paid)} cobrado de ${fmt(l.totalAmount)}</div>${l.recurring?`<div class="text-xs text-purple-500 mt-0.5">Próximo pago ${fmtDate(l.recurring.nextDate)} · ${fmt(l.recurring.amount)}${l.recurring.totalPayments?` · ${l.recurring.totalPayments} pagos`:''}</div>`:''}</div>
           <div class="text-right"><div class="font-bold ${isDone?'text-green-600':'text-purple-600'}">${isDone?'Listo':fmt(pend)}</div><div class="text-xs text-slate-400">pendiente</div></div>
         </div>
@@ -1915,7 +1972,7 @@ function renderBills() {
       const next=(l.installments||[]).filter(p=>!p.paid).sort((a,b)=>parseDate(a.date)-parseDate(b.date))[0];
       html+=`<div onclick="openModal('borrowedLoanDetail','${l.id}')" class="card p-4 mb-2.5">
         <div class="flex items-center gap-3">
-          <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-400 flex items-center justify-center">${itemIcon('borrowed','')}</div>
+          <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-400 flex items-center justify-center">${renderStoredIcon(l.emoji||'bank','borrowed','')}</div>
           <div class="flex-1"><div class="font-bold text-slate-800">${l.personName}</div><div class="text-xs text-slate-400">${paid}/${total} cuotas pagadas · ${freqLabel(l.frequency)}</div>${next?`<div class="text-xs text-indigo-500 mt-0.5">Próxima ${fmtDate(next.date)} · ${fmt(next.amount)}</div>`:''}</div>
           <div class="text-right"><div class="font-bold text-indigo-600">${fmt(pendingAmt)}</div><div class="text-xs text-slate-400">pendiente</div></div>
         </div>
@@ -2435,7 +2492,7 @@ function undoLastAction() {
   lastUndoAction=null;
   if(type==='bill') unmarkBillPaid(args[0],args[1]);
   else if(type==='income') unmarkReceived(args[0]);
-  else if(type==='onetime') unmarkOneTimePaid(args[0]);
+  else if(type==='onetime') unmarkOneTimePaid(args[0],args[1]);
   else if(type==='expense') unmarkExpensePaid(args[0]);
   else if(type==='borrowed') unmarkBorrowedPaid(args[0],args[1]||'');
   else if(type==='task') { const n=(S.calendarNotes[args[0]]||[]).find(x=>x.id===args[1]); if(n)n.done=false; save(); renderCurrentView(); updateHeaderBalance(); }
@@ -2473,20 +2530,41 @@ function unmarkReceived(id) {
   if(p&&p.received){adjustBalance(-(p.amount||0));p.received=false;}
   save(); renderCurrentView(); updateHeaderBalance();
 }
-function confirmedPayOnce(id, amount, date, source=null) {
+function confirmedPayOnce(id, amount, date, dateKey=null, source=null) {
   const o=S.oneTimePayments.find(x=>x.id===id);
   if(o) {
     const paidAmount=parseFloat(amount)||o.amount;
     adjustSource(source||readPaymentSource(),-paidAmount);
-    o.paidAmount=(o.paidAmount||0)+paidAmount;
-    o.paid=o.paidAmount>=(o.amount||0); o.paidDate=date; o.paidAt=new Date().toISOString();
-    setUndoAction('Pago único marcado como pagado','onetime',[id]);
+    const key=dateKey||o.dueDate;
+    if(!Array.isArray(o.payments)) o.payments=[];
+    const existing=o.payments.find(p=>p.dateKey===key);
+    if(existing) { existing.paidAmount=(existing.paidAmount||0)+paidAmount; existing.paidDate=date; existing.paidAt=new Date().toISOString(); }
+    else o.payments.push({id:uid(),dateKey:key,paidAmount,paidDate:date,paidAt:new Date().toISOString()});
+    if((o.frequency||'once')==='once') {
+      o.paidAmount=(o.paidAmount||0)+paidAmount;
+      o.paid=o.paidAmount>=(o.amount||0); o.paidDate=date; o.paidAt=new Date().toISOString();
+    } else {
+      o.paid=false; o.paidAmount=oneTimePaidAmount(o); o.paidDate=date; o.paidAt=new Date().toISOString();
+    }
+    setUndoAction('Pago único marcado como pagado','onetime',[id,key]);
   }
   setLastAction(); closeModal(); renderCurrentView(); showToast('Pago completado');
 }
-function unmarkOneTimePaid(id) {
+function unmarkOneTimePaid(id,dateKey=null) {
   const o=S.oneTimePayments.find(x=>x.id===id);
-  if(o){if(o.paid) adjustBalance(o.paidAmount||o.amount);o.paid=false;o.paidDate=null;o.paidAmount=null;}
+  if(o){
+    if(dateKey&&Array.isArray(o.payments)&&o.payments.some(p=>p.dateKey===dateKey)){
+      const paid=o.payments.filter(p=>p.dateKey===dateKey).reduce((s,p)=>s+(p.paidAmount||0),0);
+      if(paid) adjustBalance(paid);
+      o.payments=o.payments.filter(p=>p.dateKey!==dateKey);
+      o.paidAmount=oneTimePaidAmount(o);
+    } else {
+      const paid=oneTimePaidAmount(o);
+      if(paid) adjustBalance(paid);
+      o.payments=[];
+      o.paid=false;o.paidDate=null;o.paidAmount=null;
+    }
+  }
   save(); renderCurrentView(); updateHeaderBalance();
 }
 function markExpensePaid(id) {
@@ -2694,11 +2772,15 @@ function openModal(type, id, extra) {
       actions=`<button onclick="openModal('confirmPay','${b.id}','${pdate}')" class="flex-1 btn-primary py-3">Pagar</button><button onclick="openModal('skipPayment','bill:${b.id}::${pdate}')" class="bg-amber-50 text-amber-700 font-semibold px-4 rounded-xl">No pagar</button><button onclick="openModal('editBill','${b.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Editar</button>`;
     } else if(kind==='onetime') {
       const o=S.oneTimePayments.find(x=>x.id===pid); if(!o) return;
-      title=`${o.name}`; subtitle=`Pago único · ${o.paid?'Pagado':'Pendiente'} · ${fmtDate(o.paidDate||o.dueDate)}`; amount=o.paidAmount||o.amount;
-      rows=o.paid?`<div class="flex justify-between py-2 border-t border-slate-50"><span>${fmtDate(o.paidDate||o.dueDate)}</span><span class="font-bold text-green-600">${fmt(o.paidAmount||o.amount)}</span></div>`:'';
-      future=renderSchedulePreview(!o.paid?[{date:o.dueDate,amount:o.amount,label:'Pago único'}]:[],'paymentDetail',`${kind}:${pid}:${pdate}`,showCount);
-      details=`<div class="card p-3 mb-3 space-y-2 text-sm"><div class="flex justify-between"><span class="text-slate-400">Duración</span><span class="font-semibold text-slate-700">Único · 1 pago</span></div><div class="flex justify-between"><span class="text-slate-400">Categoría</span><span class="font-semibold text-slate-700">${o.category||'único'}</span></div></div>`;
-      actions=o.paid?`<button onclick="unmarkOneTimePaid('${o.id}');closeModal()" class="flex-1 bg-slate-100 text-slate-600 font-semibold py-3 rounded-xl">Deshacer</button>`:`<button onclick="openModal('confirmPayOnce','${o.id}')" class="flex-1 btn-primary py-3">Pagar</button><button onclick="openModal('skipPayment','onetime:${o.id}::${o.dueDate}')" class="bg-amber-50 text-amber-700 font-semibold px-4 rounded-xl">No pagar</button><button onclick="openModal('editOneTime','${o.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Editar</button>`;
+      const dateKey=pdate||o.dueDate;
+      const paidAmount=oneTimePaidAmount(o,dateKey), left=Math.max(0,(o.amount||0)-paidAmount), isPaid=left<=0;
+      const freq=o.frequency||'once';
+      const schedule=freq==='once'?[{date:o.dueDate,amount:o.amount,label:'Pago único'}]:scheduledRows(o.dueDate,freq,o.amount,{totalPayments:o.termType==='term'?o.totalPayments:null,limit:120});
+      title=`${o.name}`; subtitle=`${freqLabel(freq)} · ${isPaid?'Pagado':'Pendiente'} · ${fmtDate(dateKey)}`; amount=left||o.amount;
+      rows=(o.payments||[]).map(p=>`<div class="flex justify-between py-2 border-t border-slate-50"><span>${fmtDate(p.paidDate||p.dateKey)}${p.dateKey?` · programado ${fmtDate(p.dateKey)}`:''}</span><span class="font-bold text-green-600">${fmt(p.paidAmount||o.amount)}</span></div>`).join('') || (o.paid?`<div class="flex justify-between py-2 border-t border-slate-50"><span>${fmtDate(o.paidDate||o.dueDate)}</span><span class="font-bold text-green-600">${fmt(o.paidAmount||o.amount)}</span></div>`:'');
+      future=renderSchedulePreview(schedule.filter(r=>!isOneTimePaid(o,r.date)),'paymentDetail',`${kind}:${pid}:${dateKey}`,showCount);
+      details=`<div class="card p-3 mb-3 space-y-2 text-sm"><div class="flex justify-between"><span class="text-slate-400">Frecuencia</span><span class="font-semibold text-slate-700">${freqLabel(freq)}</span></div><div class="flex justify-between"><span class="text-slate-400">Duración</span><span class="font-semibold text-slate-700">${planDurationLabel({frequency:freq,totalPayments:o.totalPayments},(o.payments||[]).length)}</span></div><div class="flex justify-between"><span class="text-slate-400">Categoría</span><span class="font-semibold text-slate-700">${o.category||'único'}</span></div></div>`;
+      actions=isPaid?`<button onclick="unmarkOneTimePaid('${o.id}','${dateKey}');closeModal()" class="flex-1 bg-slate-100 text-slate-600 font-semibold py-3 rounded-xl">Deshacer</button><button onclick="openModal('editOneTime','${o.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Editar</button>`:`<button onclick="openModal('confirmPayOnce','${o.id}','${dateKey}')" class="flex-1 btn-primary py-3">Pagar</button><button onclick="openModal('skipPayment','onetime:${o.id}::${dateKey}')" class="bg-amber-50 text-amber-700 font-semibold px-4 rounded-xl">No pagar</button><button onclick="openModal('editOneTime','${o.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Editar</button>`;
     } else if(kind==='expense') {
       const e=S.expenses.find(x=>x.id===pid); if(!e) return;
       title=`${e.name}`; subtitle=`Gasto · ${e.category||'otros'} · ${e.paid?'Pagado':'Pendiente'}`; amount=e.amount;
@@ -2714,14 +2796,14 @@ function openModal(type, id, extra) {
       rows=inst.filter(x=>x.paid).map(x=>`<div class="flex justify-between py-2 border-t border-slate-50"><span>${fmtDate(x.paidDate||x.date)} · cuota ${x.number}</span><span class="font-bold text-red-500">${fmt(x.amount)}</span></div>`).join('');
       future=renderSchedulePreview(inst.filter(x=>!x.paid).map(x=>({date:x.date,amount:x.amount,label:`Cuota ${x.number}/${l.paymentsCount||1}`})),'paymentDetail',`${kind}:${pid}:${pdate}`,showCount);
       details=`<div class="card p-3 mb-3 space-y-2 text-sm"><div class="flex justify-between"><span class="text-slate-400">Frecuencia</span><span class="font-semibold text-slate-700">${freqLabel(l.frequency)}</span></div><div class="flex justify-between"><span class="text-slate-400">Duración</span><span class="font-semibold text-slate-700">${inst.filter(x=>x.paid).length} de ${l.paymentsCount||1} pagos</span></div><div class="flex justify-between"><span class="text-slate-400">Creado</span><span class="font-semibold text-slate-700">${l.createdAt?fmtDate(l.createdAt.slice(0,10)):'-'}</span></div></div>`;
-      actions=p&&p.paid?`<button onclick="unmarkBorrowedPaid('${l.id}','${p.id}');closeModal()" class="flex-1 bg-slate-100 text-slate-600 font-semibold py-3 rounded-xl">Deshacer</button>`:`<button onclick="openModal('confirmBorrowedPay','${l.id}','${p?p.id:''}')" class="flex-1 btn-primary py-3">Pagar cuota</button><button onclick="openModal('skipPayment','borrowed:${l.id}:${p?p.id:''}:${p?p.date:pdate}')" class="bg-amber-50 text-amber-700 font-semibold px-4 rounded-xl">No pagar</button>`;
+      actions=p&&p.paid?`<button onclick="unmarkBorrowedPaid('${l.id}','${p.id}');closeModal()" class="flex-1 bg-slate-100 text-slate-600 font-semibold py-3 rounded-xl">Deshacer</button><button onclick="openModal('editBorrowedLoan','${l.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Editar</button>`:`<button onclick="openModal('confirmBorrowedPay','${l.id}','${p?p.id:''}')" class="flex-1 btn-primary py-3">Pagar cuota</button><button onclick="openModal('skipPayment','borrowed:${l.id}:${p?p.id:''}:${p?p.date:pdate}')" class="bg-amber-50 text-amber-700 font-semibold px-4 rounded-xl">No pagar</button><button onclick="openModal('editBorrowedLoan','${l.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Editar</button>`;
     } else if(kind==='loan') {
       const l=S.loans.find(x=>x.id===pid); if(!l) return;
       title=`Cobrar a ${l.personName}`; subtitle=`Préstamo por cobrar`; amount=l.recurring&&l.recurring.amount?l.recurring.amount:l.totalAmount;
       rows=(l.payments||[]).map(p=>`<div class="flex justify-between py-2 border-t border-slate-50"><span>${fmtDate(p.date)}${p.note?' · '+p.note:''}</span><span class="font-bold text-green-600">${fmt(p.amount)}</span></div>`).join('');
       future=l.recurring?renderSchedulePreview(scheduledRows(l.recurring.nextDate,l.recurring.freq,l.recurring.amount,{totalPayments:l.recurring.totalPayments,limit:24}),'paymentDetail',`${kind}:${pid}:${pdate}`,showCount):'';
       details=`<div class="card p-3 mb-3 space-y-2 text-sm"><div class="flex justify-between"><span class="text-slate-400">Frecuencia</span><span class="font-semibold text-slate-700">${l.recurring?freqLabel(l.recurring.freq):'No recurrente'}</span></div><div class="flex justify-between"><span class="text-slate-400">Duración</span><span class="font-semibold text-slate-700">${l.recurring?planDurationLabel({frequency:l.recurring.freq,totalPayments:l.recurring.totalPayments},(l.payments||[]).length):'Sin plan'}</span></div><div class="flex justify-between"><span class="text-slate-400">Creado</span><span class="font-semibold text-slate-700">${l.createdAt?fmtDate(l.createdAt.slice(0,10)):'-'}</span></div></div>`;
-      actions=`<button onclick="openModal('addLoanPayment','${l.id}')" class="flex-1 btn-primary py-3">Registrar abono</button>`;
+      actions=`<button onclick="openModal('addLoanPayment','${l.id}')" class="flex-1 btn-primary py-3">Registrar abono</button><button onclick="openModal('editLoan','${l.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Editar</button>`;
     } else if(kind==='house') {
       const item=H.items.find(x=>x.id===pid); if(!item) return;
       const paid=housePaid(item), left=Math.max(0,(item.amount||0)-paid);
@@ -2761,16 +2843,17 @@ function openModal(type, id, extra) {
   else if(type==='confirmPayOnce') {
     const o=S.oneTimePayments.find(x=>x.id===id);
     if(!o) return;
-    const left=Math.max(0,(o.amount||0)-(o.paidAmount||0));
+    const dateKey=extra||o.dueDate;
+    const left=Math.max(0,(o.amount||0)-oneTimePaidAmount(o,dateKey));
     html=`<h3 class="text-lg font-bold text-slate-800 mb-1">Confirmar pago</h3>
-    <p class="text-sm text-slate-500 mb-4">${o.name}</p>
+    <p class="text-sm text-slate-500 mb-4">${o.name} · ${fmtDate(dateKey)}</p>
     <div class="space-y-3">
       <div><label class="text-xs font-bold text-slate-500 uppercase">Monto pagado ($)</label>
       <input type="number" id="mAmt" value="${left||o.amount}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold text-lg"></div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Fecha</label>
       <input type="date" id="mDate" value="${isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       ${paymentSourceOptions()}
-      <button onclick="confirmedPayOnce('${id}',document.getElementById('mAmt').value,document.getElementById('mDate').value)" class="w-full btn-primary py-3">Confirmar ✓</button>
+      <button onclick="confirmedPayOnce('${id}',document.getElementById('mAmt').value,document.getElementById('mDate').value,'${dateKey}')" class="w-full btn-primary py-3">Confirmar ✓</button>
     </div>`;
   }
 
@@ -2805,8 +2888,14 @@ function openModal(type, id, extra) {
     const received=items.filter(p=>p.received).sort((a,b)=>parseDate(b.receivedDate||b.date)-parseDate(a.receivedDate||a.date));
     const future=items.filter(p=>!p.received).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
     const next=future[0];
+    const sample=next||received[0]||items[0];
     html=`<h3 class="text-lg font-bold text-slate-800 mb-1">${source}</h3>
     <p class="text-sm text-slate-500 mb-4">Fuente de ingreso · ${items.length} movimientos</p>
+    ${sample?`<div class="flex items-center gap-3 card p-3 mb-4">
+      <div class="w-11 h-11 rounded-xl bg-green-50 text-green-600 flex items-center justify-center">${renderStoredIcon(sample.emoji||'brief','income',sample.category||'')}</div>
+      <div class="flex-1 min-w-0"><div class="font-bold text-slate-800">${paycheckFreqLabel(sample)}</div><div class="text-xs text-slate-400 truncate">${methodLabel(sample.method||'deposito')} · ${sample.note||'Sin nota'}</div></div>
+      <button onclick="openModal('editPaycheck','${sample.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 py-2 rounded-xl">Editar</button>
+    </div>`:''}
     <div class="grid grid-cols-3 gap-2 mb-4">
       <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">Por pago</div><div class="font-bold text-green-600">${fmt((items[0]&&items[0].amount)||0)}</div></div>
       <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">Recibidos</div><div class="font-bold text-green-600">${fmt(received.reduce((s,p)=>s+(p.amount||0),0))}</div></div>
@@ -2910,10 +2999,16 @@ function openModal(type, id, extra) {
 
   else if(type==='addPaycheck'||type==='editPaycheck') {
     const p=type==='editPaycheck'?S.paychecks.find(x=>x.id===id):null;
+    const paycheckIcon=normalizeIcon(p?p.emoji:'brief','income');
     html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${p?'Editar':'Agregar'} cheque</h3>
     <div class="space-y-3">
-      <div><label class="text-xs font-bold text-slate-500 uppercase">Fecha</label>
-      <input type="date" id="mDate" value="${p?p.date:(extra&&extra.date)||''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div class="flex gap-3">
+        <div class="w-20"><label class="text-xs font-bold text-slate-500 uppercase">Emoji</label>
+        <input type="text" id="mEmoji" value="${paycheckIcon}" readonly class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-center text-xl"></div>
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Fecha</label>
+        <input type="date" id="mDate" value="${p?p.date:(extra&&extra.date)||''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      </div>
+      ${iconPicker('income',paycheckIcon)}
       <div><label class="text-xs font-bold text-slate-500 uppercase">Monto neto ($)</label>
       <input type="number" id="mAmount" value="${p?p.amount:1742}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
@@ -2951,10 +3046,16 @@ function openModal(type, id, extra) {
 
   else if(type==='addOneTime'||type==='editOneTime') {
     const o=type==='editOneTime'?S.oneTimePayments.find(x=>x.id===id):null;
+    const oneTimeIcon=normalizeIcon(o?o.emoji:'pin','finance');
     html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${o?'Editar':'Nuevo'} pago único</h3>
     <div class="space-y-3">
-      <div><label class="text-xs font-bold text-slate-500 uppercase">Descripción</label>
-      <input type="text" id="mName" value="${o?o.name:''}" placeholder="ej. Reparación carro" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div class="flex gap-3">
+        <div class="w-20"><label class="text-xs font-bold text-slate-500 uppercase">Emoji</label>
+        <input type="text" id="mEmoji" value="${oneTimeIcon}" readonly class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-center text-xl"></div>
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Descripción</label>
+        <input type="text" id="mName" value="${o?o.name:''}" placeholder="ej. Reparación carro" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      </div>
+      ${iconPicker('finance',oneTimeIcon)}
       <div class="flex gap-3">
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Monto ($)</label>
         <input type="number" id="mAmount" value="${o?o.amount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
@@ -2965,6 +3066,22 @@ function openModal(type, id, extra) {
       <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
         ${['comida','servicios','teléfono','gasolina','seguro','arriendo','entretenimiento','salud','supermercado','transporte','otros'].map(c=>`<option value="${c}" ${o&&o.category===c?'selected':''}>${c}</option>`).join('')}
       </select></div>
+      <div class="bg-indigo-50 rounded-xl p-3">
+        <label class="text-xs font-bold text-indigo-700 uppercase">Frecuencia y duración</label>
+        <div class="grid grid-cols-2 gap-2 mt-1">
+          <select id="mFreq" onchange="document.getElementById('oneTimeTermWrap').classList.toggle('hidden', this.value==='once')" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 text-sm">
+            ${[['once','Único'],['weekly','Semanal'],['every_two_weeks','Cada 2 semanas'],['monthly','Mensual']].map(([v,l])=>`<option value="${v}" ${(!o&&v==='once')||(o&&(o.frequency===v||(o.frequency==='biweekly'&&v==='every_two_weeks')))?'selected':''}>${l}</option>`).join('')}
+          </select>
+          <select id="mTermType" onchange="document.getElementById('oneTimeCountWrap').classList.toggle('hidden', this.value!=='term')" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 text-sm">
+            <option value="indefinite" ${o&&o.frequency!=='once'&&o.termType!=='term'?'selected':''}>Indefinido</option>
+            <option value="term" ${!o||o.frequency==='once'||o.termType==='term'?'selected':''}>Con término</option>
+          </select>
+        </div>
+        <div id="oneTimeTermWrap" class="${o&&o.frequency&&o.frequency!=='once'?'':'hidden'} mt-2">
+          <div id="oneTimeCountWrap" class="${!o||o.frequency==='once'||o.termType==='term'?'':'hidden'}"><label class="text-xs text-indigo-600">Cantidad de pagos</label>
+          <input type="number" id="mTotalPayments" min="1" value="${o&&o.totalPayments?o.totalPayments:1}" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"></div>
+        </div>
+      </div>
       <button onclick="saveOneTime(${o?`'${id}'`:'null'})" class="w-full btn-primary py-3">${o?'Guardar':'Agregar'}</button>
     </div>`;
   }
@@ -3035,10 +3152,16 @@ function openModal(type, id, extra) {
   else if(type==='addLoan'||type==='editLoan') {
     const l=type==='editLoan'?S.loans.find(x=>x.id===id):null;
     const hasRec=l&&l.recurring;
+    const loanIcon=normalizeIcon(l?l.emoji:'brief','loan');
     html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${l?'Editar':'Nuevo'} préstamo</h3>
     <div class="space-y-3">
-      <div><label class="text-xs font-bold text-slate-500 uppercase">Nombre de la persona</label>
-      <input type="text" id="mName" value="${l?l.personName:''}" placeholder="ej. Carlos" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div class="flex gap-3">
+        <div class="w-20"><label class="text-xs font-bold text-slate-500 uppercase">Emoji</label>
+        <input type="text" id="mEmoji" value="${loanIcon}" readonly class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-center text-xl"></div>
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Nombre de la persona</label>
+        <input type="text" id="mName" value="${l?l.personName:''}" placeholder="ej. Carlos" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      </div>
+      ${iconPicker('loan',loanIcon)}
       <div><label class="text-xs font-bold text-slate-500 uppercase">Monto total prestado ($)</label>
       <input type="number" id="mAmount" value="${l?l.totalAmount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold text-lg"></div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">De donde salio el dinero</label>
@@ -3076,9 +3199,15 @@ function openModal(type, id, extra) {
     const l=type==='editBorrowedLoan'?S.borrowedLoans.find(x=>x.id===id):null;
     if(type==='editBorrowedLoan'&&!l) return;
     normalizeBorrowedLoan(l);
+    const borrowedIcon=normalizeIcon(l?l.emoji:'bank','borrowed');
     html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${l?'Editar':'Préstamo recibido'}</h3>
     <div class="space-y-3">
-      <div><label class="text-xs font-bold text-slate-500 uppercase">Persona</label><input id="mName" value="${l?l.personName:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1" placeholder="Nombre"></div>
+      <div class="flex gap-3">
+        <div class="w-20"><label class="text-xs font-bold text-slate-500 uppercase">Emoji</label>
+        <input type="text" id="mEmoji" value="${borrowedIcon}" readonly class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-center text-xl"></div>
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Persona</label><input id="mName" value="${l?l.personName:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1" placeholder="Nombre"></div>
+      </div>
+      ${iconPicker('borrowed',borrowedIcon)}
       <div><label class="text-xs font-bold text-slate-500 uppercase">Monto total ($)</label><input type="number" id="mAmount" value="${l?l.totalAmount||l.amount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1" oninput="calcBorrowedPmt()"></div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Fecha de primer pago</label><input type="date" id="mDate" value="${l?l.startDate||l.dueDate:(extra&&extra.date)||isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       <div class="grid grid-cols-2 gap-2">
@@ -3362,7 +3491,9 @@ function openModal(type, id, extra) {
     <div class="space-y-2 text-sm">
       <div class="flex justify-between"><span class="text-slate-400">Origen del dinero</span><span class="font-semibold text-slate-700">${sourceLabel(l.source)}</span></div>
       <div class="flex justify-between"><span class="text-slate-400">Creado</span><span class="font-semibold text-slate-700">${l.createdAt?fmtDate(l.createdAt.slice(0,10)):'-'}</span></div>
-      <div class="flex justify-between"><span class="text-slate-400">Recurrente</span><span class="font-semibold text-slate-700">${l.recurring?`${fmt(l.recurring.amount)} · ${freqLabel(l.recurring.freq)} · ${fmtDate(l.recurring.nextDate)}`:'No'}</span></div>
+      <div class="flex justify-between"><span class="text-slate-400">Frecuencia</span><span class="font-semibold text-slate-700">${l.recurring?freqLabel(l.recurring.freq):'No recurrente'}</span></div>
+      <div class="flex justify-between"><span class="text-slate-400">Duración</span><span class="font-semibold text-slate-700">${l.recurring?planDurationLabel({frequency:l.recurring.freq,totalPayments:l.recurring.totalPayments},(l.payments||[]).length):'Sin plan'}</span></div>
+      <div class="flex justify-between"><span class="text-slate-400">Próximo cobro</span><span class="font-semibold text-slate-700">${l.recurring?`${fmt(l.recurring.amount)} · ${fmtDate(l.recurring.nextDate)}`:'-'}</span></div>
     </div>
     <div class="mt-4"><div class="font-bold text-indigo-700 text-xs uppercase mb-2">Abonos recibidos</div>
       ${(l.payments||[]).length?(l.payments||[]).map(p=>`<div class="flex justify-between items-center py-2 border-t border-slate-50 text-sm"><div><div class="font-semibold text-slate-700">${fmtDate(p.date)}</div><div class="text-xs text-slate-400">${p.note||'Abono'}</div></div><div class="flex items-center gap-2"><div class="font-bold text-green-600">${fmt(p.amount)}</div><button onclick="deleteLoanPayment('${l.id}','${p.id}')" class="text-red-400 text-xs font-bold px-2 py-1 rounded-lg bg-red-50">Borrar</button></div></div>`).join(''):`<div class="text-sm text-indigo-300 text-center py-3">Sin abonos todavía.</div>`}
@@ -3386,6 +3517,8 @@ function openModal(type, id, extra) {
     <div class="space-y-2 text-sm mb-4">
       <div class="flex justify-between"><span class="text-slate-400">Fecha inicial</span><span class="font-semibold text-slate-700">${fmtDate(l.startDate||l.dueDate)}</span></div>
       <div class="flex justify-between"><span class="text-slate-400">Creado</span><span class="font-semibold text-slate-700">${l.createdAt?fmtDate(l.createdAt.slice(0,10)):'-'}</span></div>
+      <div class="flex justify-between"><span class="text-slate-400">Frecuencia</span><span class="font-semibold text-slate-700">${freqLabel(l.frequency)}</span></div>
+      <div class="flex justify-between"><span class="text-slate-400">Duración</span><span class="font-semibold text-slate-700">${paid.length} de ${l.paymentsCount||inst.length||1} pagos</span></div>
       <div class="flex justify-between"><span class="text-slate-400">Proxima cuota</span><span class="font-semibold text-slate-700">${next?`${fmtDate(next.date)} · ${fmt(next.amount)}`:'Sin pendientes'}</span></div>
     </div>
     ${next?`<button onclick="openModal('confirmBorrowedPay','${l.id}','${next.id}')" class="w-full btn-primary py-3 mb-3">Pagar próxima cuota</button>`:''}
@@ -3518,7 +3651,7 @@ function ensureIncomeSchedule(seed) {
   let lastDate=(same.length?same[same.length-1].date:seed.date);
   while((S.paychecks||[]).filter(p=>!p.received && paycheckSourceLabel(p)===source).length<8) {
     lastDate=nextPaycheckDate(lastDate, seed.recurrenceFreq, 1);
-    S.paychecks.push({id:uid(),date:lastDate,amount:seed.amount,received:false,category:seed.category,note:seed.note||'',paymentType:seed.paymentType,method:seed.method,recurrenceFreq:seed.recurrenceFreq,recurrenceTerm:seed.recurrenceTerm,recurrenceCount:null,personName:seed.personName||'',sourceName:seed.sourceName||''});
+    S.paychecks.push({id:uid(),date:lastDate,amount:seed.amount,received:false,category:seed.category,note:seed.note||'',paymentType:seed.paymentType,method:seed.method,recurrenceFreq:seed.recurrenceFreq,recurrenceTerm:seed.recurrenceTerm,recurrenceCount:null,personName:seed.personName||'',sourceName:seed.sourceName||'',emoji:seed.emoji||'brief'});
   }
 }
 
@@ -3542,6 +3675,7 @@ function saveBill(id) {
 
 function savePaycheck(id) {
   const date=document.getElementById('mDate').value, amount=parseFloat(document.getElementById('mAmount').value);
+  const emoji=normalizeIcon(document.getElementById('mEmoji')?.value.trim()||'brief','income');
   const category=document.getElementById('mCat').value, note=document.getElementById('mNote').value.trim();
   const paymentType=document.getElementById('mPayType')?document.getElementById('mPayType').value:'recurrente', method=document.getElementById('mMethod')?document.getElementById('mMethod').value:'deposito';
   const recurrenceFreq=document.getElementById('mRecFreq')?document.getElementById('mRecFreq').value:null;
@@ -3552,9 +3686,9 @@ function savePaycheck(id) {
   const sourceName=category==='trabajo'?(document.getElementById('mWorkName').value.trim()||'Trabajo'):category==='otro'?(document.getElementById('mOtherName').value.trim()||'Otro'):'';
   if(!date||!amount){showToast('❌ Completa fecha y monto');return;}
   if(category==='persona'&&!personName){showToast('Selecciona o agrega una persona');return;}
-  if(id){const p=S.paychecks.find(x=>x.id===id);if(p){Object.assign(p,{date,amount,category,note,paymentType,method,recurrenceFreq,recurrenceTerm,recurrenceCount,personName,sourceName});ensureIncomeSchedule(p);}}
+  if(id){const p=S.paychecks.find(x=>x.id===id);if(p){const oldSource=paycheckSourceLabel(p);const shared={amount,category,note,paymentType,method,recurrenceFreq,recurrenceTerm,recurrenceCount,personName,sourceName,emoji};Object.assign(p,{date,...shared});S.paychecks.forEach(x=>{if(x.id!==id&&!x.received&&paycheckSourceLabel(x)===oldSource) Object.assign(x,shared);});ensureIncomeSchedule(p);}}
   else {
-    const base={amount,received:false,category,note,paymentType,method,recurrenceFreq,recurrenceTerm,recurrenceCount,personName,sourceName};
+    const base={amount,received:false,category,note,paymentType,method,recurrenceFreq,recurrenceTerm,recurrenceCount,personName,sourceName,emoji};
     if(paymentType==='recurrente'&&recurrenceTerm==='term'&&recurrenceCount>1) {
       const rows=Array.from({length:recurrenceCount},(_,i)=>({id:uid(),date:nextPaycheckDate(date,recurrenceFreq,i),...base}));
       S.paychecks.unshift(...rows);
@@ -3570,9 +3704,13 @@ function savePaycheck(id) {
 function saveOneTime(id) {
   const name=document.getElementById('mName').value.trim(), amount=parseFloat(document.getElementById('mAmount').value), dueDate=document.getElementById('mDate').value;
   const category=document.getElementById('mCat')?.value||'otros';
+  const emoji=normalizeIcon(document.getElementById('mEmoji')?.value.trim()||'pin','finance');
+  const frequency=document.getElementById('mFreq')?.value||'once';
+  const termType=frequency==='once'?'term':(document.getElementById('mTermType')?.value||'indefinite');
+  const totalPayments=termType==='term'?(parseInt(document.getElementById('mTotalPayments')?.value)||1):(frequency==='once'?1:null);
   if(!name||!amount||!dueDate){showToast('❌ Completa los campos');return;}
-  if(id){const o=S.oneTimePayments.find(x=>x.id===id);if(o)Object.assign(o,{name,amount,dueDate,category});}
-  else S.oneTimePayments.unshift({id:uid(),name,amount,dueDate,category,paid:false,paidDate:null,paidAmount:null});
+  if(id){const o=S.oneTimePayments.find(x=>x.id===id);if(o)Object.assign(o,{name,amount,dueDate,category,emoji,frequency,termType,totalPayments});}
+  else S.oneTimePayments.unshift({id:uid(),name,amount,dueDate,category,emoji,frequency,termType,totalPayments,paid:false,paidDate:null,paidAmount:null,payments:[]});
   save(); closeModal(); renderCurrentView(); showToast('✅ Guardado');
 }
 
@@ -3610,18 +3748,19 @@ function savePocket(id) {
 function saveLoan(id) {
   const personName=document.getElementById('mName').value.trim(), totalAmount=parseFloat(document.getElementById('mAmount').value);
   const note=document.getElementById('mNote').value.trim();
+  const emoji=normalizeIcon(document.getElementById('mEmoji')?.value.trim()||'brief','loan');
   if(!personName||!totalAmount){showToast('❌ Completa los campos');return;}
   const isRec=document.getElementById('mRecurring').checked;
   let recurring=null;
   if(isRec){recurring={freq:document.getElementById('mRecFreq').value,amount:parseFloat(document.getElementById('mRecAmt').value)||0,nextDate:document.getElementById('mRecNext').value,totalPayments:parseInt(document.getElementById('mRecCount').value)||null};}
-  if(id){const l=S.loans.find(x=>x.id===id);if(l)Object.assign(l,{personName,totalAmount,note,recurring});}
+  if(id){const l=S.loans.find(x=>x.id===id);if(l)Object.assign(l,{personName,totalAmount,note,emoji,recurring});}
   else {
     const raw=document.getElementById('mSource').value;
     const source=raw.startsWith('pocket:')?{type:'pocket',id:raw.split(':')[1]}:{type:'balance',id:null};
     if(source.type==='balance' && totalAmount>freeBalance()){showToast('No hay suficiente balance libre');return;}
     if(source.type==='pocket'){const p=S.pockets.find(x=>x.id===source.id); if(!p||totalAmount>(p.saved||0)){showToast('No hay suficiente dinero en ese bolsillo');return;}}
     adjustSource(source,-totalAmount);
-    S.loans.unshift({id:uid(),personName,totalAmount,note,source,payments:[],recurring,createdAt:new Date().toISOString()});
+    S.loans.unshift({id:uid(),personName,totalAmount,note,emoji,source,payments:[],recurring,createdAt:new Date().toISOString()});
   }
   save(); closeModal(); renderCurrentView(); showToast('✅ Préstamo guardado');
 }
@@ -3642,6 +3781,7 @@ function calcBorrowedPmt() {
 function saveBorrowedLoan(id=null) {
   const personName=document.getElementById('mName').value.trim(), amount=parseFloat(document.getElementById('mAmount').value), dueDate=document.getElementById('mDate').value;
   const description=document.getElementById('mDesc').value.trim();
+  const emoji=normalizeIcon(document.getElementById('mEmoji')?.value.trim()||'bank','borrowed');
   const paymentsCount=parseInt(document.getElementById('mPayments').value)||1;
   const frequency=document.getElementById('mFreq')?.value||'monthly';
   const perPayment=amount/paymentsCount;
@@ -3653,7 +3793,7 @@ function saveBorrowedLoan(id=null) {
     const prev=previousPaid.find(p=>p.number===i+1);
     return {id:prev?.id||uid(),number:i+1,amount:perPayment,date:nextDateByFrequency(dueDate,frequency,i),paid:!!prev,paidDate:prev?.paidDate||null,paidAt:prev?.paidAt||null,createdAt:prev?.createdAt||new Date().toISOString()};
   });
-  const payload={personName,totalAmount:amount,amount,dueDate,startDate:dueDate,description,paymentsCount,frequency,perPayment,installments,paid:installments.every(p=>p.paid),createdDate:existing?.createdDate||isoToday(),createdAt:existing?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+  const payload={personName,totalAmount:amount,amount,dueDate,startDate:dueDate,description,emoji,paymentsCount,frequency,perPayment,installments,paid:installments.every(p=>p.paid),createdDate:existing?.createdDate||isoToday(),createdAt:existing?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
   if(existing) Object.assign(existing,payload);
   else S.borrowedLoans.unshift({id:uid(),...payload});
   setLastAction(); closeModal(); renderCurrentView(); showToast('Préstamo recibido guardado');
@@ -3908,6 +4048,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!supabase) return;
 
   // mostrar pantalla de carga mientras verifica sesión
+  const authScreen=document.getElementById('authScreen');
+  authScreen.classList.add('auth-loading-active');
   document.getElementById('authForm').classList.add('hidden');
   document.getElementById('authLoading').classList.remove('hidden');
   document.getElementById('authLoading').style.display = 'flex';
@@ -3918,6 +4060,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (session && session.user) {
       CURRENT_USER = session.user;
       await loadCloudData();
+      authScreen.classList.remove('auth-loading-active');
       document.getElementById('authScreen').classList.add('hidden');
       updateHeaderBalance();
       renderHome();
@@ -3925,11 +4068,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       showToast(`Bienvenido${wName}`);
     } else {
       // sin sesión — mostrar login
+      authScreen.classList.remove('auth-loading-active');
       document.getElementById('authLoading').style.display = 'none';
       document.getElementById('authForm').classList.remove('hidden');
     }
   } catch(e) {
     console.error('Auth init:', e);
+    authScreen.classList.remove('auth-loading-active');
     document.getElementById('authLoading').style.display = 'none';
     document.getElementById('authForm').classList.remove('hidden');
   }
