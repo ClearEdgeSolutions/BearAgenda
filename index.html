@@ -37,7 +37,7 @@
     .plan-great { border-left: 4px solid #34d399; }
     input, select, textarea { outline: none; -webkit-appearance: none; }
     .pill-tab.active { background: #4f46e5; color: white; }
-    .pill-tab { background: #ede9fe; color: #6d28d9; }
+    .pill-tab { background: #ede9fe; color: #6d28d9; min-height: 32px; padding: .45rem .7rem !important; font-size: 11px; }
     ::-webkit-scrollbar { display: none; }
     .card { background: white; border-radius: 20px; box-shadow: 0 1px 4px rgba(79,70,229,0.08); }
     .btn-primary { background: linear-gradient(135deg,#6366f1,#4f46e5); color: white; border-radius: 14px; font-weight: 700; }
@@ -84,8 +84,11 @@
     }
     @media (max-width:640px) {
       .module-top-row { min-height:0 !important; margin-bottom:0 !important; }
-      .mobile-fab-add { position:fixed; right:16px; bottom:86px; z-index:35; box-shadow:0 12px 28px rgba(79,70,229,.24); }
+      .mobile-fab-add { position:fixed; right:16px; bottom:92px; z-index:35; box-shadow:0 12px 28px rgba(79,70,229,.24); }
       .mobile-fab-add::first-letter { font-size:16px; }
+    }
+    @media (max-width:390px) {
+      .pill-tab { min-height: 30px; padding: .4rem .55rem !important; font-size: 10.5px; }
     }
     /* ===== DARK MODE — paleta diluida / sin saturación ===== */
     body.dark { background: #13151b; }
@@ -235,13 +238,13 @@
     </div>
   </div>
 </div>
-<main class="pt-16 pb-20 min-h-screen">
+<main class="pt-16 pb-24 min-h-screen">
   <div id="view-home" class="view active"><div class="px-4 py-5 space-y-4" id="homeContent"></div></div>
   <div id="view-cheques" class="view">
     <div class="px-4 py-5">
       <div class="module-top-row flex items-center justify-end mb-4">
         <h2 class="module-title-inline text-lg font-bold text-slate-800">Ingresos</h2>
-        <button onclick="openModal('addPaycheck')" class="btn-primary text-sm px-4 py-2.5 shrink-0 mobile-fab-add">+ Agregar ingreso</button>
+        <button id="incomeAddBtn" onclick="openModal('addPaycheck')" class="btn-primary text-sm px-4 py-2.5 shrink-0 mobile-fab-add">+ Agregar ingreso</button>
       </div>
       <div id="checksList" class="space-y-2.5"></div>
     </div>
@@ -366,26 +369,26 @@
 </main>
 
 <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-indigo-100" style="padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 12px rgba(79,70,229,0.07)">
-  <div class="flex justify-around items-center h-16">
-    <button class="nav-btn active flex flex-col items-center gap-0.5 flex-1 py-2 text-indigo-600" onclick="showView('home')">
-      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/></svg>
-      <span class="text-[9px] font-semibold">Inicio</span>
+  <div class="flex justify-around items-center h-[68px]">
+    <button class="nav-btn active flex flex-col items-center gap-1 flex-1 py-2.5 text-indigo-600" onclick="showView('home')">
+      <svg class="w-[22px] h-[22px]" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/></svg>
+      <span class="text-[10px] font-semibold">Inicio</span>
     </button>
-    <button class="nav-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-slate-400" onclick="showView('cheques')">
-      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"/></svg>
-      <span class="text-[9px] font-semibold">Ingresos</span>
+    <button class="nav-btn flex flex-col items-center gap-1 flex-1 py-2.5 text-slate-400" onclick="showView('cheques')">
+      <svg class="w-[22px] h-[22px]" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"/></svg>
+      <span class="text-[10px] font-semibold">Ingresos</span>
     </button>
-    <button class="nav-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-slate-400" onclick="showView('facturas')">
-      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm2 10a1 1 0 10-2 0v3a1 1 0 102 0v-3zm2-3a1 1 0 011 1v5a1 1 0 11-2 0v-5a1 1 0 011-1zm4-1a1 1 0 10-2 0v6a1 1 0 102 0V8z" clip-rule="evenodd"/></svg>
-      <span class="text-[9px] font-semibold">Finanzas</span>
+    <button class="nav-btn flex flex-col items-center gap-1 flex-1 py-2.5 text-slate-400" onclick="showView('facturas')">
+      <svg class="w-[22px] h-[22px]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm2 10a1 1 0 10-2 0v3a1 1 0 102 0v-3zm2-3a1 1 0 011 1v5a1 1 0 11-2 0v-5a1 1 0 011-1zm4-1a1 1 0 10-2 0v6a1 1 0 102 0V8z" clip-rule="evenodd"/></svg>
+      <span class="text-[10px] font-semibold">Finanzas</span>
     </button>
-    <button class="nav-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-slate-400" onclick="showView('cal')">
-      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
-      <span class="text-[9px] font-semibold">Calendario</span>
+    <button class="nav-btn flex flex-col items-center gap-1 flex-1 py-2.5 text-slate-400" onclick="showView('cal')">
+      <svg class="w-[22px] h-[22px]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+      <span class="text-[10px] font-semibold">Calendario</span>
     </button>
-    <button class="nav-btn flex flex-col items-center gap-0.5 flex-1 py-2 text-slate-400" onclick="showView('casa')">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-      <span class="text-[9px] font-semibold">Casa</span>
+    <button class="nav-btn flex flex-col items-center gap-1 flex-1 py-2.5 text-slate-400" onclick="showView('casa')">
+      <svg class="w-[22px] h-[22px]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+      <span class="text-[10px] font-semibold">Casa</span>
     </button>
   </div>
 </nav>
@@ -522,10 +525,16 @@ const HOUSE_INIT = {
   items: [],
   pockets: [],
   transactions: [],
+  calendarNotes: {},
+  shoppingLists: [],
+  plans: [],
   deletedItems: [],
   deletedPockets: [],
   deletedPayments: [],
   deletedPaymentKeys: [],
+  deletedCalendarNotes: [],
+  deletedShoppingLists: [],
+  deletedPlans: [],
   nextId: 1,
   updatedAt: null,
 };
@@ -572,6 +581,7 @@ let finMonth = '';
 let analysisMonth = '';
 let houseMonth = '';
 let houseTab = 'payments';
+let houseCalDate = null;
 let houseSyncStatus = 'local';
 let houseSyncMessage = '';
 let houseFollowupSyncTimer1 = null;
@@ -580,6 +590,7 @@ let selectedIncomeCategory = '';
 let incomeTab = 'active';
 let incomeMonth = '';
 let calDate = null;
+let homeUpcomingFilter = 'all';
 let lastUndoAction = null;
 
 function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
@@ -620,7 +631,7 @@ function addMonthsKeepingDay(dateKey, monthsToAdd) {
 function nextDateByFrequency(dateKey, frequency, step=1) {
   if(frequency==='monthly') return addMonthsKeepingDay(dateKey, step);
   const d=parseDate(dateKey);
-  const days = frequency==='weekly' ? 7 : (frequency==='every_two_weeks'||frequency==='biweekly') ? 14 : 0;
+  const days = frequency==='weekly' ? 7 : (frequency==='every_two_weeks'||frequency==='biweekly') ? 14 : (frequency==='semimonthly'||frequency==='quincenal') ? 15 : 0;
   d.setDate(d.getDate() + (days * step));
   return fmtISO(d);
 }
@@ -631,6 +642,7 @@ function normalizeBorrowedLoan(l) {
   if(!l.paymentsCount) l.paymentsCount = l.installmentsCount || 1;
   if(!l.frequency) l.frequency = 'monthly';
   if(l.frequency==='biweekly') l.frequency='every_two_weeks';
+  if(l.frequency==='quincenal') l.frequency='semimonthly';
   if(!l.emoji) l.emoji = 'bank';
   if(!l.perPayment) l.perPayment = (l.totalAmount||l.amount||0) / Math.max(1,l.paymentsCount||1);
   if(!l.dueDate && l.startDate) l.dueDate = l.startDate;
@@ -689,6 +701,8 @@ function normalizeState() {
   S.plans.forEach(p=>{ if(!p.id) p.id=uid(); if(!p.items) p.items=[]; p.isCustom=true; });
   S.bills.forEach(b => {
     if (!b.frequency) b.frequency = 'monthly';
+    if (b.frequency === 'biweekly') b.frequency = 'every_two_weeks';
+    if (b.frequency === 'quincenal') b.frequency = 'semimonthly';
     if (!b.termType) b.termType = 'indefinite';
     if (b.totalPayments === undefined) b.totalPayments = null;
   });
@@ -696,6 +710,7 @@ function normalizeState() {
     if (!p.category) p.category = 'trabajo';
     if (!p.emoji) p.emoji = p.category==='persona' ? 'heart' : 'brief';
     if (p.recurrenceFreq === 'biweekly') p.recurrenceFreq = 'every_two_weeks';
+    if (p.recurrenceFreq === 'quincenal') p.recurrenceFreq = 'semimonthly';
   });
   S.oneTimePayments.forEach(o => {
     if (o.paidAmount === undefined) o.paidAmount = null;
@@ -703,6 +718,7 @@ function normalizeState() {
     if (!o.emoji) o.emoji = 'pin';
     if (!o.frequency) o.frequency = 'once';
     if (o.frequency === 'biweekly') o.frequency = 'every_two_weeks';
+    if (o.frequency === 'quincenal') o.frequency = 'semimonthly';
     if (!o.termType) o.termType = o.frequency === 'once' ? 'term' : 'indefinite';
     if (o.frequency === 'once' && !o.totalPayments) o.totalPayments = 1;
     if (o.totalPayments === undefined) o.totalPayments = null;
@@ -716,6 +732,8 @@ function normalizeState() {
     if (!l.payments) l.payments = [];
     if (!l.source) l.source = {type:'balance',id:null};
     if (!l.emoji) l.emoji = 'brief';
+    if (l.recurring && l.recurring.freq === 'biweekly') l.recurring.freq = 'every_two_weeks';
+    if (l.recurring && l.recurring.freq === 'quincenal') l.recurring.freq = 'semimonthly';
     if (l.recurring && l.recurring.totalPayments === undefined) l.recurring.totalPayments = null;
   });
   S.borrowedLoans.forEach(l => normalizeBorrowedLoan(l));
@@ -732,15 +750,40 @@ function normalizeHouse() {
   if (!H.items) H.items = [];
   if (!H.pockets) H.pockets = [];
   if (!H.transactions) H.transactions = [];
+  if (!H.calendarNotes) H.calendarNotes = {};
+  if (!H.shoppingLists) H.shoppingLists = [];
+  if (!H.plans) H.plans = [];
   if (!H.deletedItems) H.deletedItems = [];
   if (!H.deletedPockets) H.deletedPockets = [];
   if (!H.deletedPayments) H.deletedPayments = [];
   if (!H.deletedPaymentKeys) H.deletedPaymentKeys = [];
+  if (!H.deletedCalendarNotes) H.deletedCalendarNotes = [];
+  if (!H.deletedShoppingLists) H.deletedShoppingLists = [];
+  if (!H.deletedPlans) H.deletedPlans = [];
   if (!H.nextId) H.nextId = 1;
   H.items.forEach(item=>{
     if(!item.frequency) item.frequency='once';
+    if(item.frequency==='biweekly') item.frequency='every_two_weeks';
+    if(item.frequency==='quincenal') item.frequency='semimonthly';
     if(!item.termType) item.termType=item.frequency==='once'?'term':'indefinite';
     if(item.frequency==='once' && !item.totalPayments) item.totalPayments=1;
+  });
+  Object.values(H.calendarNotes||{}).forEach(notes=>{
+    (notes||[]).forEach(n=>{ if(!n.type) n.type='pendiente'; if(n.done===undefined) n.done=false; });
+  });
+  H.shoppingLists.forEach(list=>{
+    if(!list.id) list.id=houseUid('house_list');
+    if(!list.title) list.title='Lista';
+    if(!list.date) list.date=isoToday();
+    if(!Array.isArray(list.items)) list.items=[];
+    if(list.completed===undefined) list.completed=false;
+  });
+  H.plans.forEach(plan=>{
+    if(!plan.id) plan.id=houseUid('house_plan');
+    if(!plan.label) plan.label='Plan de Casa';
+    if(!plan.date) plan.date=isoToday();
+    if(!Array.isArray(plan.items)) plan.items=[];
+    if(plan.completed===undefined) plan.completed=false;
   });
 }
 
@@ -767,6 +810,17 @@ function mergeById(a=[], b=[], preferNewest=true) {
   return [...map.values()];
 }
 
+function mergeHouseCalendarNotes(localNotes={}, cloudNotes={}, deleted=[]) {
+  const deletedSet=new Set(deleted||[]);
+  const dates=[...new Set([...Object.keys(localNotes||{}),...Object.keys(cloudNotes||{})])];
+  const merged={};
+  dates.forEach(date=>{
+    const rows=mergeById(localNotes[date]||[], cloudNotes[date]||[], true).filter(n=>!deletedSet.has(n.id));
+    if(rows.length) merged[date]=rows.sort((a,b)=>new Date(b.updatedAt||b.createdAt||0)-new Date(a.updatedAt||a.createdAt||0));
+  });
+  return merged;
+}
+
 function mergeHouseItems(localItems=[], cloudItems=[], deleted=[], deletedPayments=[], deletedPaymentKeys=[]) {
   const deletedSet=new Set(deleted);
   const deletedPaySet=new Set(deletedPayments);
@@ -791,9 +845,14 @@ function mergeHouseData(localData={}, cloudData={}) {
   const deletedPockets=[...new Set([...(local.deletedPockets||[]),...(cloud.deletedPockets||[])])];
   const deletedPayments=[...new Set([...(local.deletedPayments||[]),...(cloud.deletedPayments||[])])];
   const deletedPaymentKeys=[...new Set([...(local.deletedPaymentKeys||[]),...(cloud.deletedPaymentKeys||[])])];
+  const deletedCalendarNotes=[...new Set([...(local.deletedCalendarNotes||[]),...(cloud.deletedCalendarNotes||[])])];
+  const deletedShoppingLists=[...new Set([...(local.deletedShoppingLists||[]),...(cloud.deletedShoppingLists||[])])];
+  const deletedPlans=[...new Set([...(local.deletedPlans||[]),...(cloud.deletedPlans||[])])];
   const deletedPocketSet=new Set(deletedPockets);
   const deletedPaymentSet=new Set(deletedPayments);
   const deletedPaymentKeySet=new Set(deletedPaymentKeys);
+  const deletedShoppingSet=new Set(deletedShoppingLists);
+  const deletedPlanSet=new Set(deletedPlans);
   const merged={...HOUSE_INIT};
   merged.items=mergeHouseItems(local.items,cloud.items,deletedItems,deletedPayments,deletedPaymentKeys);
   merged.pockets=mergeById(local.pockets,cloud.pockets,true).filter(p=>!deletedPocketSet.has(p.id));
@@ -801,10 +860,16 @@ function mergeHouseData(localData={}, cloudData={}) {
     .filter(t=>!t.paymentId||!deletedPaymentSet.has(t.paymentId))
     .filter(t=>!(t.refType==='houseItem'&&deletedPaymentKeySet.has([t.refId,t.amount||0,t.date||'',t.by||''].join('|'))))
     .sort((a,b)=>new Date(b.createdAt||b.date)-new Date(a.createdAt||a.date));
+  merged.calendarNotes=mergeHouseCalendarNotes(local.calendarNotes,cloud.calendarNotes,deletedCalendarNotes);
+  merged.shoppingLists=mergeById(local.shoppingLists,cloud.shoppingLists,true).filter(l=>!deletedShoppingSet.has(l.id));
+  merged.plans=mergeById(local.plans,cloud.plans,true).filter(p=>!deletedPlanSet.has(p.id));
   merged.deletedItems=deletedItems;
   merged.deletedPockets=deletedPockets;
   merged.deletedPayments=deletedPayments;
   merged.deletedPaymentKeys=deletedPaymentKeys;
+  merged.deletedCalendarNotes=deletedCalendarNotes;
+  merged.deletedShoppingLists=deletedShoppingLists;
+  merged.deletedPlans=deletedPlans;
   merged.nextId=Math.max(local.nextId||1,cloud.nextId||1);
   merged.updatedAt=[local.updatedAt,cloud.updatedAt].filter(Boolean).sort().pop()||null;
   return merged;
@@ -960,9 +1025,21 @@ function currentActorName() {
   return name || 'Alguien';
 }
 
+function normalizePersonText(value='') {
+  return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+}
+
 function currentHousePerson() {
   const raw = ((S.profileName||'') + ' ' + (CURRENT_USER&&CURRENT_USER.email?CURRENT_USER.email:'')).toLowerCase();
   return raw.includes('laura') ? 'laura' : 'felipe';
+}
+
+function isHousePaymentByCurrentActor(payment={}) {
+  const by=normalizePersonText(payment.by||'');
+  if(!by || by==='casa' || by==='alguien') return false;
+  const actor=normalizePersonText(currentActorName());
+  const person=currentHousePerson();
+  return by.includes(person) || (actor && (by.includes(actor) || actor.includes(by)));
 }
 
 function houseAssigneeLabel(v) {
@@ -1065,8 +1142,8 @@ function totalPockets() { return S.pockets.reduce((s,p)=>s+(p.saved||0),0); }
 function loanPaid(loan) { return (loan.payments||[]).reduce((s,p)=>s+p.amount,0); }
 function catLabel(c) { return {trabajo:'Trabajo',deuda:'Deuda',persona:'Persona',otro:'Otro'}[c]||c; }
 function methodLabel(m) { return {deposito:'depósito',efectivo:'efectivo',transferencia:'transferencia'}[m]||m; }
-function freqLabel(f) { return {monthly:'Mensual',biweekly:'Cada 2 semanas',every_two_weeks:'Cada 2 semanas',weekly:'Semanal',once:'Único'}[f]||f; }
-function paycheckFreqLabel(p) { return {weekly:'Semanal',biweekly:'Cada 2 semanas',every_two_weeks:'Cada 2 semanas',monthly:'Mensual'}[p.recurrenceFreq] || (p.paymentType==='unico'?'Único':'Recurrente'); }
+function freqLabel(f) { return {monthly:'Mensual',biweekly:'Cada 2 semanas',every_two_weeks:'Cada 2 semanas',semimonthly:'Quincenal',quincenal:'Quincenal',weekly:'Semanal',once:'Único'}[f]||f; }
+function paycheckFreqLabel(p) { return {weekly:'Semanal',biweekly:'Cada 2 semanas',every_two_weeks:'Cada 2 semanas',semimonthly:'Quincenal',quincenal:'Quincenal',monthly:'Mensual'}[p.recurrenceFreq] || (p.paymentType==='unico'?'Único':'Recurrente'); }
 function peopleNames() { return [...new Set([...S.loans.map(l=>l.personName), ...S.borrowedLoans.map(l=>l.personName)].filter(Boolean))]; }
 function paycheckSourceLabel(p) {
   if(p.category==='persona') return p.personName||'Persona';
@@ -1111,13 +1188,17 @@ function sourceLabel(source) {
   return p ? `Bolsillo: ${p.name}` : 'Bolsillo';
 }
 function noteTypeLabel(type) {
-  return {llamada:'Llamada',compra:'Compra',cita:'Cita',otro:'Otro'}[type]||'Otro';
+  return {llamada:'Llamada',compra:'Compra',cita:'Cita',pendiente:'Pendiente',plan:'Plan',lista:'Lista',pago:'Pago',otro:'Otro'}[type]||'Otro';
 }
 function noteTypeIcon(type) {
   const icons = {
     llamada:`<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>`,
     compra:`<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>`,
     cita:`<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>`,
+    pendiente:`<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>`,
+    plan:`<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5h6m-6 4h6m-6 4h3M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/></svg>`,
+    lista:`<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>`,
+    pago:`<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>`,
     otro:`<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>`,
   };
   return icons[type]||icons.otro;
@@ -1184,7 +1265,10 @@ function getTransactions(limit=8) {
   (H.items||[]).forEach(item=>{
     const assigned=item.assignedTo||'both';
     if(!(assigned==='both'||assigned===housePerson)) return;
-    (item.payments||[]).forEach(p=>tx.push({date:p.date,createdAt:p.createdAt,type:'Casa',name:`Casa: ${item.name}`,amount:p.amount||0,sign:'-'}));
+    (item.payments||[]).filter(p=>isHousePaymentByCurrentActor(p)).forEach(p=>{
+      const by=p.by||currentActorName();
+      tx.push({date:p.date,createdAt:p.createdAt,type:'Casa',name:`Casa: ${item.name} · hecho por ${by}`,amount:p.amount||0,sign:'-'});
+    });
   });
   return tx.sort((a,b)=>(parseDate(b.date)-parseDate(a.date))||(new Date(b.createdAt||b.date)-new Date(a.createdAt||a.date))).slice(0,limit);
 }
@@ -1253,6 +1337,10 @@ function getUpcomingItems(days=14) {
     const d=parseDate(date);
     if(d>=t&&d<=limit) (notes||[]).filter(n=>!n.done).forEach(n=>items.push({type:'task',id:n.id,name:n.text,amount:0,date,dateKey:date,days:daysUntil(date)}));
   });
+  (S.plans||[]).filter(p=>p.isCustom!==false&&!p.completed).forEach(p=>{
+    const d=parseDate(p.date);
+    if(d>=t&&d<=limit) items.push({type:'plan',id:p.id,name:p.label||'Plan',amount:p.amount||0,date:p.date,days:daysUntil(p.date),emoji:'receipt',pending:(p.items||[]).length});
+  });
   (S.shoppingLists||[]).forEach(list=>{
     const pending=(list.items||[]).filter(i=>!i.done).length;
     if(!pending) return;
@@ -1298,7 +1386,42 @@ function homeActionIcon(onclick, kind, label) {
   const path=yes
     ? '<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>'
     : '<path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18"/>';
-  return `<button onclick="${onclick}" title="${label}" aria-label="${label}" class="inline-flex items-center justify-center w-9 h-9 shrink-0 rounded-xl border ${cls}" style="box-shadow:0 4px 12px rgba(15,23,42,.04)"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.6" viewBox="0 0 24 24">${path}</svg></button>`;
+  return `<button onclick="event.stopPropagation();${onclick}" title="${label}" aria-label="${label}" class="inline-flex items-center justify-center w-9 h-9 shrink-0 rounded-xl border ${cls}" style="box-shadow:0 4px 12px rgba(15,23,42,.04)"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.6" viewBox="0 0 24 24">${path}</svg></button>`;
+}
+
+function setHomeUpcomingFilter(filter) {
+  homeUpcomingFilter=filter||'all';
+  renderHome();
+}
+
+function homeUpcomingKind(item) {
+  if(['bill','onetime','expense','borrowed','house'].includes(item.type)) return 'payments';
+  if(item.type==='income') return 'income';
+  if(['task','shopping','plan'].includes(item.type)) return 'tasks';
+  return 'other';
+}
+
+function homeUpcomingDetailPayload(item) {
+  if(!item) return '';
+  return [item.type,item.id||'',item.paymentId||'',item.date||item.dateKey||''].join(':');
+}
+
+function homeSpendingBars(month) {
+  const rows=spendByCategory(month).slice(0,5);
+  const total=rows.reduce((s,r)=>s+(r.amount||0),0);
+  if(!rows.length||!total) return '';
+  return `<div class="card p-4">
+    <div class="flex justify-between items-center mb-3"><div><div class="font-semibold text-indigo-700 text-sm">Dónde se va el dinero</div><div class="text-xs text-slate-400">${monthTitle(month)}</div></div><div class="font-bold text-slate-800 text-sm">${fmt(total)}</div></div>
+    <div class="space-y-2.5">
+      ${rows.map(r=>{
+        const pct=Math.max(4,Math.round((r.amount/total)*100));
+        return `<button onclick="openModal('analysisCategoryDetail','${encodeURIComponent(r.name)}','${month}')" class="w-full text-left">
+          <div class="flex justify-between text-xs mb-1"><span class="font-semibold text-slate-700 capitalize">${r.name}</span><span class="font-bold text-slate-800">${fmt(r.amount)}</span></div>
+          <div class="w-full h-2.5 rounded-full bg-indigo-50 overflow-hidden"><div class="h-full rounded-full bg-gradient-to-r from-indigo-400 to-violet-400" style="width:${pct}%"></div></div>
+        </button>`;
+      }).join('')}
+    </div>
+  </div>`;
 }
 
 // ═══════════════════════════════════════
@@ -1320,6 +1443,8 @@ function updateHeaderBalance() {
 function renderHome() {
   const bal=freeBalance(), pkt=totalPockets();
   const upcoming=getUpcomingItems(14);
+  const filterLabels={all:'Todos',payments:'Pagos',income:'Ingresos',tasks:'Tareas'};
+  const visibleUpcoming=upcoming.filter(item=>homeUpcomingFilter==='all'||homeUpcomingKind(item)===homeUpcomingFilter);
   const pay14=upcoming.filter(x=>['bill','onetime','expense','borrowed','house'].includes(x.type)).reduce((s,x)=>s+x.amount,0);
   const owedToMe=S.loans.reduce((s,l)=>s+Math.max(0,(l.totalAmount||0)-loanPaid(l)),0);
   const t=today(), mk=monthKey(t);
@@ -1371,15 +1496,20 @@ function renderHome() {
     <div class="text-xs text-indigo-300 mt-1 font-medium">${pct}% pagado</div>
   </div>
 
-  <h3 class="font-bold text-indigo-700 text-xs uppercase tracking-wide">Próximos 14 días</h3>`;
+  <div class="flex items-center justify-between gap-2">
+    <h3 class="font-bold text-indigo-700 text-xs uppercase tracking-wide">Próximos 14 días</h3>
+    <div class="flex gap-1 overflow-x-auto">
+      ${Object.entries(filterLabels).map(([key,label])=>`<button onclick="setHomeUpcomingFilter('${key}')" class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${homeUpcomingFilter===key?'bg-indigo-600 text-white':'bg-indigo-50 text-indigo-600'}">${label}</button>`).join('')}
+    </div>
+  </div>`;
 
-  if(!upcoming.length) {
-    html+=`<div class="card p-4 text-center text-indigo-300 text-sm">Sin pagos próximos</div>`;
+  if(!visibleUpcoming.length) {
+    html+=`<div class="card p-4 text-center text-indigo-300 text-sm">Sin elementos para este filtro.</div>`;
   } else {
-    upcoming.forEach(item=>{
+    visibleUpcoming.forEach(item=>{
       const urgentCls=item.days<=2?'bg-red-100 text-red-700':item.days<=8?'bg-amber-100 text-amber-700':'bg-purple-100 text-purple-700';
-      const icon=itemIcon(item.type==='income'?'income':item.type==='loan'?'loan':item.type==='task'?'task':item.type==='shopping'?'task':item.type==='house'?'house':item.type==='borrowed'?'borrowed':item.type, item.category||'');
-      const color=item.type==='income'?'text-green-600':item.type==='task'?'text-slate-500':'text-indigo-700';
+      const icon=itemIcon(item.type==='income'?'income':item.type==='loan'?'loan':item.type==='task'?'task':item.type==='shopping'?'task':item.type==='plan'?'task':item.type==='house'?'house':item.type==='borrowed'?'borrowed':item.type, item.category||'');
+      const color=item.type==='income'?'text-green-600':(['task','plan','shopping'].includes(item.type)?'text-slate-500':'text-indigo-700');
       let actionBtn;
       if(item.type==='income') actionBtn=`<div class="flex gap-1.5 justify-end">${homeActionIcon(`openModal('confirmReceive','${item.id}')`,'yes','Recibido')}${homeActionIcon(`openModal('skipIncomePayment','${item.id}')`,'no','No recibido')}</div>`;
       else if(item.type==='bill') actionBtn=`<div class="flex gap-1.5 justify-end">${homeActionIcon(`openModal('confirmPay','${item.id}','${item.dateKey}')`,'yes','Pagar')}${homeNoPayButton(item)}</div>`;
@@ -1387,37 +1517,32 @@ function renderHome() {
       else if(item.type==='expense') actionBtn=`<div class="flex gap-1.5 justify-end">${homeActionIcon(`markExpensePaid('${item.id}')`,'yes','Pagar')}${homeNoPayButton(item)}</div>`;
       else if(item.type==='borrowed') actionBtn=`<div class="flex gap-1.5 justify-end">${homeActionIcon(`markBorrowedPaid('${item.id}','${item.paymentId||''}')`,'yes','Pagar')}${homeNoPayButton(item)}</div>`;
       else if(item.type==='house') actionBtn=`<div class="flex gap-1.5 justify-end">${homeActionIcon(`openModal('addHousePayment','${item.id}')`,'yes','Abonar')}${homeNoPayButton(item)}</div>`;
-      else if(item.type==='shopping') actionBtn=`<div class="flex gap-1 justify-end"><button onclick="completeShoppingList('${item.id}',true)" class="text-xs bg-green-50 text-green-700 font-semibold px-2 py-1 rounded-full">Completar</button><button onclick="openModal('shoppingListDetail','${item.id}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-2 py-1 rounded-full">Abrir</button></div>`;
-      else if(item.type==='task') actionBtn=`<div class="flex gap-1 justify-end"><button onclick="completeCalendarNote('${item.dateKey}','${item.id}')" class="text-xs bg-green-50 text-green-700 font-semibold px-2 py-1 rounded-full">Completar</button><button onclick="openModal('rescheduleCalendarNote','${item.dateKey}','${item.id}')" class="text-xs bg-slate-100 text-slate-600 font-semibold px-2 py-1 rounded-full">Mover</button></div>`;
-      else actionBtn=`<button onclick="openModal('addLoanPayment','${item.id}')" class="text-xs bg-purple-50 text-purple-700 font-semibold px-3 py-1 rounded-full">Registrar</button>`;
-      html+=`<div class="card p-3.5 flex items-center gap-3">
+      else if(item.type==='shopping') actionBtn=`<div class="flex gap-1 justify-end"><button onclick="event.stopPropagation();completeShoppingList('${item.id}',true)" class="text-xs bg-green-50 text-green-700 font-semibold px-2 py-1 rounded-full">Completar</button><button onclick="event.stopPropagation();openModal('shoppingListDetail','${item.id}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-2 py-1 rounded-full">Abrir</button></div>`;
+      else if(item.type==='task') actionBtn=`<div class="flex gap-1 justify-end"><button onclick="event.stopPropagation();completeCalendarNote('${item.dateKey}','${item.id}')" class="text-xs bg-green-50 text-green-700 font-semibold px-2 py-1 rounded-full">Completar</button><button onclick="event.stopPropagation();openModal('rescheduleCalendarNote','${item.dateKey}','${item.id}')" class="text-xs bg-slate-100 text-slate-600 font-semibold px-2 py-1 rounded-full">Mover</button></div>`;
+      else if(item.type==='plan') actionBtn=`<button onclick="event.stopPropagation();openModal('editCustomPlan','${item.id}')" class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full">Ver</button>`;
+      else actionBtn=`<button onclick="event.stopPropagation();openModal('addLoanPayment','${item.id}')" class="text-xs bg-purple-50 text-purple-700 font-semibold px-3 py-1 rounded-full">Registrar</button>`;
+      html+=`<div onclick="openModal('homeUpcomingDetail','${homeUpcomingDetailPayload(item)}')" class="card p-3.5 flex items-center gap-3 active:scale-[.99] transition">
         <div class="w-10 h-10 rounded-xl flex items-center justify-center ${item.type==='income'?'bg-green-50 text-green-600':'bg-indigo-50 text-indigo-500'}">${item.emoji?renderStoredIcon(item.emoji,item.type,item.category||''):icon}</div>
         <div class="flex-1 min-w-0">
           <div class="font-semibold text-slate-800 text-sm truncate">${item.name}</div>
           <div class="flex items-center gap-2 mt-0.5">
-            <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">${item.type==='income'?'Ingreso':item.type==='task'?'Tarea':item.type==='shopping'?'Compras':'Pago'}</span>
+            <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">${item.type==='income'?'Ingreso':item.type==='task'?'Tarea':item.type==='shopping'?'Compras':item.type==='plan'?'Plan':'Pago'}</span>
             <span class="inline-flex items-center justify-center w-8 h-6 shrink-0 rounded-full text-[10px] font-extrabold whitespace-nowrap ${urgentCls}">${Math.max(0,item.days)}D</span>
             <span class="text-xs text-slate-600 font-semibold whitespace-nowrap">${fmtDate(item.date)}</span>
           </div>
         </div>
         <div class="text-right">
-          <div class="font-bold ${color} text-sm">${item.type==='task'?'Tarea':item.type==='shopping'?`${item.pending} pendientes`:`${item.type==='income'?'+':'-'}${fmt(item.amount)}`}</div>
+          <div class="font-bold ${color} text-sm">${item.type==='task'?'Tarea':item.type==='shopping'?`${item.pending} pendientes`:item.type==='plan'?`${item.pending||0} items`:`${item.type==='income'?'+':'-'}${fmt(item.amount)}`}</div>
           <div class="mt-1">${actionBtn}</div>
         </div>
       </div>`;
     });
   }
 
-  html+=`<div class="card p-4">
-    <h3 class="font-semibold text-indigo-700 text-sm mb-3">Gasto rápido</h3>
-    <div class="flex gap-2">
-      <input type="text" id="qName" placeholder="Descripción" class="flex-1 border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2 text-sm">
-      <input type="number" id="qAmt" placeholder="$0" class="w-20 border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2 text-sm">
-      <button onclick="startQuickExpense()" class="btn-primary px-3 py-2 text-sm">+</button>
-    </div>
-  </div>`;
   const tx=getTransactions(6);
+  html+=homeSpendingBars(mk);
   html+=`<div class="card p-4"><div class="font-semibold text-indigo-700 text-sm mb-3">Transacciones</div>${tx.length?tx.map(t=>`<div class="flex items-center justify-between py-2 border-t border-slate-50"><div><div class="text-sm font-semibold text-slate-700">${t.name}</div><div class="text-xs text-slate-400">${t.type} · ${fmtDate(t.date)}</div></div><div class="font-bold ${t.sign==='+'?'text-green-600':'text-red-500'}">${t.sign}${fmt(t.amount)}</div></div>`).join(''):`<div class="text-sm text-indigo-300 text-center py-3">Sin historial todavía.</div>`}</div>`;
+  html+=`<button onclick="openModal('homeCreateChoice')" class="btn-primary text-sm px-4 py-2.5 shrink-0 mobile-fab-add">+ Crear</button>`;
 
   document.getElementById('homeContent').innerHTML=html;
   decorateMoneyInputs();
@@ -1509,7 +1634,13 @@ function renderChecks() {
   S.paychecks.forEach(p=>{const key=paycheckSourceLabel(p); (groups[key]||(groups[key]=[])).push(p);});
   const groupCards=Object.entries(groups).sort(([a],[b])=>a.localeCompare(b));
   if(!incomeTab) incomeTab='active';
-  let html=`<div class="finance-month-nav mb-3">
+  const incomeAddBtn=document.getElementById('incomeAddBtn');
+  if(incomeAddBtn) incomeAddBtn.classList.toggle('hidden', incomeTab==='history');
+  let html=`<div class="grid grid-cols-2 gap-1 mb-3">
+    <button class="pill-tab ${incomeTab==='active'?'active':''} text-[11px] font-bold px-2 py-1.5 rounded-full whitespace-nowrap" onclick="setIncomeTab('active')">Activos</button>
+    <button class="pill-tab ${incomeTab==='history'?'active':''} text-[11px] font-bold px-2 py-1.5 rounded-full whitespace-nowrap" onclick="setIncomeTab('history')">Historial</button>
+  </div>
+  <div class="finance-month-nav mb-3">
     <button onclick="changeIncomeMonth(-1)" class="bg-white text-indigo-500 border border-indigo-100 rounded-xl px-3 py-2 text-sm font-bold">‹</button>
     <div class="text-center"><h2>${['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'][im-1]}</h2><p class="text-xs text-slate-400">Ingresos ${iy}</p></div>
     <button onclick="changeIncomeMonth(1)" class="bg-white text-indigo-500 border border-indigo-100 rounded-xl px-3 py-2 text-sm font-bold">›</button>
@@ -1518,10 +1649,6 @@ function renderChecks() {
     <div class="card p-3 min-w-0"><div class="text-[10px] text-slate-400 font-bold uppercase leading-tight">Recibido este año</div><div class="text-lg font-extrabold text-green-600">${fmt(yearIn)}</div><div class="summary-range text-slate-400">${fmtDateShort(fmtISO(yearStart))} – ${fmtDateShort(fmtISO(yearEnd))} ${thisYear}</div></div>
     <div class="card p-3 min-w-0"><div class="text-[10px] text-slate-400 font-bold uppercase leading-tight">A recibir este mes</div><div class="text-lg font-extrabold text-green-600">${fmt(thisIn)}</div><div class="summary-range text-slate-400">${fmtDateShort(fmtISO(monthStart))} – ${fmtDateShort(fmtISO(monthEnd))} ${iy}</div></div>
     <div class="card p-3 min-w-0"><div class="text-[10px] text-slate-400 font-bold uppercase leading-tight">Recibido a hoy</div><div class="text-lg font-extrabold text-green-600">${fmt(paidToToday)}</div><div class="summary-range text-slate-400">${fmtDateShort(fmtISO(monthStart))} – Hoy</div></div>
-  </div>
-  <div class="grid grid-cols-2 gap-1 mb-4">
-    <button class="pill-tab ${incomeTab==='active'?'active':''} text-[11px] font-bold px-2 py-1.5 rounded-full whitespace-nowrap" onclick="setIncomeTab('active')">Activos</button>
-    <button class="pill-tab ${incomeTab==='history'?'active':''} text-[11px] font-bold px-2 py-1.5 rounded-full whitespace-nowrap" onclick="setIncomeTab('history')">Historial</button>
   </div>`;
 
   if(incomeTab==='active') {
@@ -1710,8 +1837,8 @@ const ICON_DEFS = {
   heart:   {l:'Especial',     p:'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z'},
   bed:     {l:'Dormitorio',   p:'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'},
   box:     {l:'Paquete',      p:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'},
-  cat:     {l:'Gato',         p:'M4 4l4 3 4-3 4 3 4-3v8a8 8 0 11-16 0V4zm6 8h.01M14 12h.01M9 16c1.6 1.2 4.4 1.2 6 0'},
-  cannabis:{l:'Mata de marihuana',p:'M12 22V12m0 0C9 9 7 6 7 2c3 1 5 4 5 10zm0 0c3-3 5-6 5-10 3 2 4 6 2 10-2 1-4 1-7 0zm0 0C9 11 6 11 3 13c2 2 5 3 9-1zm0 0c3-1 6-1 9 1-2 2-5 3-9-1zm0 0c-2 2-4 4-6 7 3 0 5-2 6-7zm0 0c2 2 4 4 6 7-3 0-5-2-6-7z'},
+  cat:     {l:'Gato',         svg:`<svg class="__SIZE__" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 8.5 7 4l3.2 2.2a8.1 8.1 0 013.6 0L17 4l2.5 4.5A7.7 7.7 0 0121 13c0 4.4-4 8-9 8s-9-3.6-9-8c0-1.6.5-3.1 1.5-4.5z"/><path stroke-linecap="round" d="M9 12h.01M15 12h.01M8 16c2.2 1.6 5.8 1.6 8 0M10.5 14h3M6.5 13.5H3.8M6.8 15.5H4.2M17.5 13.5h2.7M17.2 15.5h2.6"/></svg>`},
+  cannabis:{l:'Mata de marihuana',svg:`<svg class="__SIZE__" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path fill="currentColor" d="M12 22c-.55 0-1-.45-1-1v-5.7c-1.45 2.33-3.3 4.1-5.56 5.28-.7.36-1.46-.2-1.34-.98.42-2.7 1.82-4.92 4.2-6.65-2.48.27-4.67-.16-6.55-1.29-.58-.35-.58-1.19 0-1.54 2.25-1.35 4.77-1.47 7.56-.36-1.7-2.3-2.52-4.6-2.46-6.9.02-.72.88-1.09 1.42-.62 1.65 1.43 2.89 3.5 3.73 6.23.84-2.73 2.08-4.8 3.73-6.23.54-.47 1.4-.1 1.42.62.06 2.3-.76 4.6-2.46 6.9 2.79-1.11 5.31-.99 7.56.36.58.35.58 1.19 0 1.54-1.88 1.13-4.07 1.56-6.55 1.29 2.38 1.73 3.78 3.95 4.2 6.65.12.78-.64 1.34-1.34.98-2.26-1.18-4.11-2.95-5.56-5.28V21c0 .55-.45 1-1 1z"/></svg>`},
 };
 const EMOJI_TO_KEY = {
   '💳':'card','🏠':'home','🛡️':'shield','📱':'phone','💡':'light','💧':'drop','🔥':'fire',
@@ -1732,6 +1859,8 @@ const ICON_KEYS = {
 };
 function renderIcon(key,size='w-5 h-5') {
   const d=ICON_DEFS[key]; if(!d) return null;
+  if(d.emoji) return `<span class="${size} inline-flex items-center justify-center text-[1.25rem] leading-none" aria-hidden="true">${d.emoji}</span>`;
+  if(d.svg) return d.svg.replace(/__SIZE__/g,size);
   return `<svg class="${size}" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="${d.p}"/></svg>`;
 }
 function renderStoredIcon(stored,kind,category) {
@@ -1821,12 +1950,12 @@ function itemIcon(kind, category) {
 // PLAN
 // ═══════════════════════════════════════
 function facturaAddAction() {
-  const actions={monthly:'addFinanceChoice',gastos:'addExpense',bolsillos:'addPocket',prestamos:'addLoanChoice'};
+  const actions={monthly:'addFinanceChoice',bolsillos:'addPocket',prestamos:'addLoanChoice'};
   openModal(actions[currentTab]||'addBill');
 }
 
 function financeAddLabel() {
-  return {monthly:'+ Agregar pago',gastos:'+ Agregar gasto',bolsillos:'+ Crear bolsillo',prestamos:'+ Agregar préstamo'}[currentTab] || '+ Agregar';
+  return {monthly:'+ Agregar pago',bolsillos:'+ Crear bolsillo',prestamos:'+ Agregar préstamo'}[currentTab] || '+ Agregar';
 }
 
 function setFinanceMonth(month) {
@@ -1844,6 +1973,12 @@ function renderBills() {
   const t=today();
   let html='';
   const [fy,fm]=finMonth.split('-').map(Number);
+  if(currentView==='facturas') html+=`<div class="grid grid-cols-4 gap-1 mb-3">
+    <button class="pill-tab ${currentTab==='monthly'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="switchTab('monthly',this)">Pagos</button>
+    <button class="pill-tab ${currentTab==='prestamos'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="switchTab('prestamos',this)">Préstamos</button>
+    <button class="pill-tab ${currentTab==='bolsillos'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="switchTab('bolsillos',this)">Bolsillos</button>
+    <button class="pill-tab ${currentTab==='gastos'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="switchTab('gastos',this)">Historial</button>
+  </div>`;
   if(currentTab!=='bolsillos') {
     html+=`<div class="finance-month-nav mb-3">
       <button onclick="changeFinanceMonth(-1)" class="bg-white text-indigo-500 border border-indigo-100 rounded-xl px-3 py-2 text-sm font-bold">‹</button>
@@ -1851,12 +1986,6 @@ function renderBills() {
       <button onclick="changeFinanceMonth(1)" class="bg-white text-indigo-500 border border-indigo-100 rounded-xl px-3 py-2 text-sm font-bold">›</button>
     </div>`;
   }
-  if(currentView==='facturas') html+=`<div class="grid grid-cols-4 gap-1 mb-4">
-    <button class="pill-tab ${currentTab==='monthly'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="switchTab('monthly',this)">Pagos</button>
-    <button class="pill-tab ${currentTab==='prestamos'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="switchTab('prestamos',this)">Préstamos</button>
-    <button class="pill-tab ${currentTab==='bolsillos'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="switchTab('bolsillos',this)">Bolsillos</button>
-    <button class="pill-tab ${currentTab==='gastos'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="switchTab('gastos',this)">Historial</button>
-  </div>`;
 
   if(currentTab==='monthly') {
     html+=`<div class="flex justify-end mb-3"><button onclick="facturaAddAction()" class="btn-primary text-sm px-4 py-2.5 shrink-0 mobile-fab-add">${financeAddLabel()}</button></div>`;
@@ -1909,7 +2038,6 @@ function renderBills() {
   }
 
   else if(currentTab==='gastos') {
-    html+=`<div class="flex justify-end mb-3"><button onclick="facturaAddAction()" class="btn-primary text-sm px-4 py-2.5 mobile-fab-add">${financeAddLabel()}</button></div>`;
     const historyItems=getMonthPayments(finMonth).filter(item=>item.kind!=='loan').sort((a,b)=>parseDate(b.date)-parseDate(a.date));
     const paidTotal=historyItems.reduce((s,item)=>s+(item.paid?((item.paidAmount||0)||(item.originalAmount||item.amount||0)):0),0);
     const totalBudget=historyItems.reduce((s,item)=>s+(item.originalAmount||item.amount||0),0);
@@ -1929,7 +2057,6 @@ function renderBills() {
         </div>
       </div>`;
     });
-    html+=`<button onclick="openModal('addExpense')" class="w-full mt-3 border-2 border-dashed border-indigo-200 text-indigo-400 font-semibold py-3 rounded-2xl text-sm">+ Agregar gasto</button>`;
   }
 
   else if(currentTab==='bolsillos') {
@@ -2060,12 +2187,16 @@ function renderSchedulePreview(rows=[], modalType='', modalId='', show=4) {
 
 function houseAddAction() {
   if(houseTab==='pockets') openModal('addHousePocket');
+  else if(houseTab==='calendar') openModal('houseCalendarAddChoice',houseCalDate||isoToday());
   else openModal('addHouseItem');
 }
 
 function updateHouseAddButton() {
   const btn=document.getElementById('houseAddBtn');
-  if(btn) btn.textContent=houseTab==='pockets'?'+ Agregar bolsillo':'+ Agregar pago';
+  if(btn) {
+    btn.classList.toggle('hidden', houseTab==='history');
+    btn.textContent=houseTab==='pockets'?'+ Agregar bolsillo':houseTab==='calendar'?'+ Agregar':'+ Agregar pago';
+  }
 }
 
 function setHouseTab(tab) {
@@ -2088,16 +2219,17 @@ function renderHouse() {
   const total=visibleItems.reduce((s,i)=>s+(i.amount||0),0);
   const paid=visibleItems.reduce((s,i)=>s+housePaid(i),0);
   const pending=Math.max(0,total-paid);
-  let html=`${houseTab!=='pockets'?`<div class="finance-month-nav mb-3">
+  let html=`<div class="grid grid-cols-4 gap-1 mb-3">
+    <button class="pill-tab ${houseTab==='payments'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="setHouseTab('payments')">Pagos</button>
+    <button class="pill-tab ${houseTab==='pockets'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="setHouseTab('pockets')">Bolsillos</button>
+    <button class="pill-tab ${houseTab==='calendar'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="setHouseTab('calendar')">Calendario</button>
+    <button class="pill-tab ${houseTab==='history'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="setHouseTab('history')">Historial</button>
+  </div>
+  ${houseTab!=='pockets'&&houseTab!=='calendar'?`<div class="finance-month-nav mb-3">
     <button onclick="changeHouseMonth(-1)" class="bg-white text-indigo-500 border border-indigo-100 rounded-xl px-3 py-2 text-sm font-bold">‹</button>
     <div class="text-center"><h2>${['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'][hm-1]}</h2><p class="text-xs text-slate-400">Casa ${hy}</p></div>
     <button onclick="changeHouseMonth(1)" class="bg-white text-indigo-500 border border-indigo-100 rounded-xl px-3 py-2 text-sm font-bold">›</button>
-  </div>`:''}
-  <div class="grid grid-cols-3 gap-1 mb-3">
-    <button class="pill-tab ${houseTab==='payments'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="setHouseTab('payments')">Pagos</button>
-    <button class="pill-tab ${houseTab==='pockets'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="setHouseTab('pockets')">Bolsillos</button>
-    <button class="pill-tab ${houseTab==='history'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="setHouseTab('history')">Historial</button>
-  </div>`;
+  </div>`:''}`;
 
   if(houseTab==='payments') {
     html+=`<div class="grid grid-cols-3 gap-2">
@@ -2154,14 +2286,100 @@ function renderHouse() {
         </div>`;
       });
     }
+  } else if(houseTab==='calendar') {
+    html+=renderHouseCalendarContent();
   } else {
     const completed=visibleItems.filter(item=>housePaid(item)>0).sort((a,b)=>new Date(b.updatedAt||b.createdAt||0)-new Date(a.updatedAt||a.createdAt||0));
     const recent=(H.transactions||[]).filter(t=>txMonthMatches(t.date,houseMonth)).slice(0,30);
-    html+=`<div class="card p-4"><div class="font-semibold text-indigo-700 text-sm mb-3">Pagos realizados</div>${completed.length?completed.map(item=>`<button onclick="openModal('houseItemDetail','${item.id}')" class="w-full text-left flex justify-between py-2 border-t border-slate-50"><div><div class="text-sm font-semibold text-slate-700">${item.emoji||'🏠'} ${item.name}</div><div class="text-xs text-slate-400">${houseAssigneeLabel(item.assignedTo||'both')} · ${fmtDate(item.dueDate||isoToday())}</div></div><div class="font-bold text-green-600">${fmt(housePaid(item))}</div></button>`).join(''):`<div class="text-sm text-indigo-300 text-center py-3">Aún no hay pagos realizados.</div>`}</div>`;
+    html+=`<div class="card p-4"><div class="font-semibold text-indigo-700 text-sm mb-3">Pagos realizados</div>${completed.length?completed.map(item=>`<button onclick="openModal('houseItemDetail','${item.id}')" class="w-full text-left flex justify-between py-2 border-t border-slate-50"><div class="flex items-center gap-2 min-w-0"><span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0">${renderStoredIcon(item.emoji||'home','house','')}</span><div class="min-w-0"><div class="text-sm font-semibold text-slate-700 truncate">${item.name}</div><div class="text-xs text-slate-400">${houseAssigneeLabel(item.assignedTo||'both')} · ${fmtDate(item.dueDate||isoToday())}</div></div></div><div class="font-bold text-green-600">${fmt(housePaid(item))}</div></button>`).join(''):`<div class="text-sm text-indigo-300 text-center py-3">Aún no hay pagos realizados.</div>`}</div>`;
     html+=`<div class="card p-4"><div class="font-semibold text-indigo-700 text-sm mb-3">Actividad compartida</div>${recent.length?recent.map(t=>`<div class="flex justify-between py-2 border-t border-slate-50"><div><div class="text-sm font-semibold text-slate-700">${t.label}</div><div class="text-xs text-slate-400">${fmtDate(t.date)} · ${t.by||'Casa'}</div></div><div class="font-bold ${t.amount>=0?'text-green-600':'text-red-500'}">${fmt(Math.abs(t.amount||0))}</div></div>`).join(''):`<div class="text-sm text-indigo-300 text-center py-3">Sin actividad todavía.</div>`}</div>`;
   }
   document.getElementById('houseContent').innerHTML=html;
 }
+
+function houseCalendarItemsForDate(dateKey) {
+  const payments=(H.items||[]).filter(item=>(item.dueDate||item.createdAt&&item.createdAt.slice(0,10))===dateKey);
+  const notes=(H.calendarNotes&&H.calendarNotes[dateKey])||[];
+  const lists=(H.shoppingLists||[]).filter(list=>list.date===dateKey);
+  const plans=(H.plans||[]).filter(plan=>plan.date===dateKey);
+  return {payments,notes,lists,plans};
+}
+
+function houseCalendarCount(dateKey) {
+  const day=houseCalendarItemsForDate(dateKey);
+  return day.payments.length+day.notes.length+day.lists.length+day.plans.length;
+}
+
+function housePlanTotal(plan) {
+  return (plan.items||[]).reduce((s,item)=>s+(parseFloat(item.amount)||0),0);
+}
+
+function renderHouseCalendarContent() {
+  if(!houseCalDate) houseCalDate=isoToday();
+  const base=parseDate(houseCalDate), y=base.getFullYear(), m=base.getMonth();
+  const first=new Date(y,m,1), last=new Date(y,m+1,0), start=first.getDay();
+  const selected=houseCalDate, day=houseCalendarItemsForDate(selected);
+  let html=`<div class="grid grid-cols-3 items-center mb-4">
+    <button onclick="changeHouseCalendarMonth(-1)" class="bg-white text-indigo-500 border border-indigo-100 rounded-xl px-3 py-2 text-sm font-bold justify-self-start">‹</button>
+    <div class="text-center"><h2 class="text-3xl font-extrabold text-slate-800 leading-tight">${['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'][m]}</h2><p class="text-xs text-slate-400">Calendario Casa ${y}</p></div>
+    <button onclick="changeHouseCalendarMonth(1)" class="bg-white text-indigo-500 border border-indigo-100 rounded-xl px-3 py-2 text-sm font-bold justify-self-end">›</button>
+  </div>
+  <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400 mb-1">${['D','L','M','M','J','V','S'].map(d=>`<div>${d}</div>`).join('')}</div>
+  <div class="grid grid-cols-7 gap-1 mb-4">`;
+  for(let i=0;i<start;i++) html+=`<div></div>`;
+  for(let d=1;d<=last.getDate();d++){
+    const key=fmtISO(new Date(y,m,d)), isSel=key===selected, isToday=key===isoToday(), count=houseCalendarCount(key);
+    html+=`<button onclick="selectHouseCalendarDate('${key}')" class="cal-day ${isSel?'ring-2 ring-indigo-400 bg-white':isToday?'cal-today':'bg-white text-slate-700'}"><span class="text-sm font-bold">${d}</span>${count?`<span class="w-1.5 h-1.5 rounded-full ${isSel||isToday?'bg-indigo-300':'bg-indigo-500'} mt-0.5"></span>`:''}</button>`;
+  }
+  html+=`</div>
+  <div class="card p-4">
+    <div class="flex justify-between items-center mb-3">
+      <div><div class="font-bold text-slate-800">Casa para ${fmtDateLong(selected)}</div><div class="text-xs text-slate-400">Listas, planes, citas, pendientes y pagos compartidos</div></div>
+      <button onclick="openModal('houseCalendarAddChoice','${selected}')" class="btn-primary text-sm px-4 py-2.5 shrink-0 mobile-fab-add">+ Agregar</button>
+    </div>`;
+  if(!day.payments.length&&!day.notes.length&&!day.lists.length&&!day.plans.length) html+=`<div class="text-center text-indigo-300 py-6 text-sm">Nada de Casa programado para este día.</div>`;
+  day.payments.forEach(item=>{
+    const paid=housePaid(item), left=Math.max(0,(item.amount||0)-paid);
+    html+=`<button onclick="openModal('houseItemDetail','${item.id}')" class="w-full text-left py-2 border-t border-slate-50 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center">${renderStoredIcon(item.emoji||'home','house','')}</div>
+      <div class="flex-1 min-w-0"><div class="text-sm font-semibold text-slate-800">${item.name}</div><div class="text-xs text-slate-400">${houseAssigneeLabel(item.assignedTo||'both')} · ${freqLabel(item.frequency||'once')}</div></div>
+      <div class="text-right"><div class="font-bold ${left<=0?'text-green-600':'text-red-500'}">${left<=0?'Listo':fmt(left)}</div><div class="text-[10px] text-slate-400">${fmt(item.amount||0)}</div></div>
+    </button>`;
+  });
+  day.notes.forEach(n=>{
+    html+=`<div class="py-2 border-t border-slate-50">
+      <div class="flex items-center gap-3">
+        <button onclick="toggleHouseCalendarNote('${selected}','${n.id}')" class="w-6 h-6 rounded-full ${n.done?'bg-green-100 text-green-600':'bg-slate-100 text-slate-300'} text-xs font-bold">${n.done?'✓':''}</button>
+        <div class="flex-1 min-w-0"><div class="inline-flex items-center gap-1 text-xs bg-indigo-50 text-indigo-600 font-bold px-2 py-0.5 rounded-full">${noteTypeIcon(n.type)} ${noteTypeLabel(n.type)}</div><div class="text-sm mt-1 ${n.done?'line-through text-slate-400':'text-slate-700'}">${n.text}</div></div>
+        <button onclick="openModal('rescheduleHouseCalendarNote','${selected}','${n.id}')" class="text-xs bg-slate-100 text-slate-600 font-semibold px-2 py-1 rounded-full">Mover</button>
+        <button onclick="deleteHouseCalendarNote('${selected}','${n.id}')" class="text-slate-300 text-lg">x</button>
+      </div>
+    </div>`;
+  });
+  day.lists.forEach(list=>{
+    const pending=(list.items||[]).filter(i=>!i.done).length;
+    html+=`<button onclick="openModal('houseShoppingListDetail','${list.id}')" class="w-full text-left py-2 border-t border-slate-50 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center">${renderIcon('cart','w-5 h-5')}</div><div class="flex-1 min-w-0"><div class="text-sm font-semibold text-slate-800">${list.title}</div><div class="text-xs text-slate-400">${pending} pendientes de ${(list.items||[]).length} items</div></div>
+      <span class="text-xs bg-indigo-50 text-indigo-600 font-bold px-2 py-1 rounded-full">Lista</span>
+    </button>`;
+  });
+  day.plans.forEach(plan=>{
+    html+=`<button onclick="openModal('housePlanDetail','${plan.id}')" class="w-full text-left py-2 border-t border-slate-50 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center">${renderIcon('receipt','w-5 h-5')}</div><div class="flex-1 min-w-0"><div class="text-sm font-semibold text-slate-800">${plan.label}</div><div class="text-xs text-slate-400">${plan.completed?'Completado':'Pendiente'} · ${fmt(housePlanTotal(plan))}</div></div>
+      <span class="text-xs bg-indigo-50 text-indigo-600 font-bold px-2 py-1 rounded-full">Plan</span>
+    </button>`;
+  });
+  html+=`</div>`;
+  return html;
+}
+
+function changeHouseCalendarMonth(delta) {
+  const d=parseDate(houseCalDate||isoToday());
+  d.setMonth(d.getMonth()+delta);
+  houseCalDate=fmtISO(new Date(d.getFullYear(),d.getMonth(),1));
+  renderHouse();
+}
+function selectHouseCalendarDate(dateKey) { houseCalDate=dateKey; renderHouse(); }
 
 function txMonthMatches(date, month) {
   return date && monthKey(parseDate(date))===month;
@@ -2184,8 +2402,14 @@ function monthTitle(key) {
 function spendByCategory(month) {
   const rows={};
   const add=(cat,amount)=>{ rows[cat]=(rows[cat]||0)+(amount||0); };
-  getMonthPayments(month).filter(p=>p.kind!=='loan').forEach(p=>add(p.category||p.kind||'pagos',p.amount||0));
+  getMonthPayments(month).filter(p=>p.kind!=='loan').forEach(p=>add(p.category||p.kind||'pagos',p.originalAmount||p.amount||0));
   return Object.entries(rows).map(([name,amount])=>({name,amount})).sort((a,b)=>b.amount-a.amount);
+}
+
+function analysisCategoryItems(category, month=analysisMonth) {
+  return getMonthPayments(month)
+    .filter(p=>p.kind!=='loan' && (p.category||p.kind||'pagos')===category)
+    .sort((a,b)=>parseDate(a.date)-parseDate(b.date));
 }
 
 function pieChart(rows, total) {
@@ -2227,7 +2451,7 @@ function renderAnalysis() {
     <div class="mt-4 space-y-2">${cats.length?cats.map((c,i)=>{
       const colors=['bg-indigo-600','bg-emerald-500','bg-orange-500','bg-red-500','bg-cyan-500','bg-violet-500','bg-amber-500','bg-slate-500'];
       const pct=totalCats?Math.round(c.amount/totalCats*100):0;
-      return `<div class="flex items-center justify-between text-sm"><div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full ${colors[i%colors.length]}"></span><span class="font-semibold text-slate-700 capitalize">${c.name}</span></div><div class="font-bold text-slate-800">${fmt(c.amount)} <span class="text-xs text-slate-400">(${pct}%)</span></div></div>`;
+      return `<button onclick="openModal('analysisCategoryDetail','${encodeURIComponent(c.name)}')" class="w-full flex items-center justify-between text-sm text-left rounded-xl px-2 py-2 hover:bg-indigo-50 active:scale-[.99] transition"><div class="flex items-center gap-2 min-w-0"><span class="w-3 h-3 rounded-full ${colors[i%colors.length]} shrink-0"></span><span class="font-semibold text-slate-700 capitalize truncate">${c.name}</span></div><div class="font-bold text-slate-800">${fmt(c.amount)} <span class="text-xs text-slate-400">(${pct}%)</span></div></button>`;
     }).join(''):`<div class="text-sm text-indigo-300 text-center py-3">No hay egresos en este mes.</div>`}</div>
   </div>`;
   document.getElementById('analysisContent').innerHTML=html;
@@ -2386,9 +2610,9 @@ function toggleCustomPlan(id) { const p=S.plans.find(x=>x.id===id); if(p) p.comp
 function calendarItemsForDate(dateKey) {
   const items=[];
   getMonthPayments(monthKey(parseDate(dateKey))).forEach(p=>{ if(p.date===dateKey) items.push(p); });
-  S.paychecks.forEach(p=>{ if(p.date===dateKey) items.push({kind:'income',name:'Cheque nómina',amount:p.amount,paid:p.received,emoji:'💵'}); });
+  S.paychecks.forEach(p=>{ if(p.date===dateKey) items.push({kind:'income',name:'Cheque nómina',amount:p.amount,paid:p.received,emoji:p.emoji||'coin'}); });
   const allPlans=[...(S.plans||[])];
-  allPlans.forEach(p=>{ if(p.date===dateKey) items.push({kind:'plan',name:p.label,amount:0,paid:p.completed,emoji:'📋',note:p.note,items:p.items||[]}); });
+  allPlans.forEach(p=>{ if(p.date===dateKey) items.push({kind:'plan',name:p.label,amount:0,paid:p.completed,emoji:'receipt',note:p.note,items:p.items||[]}); });
   return items;
 }
 
@@ -2417,10 +2641,10 @@ function renderCalendar() {
   if(!dayItems.length&&!notes.length&&!dayShopping.length) html+=`<div class="text-center text-indigo-300 py-6 text-sm">Nada programado para este día.</div>`;
   dayItems.forEach(item=>{
     if(item.kind==='plan') {
-      html+=`<div class="flex items-start gap-3 py-2 border-t border-slate-50"><div class="text-xl">${item.emoji||'📋'}</div><div class="flex-1"><div class="text-sm font-semibold text-slate-800">${item.name}</div><div class="text-xs text-slate-400">${item.paid?'Guía completada':'Guía de plan'}</div>${item.note?`<div class="text-xs text-slate-500 mt-1">${item.note}</div>`:''}</div><span class="text-xs bg-indigo-50 text-indigo-600 font-bold px-2 py-1 rounded-full">Plan</span></div>`;
+      html+=`<div class="flex items-start gap-3 py-2 border-t border-slate-50"><div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0">${renderStoredIcon(item.emoji||'receipt','plan','')}</div><div class="flex-1"><div class="text-sm font-semibold text-slate-800">${item.name}</div><div class="text-xs text-slate-400">${item.paid?'Guía completada':'Guía de plan'}</div>${item.note?`<div class="text-xs text-slate-500 mt-1">${item.note}</div>`:''}</div><span class="text-xs bg-indigo-50 text-indigo-600 font-bold px-2 py-1 rounded-full">Plan</span></div>`;
       return;
     }
-    html+=`<div class="flex items-center gap-3 py-2 border-t border-slate-50"><div class="text-xl">${item.emoji||'📌'}</div><div class="flex-1"><div class="text-sm font-semibold text-slate-800">${item.name}</div><div class="text-xs text-slate-400">${item.paid?'Completado':'Pendiente'}</div></div><div class="font-bold ${item.kind==='income'||item.kind==='loan'?'text-green-600':'text-red-500'}">${item.kind==='income'||item.kind==='loan'?'+':'-'}${fmt(item.amount)}</div></div>`;
+    html+=`<div class="flex items-center gap-3 py-2 border-t border-slate-50"><div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center">${renderStoredIcon(item.emoji||'pin',item.kind,item.category||'')}</div><div class="flex-1"><div class="text-sm font-semibold text-slate-800">${item.name}</div><div class="text-xs text-slate-400">${item.paid?'Completado':'Pendiente'}</div></div><div class="font-bold ${item.kind==='income'||item.kind==='loan'?'text-green-600':'text-red-500'}">${item.kind==='income'||item.kind==='loan'?'+':'-'}${fmt(item.amount)}</div></div>`;
   });
   notes.forEach(n=>{
     const items=(n.items||[]).filter(Boolean);
@@ -2440,7 +2664,7 @@ function renderCalendar() {
   dayShopping.forEach(list=>{
     const pending=(list.items||[]).filter(i=>!i.done).length;
     html+=`<button onclick="openModal('shoppingListDetail','${list.id}')" class="w-full text-left py-2 border-t border-slate-50 flex items-center gap-3">
-      <div class="text-xl">🛒</div><div class="flex-1"><div class="text-sm font-semibold text-slate-800">${list.title}</div><div class="text-xs text-slate-400">${pending} pendientes de ${(list.items||[]).length} items</div></div>
+      <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center">${renderIcon('cart','w-5 h-5')}</div><div class="flex-1"><div class="text-sm font-semibold text-slate-800">${list.title}</div><div class="text-xs text-slate-400">${pending} pendientes de ${(list.items||[]).length} items</div></div>
       <span class="text-xs bg-indigo-50 text-indigo-600 font-bold px-2 py-1 rounded-full">Abrir</span>
     </button>`;
   });
@@ -2670,6 +2894,142 @@ async function saveHousePayment(id) {
   if(housePaid(item)>=(item.amount||0)) item.done=true;
   H.transactions.unshift({id:houseUid('house_tx'),label:`Abono a ${item.name}`,amount,date,by:currentActorName(),createdAt:new Date().toISOString(),refType:'houseItem',refId:item.id,paymentId:payment.id});
   await save(); await saveHouse(); closeModal(); renderCurrentView(); updateHeaderBalance(); showToast('Abono registrado en Casa');
+}
+
+async function saveHouseCalendarNote(dateKey) {
+  const text=document.getElementById('mNoteText').value.trim();
+  const type=document.getElementById('mNoteType')?.value||'pendiente';
+  if(!text){showToast('Escribe la nota o pendiente');return;}
+  normalizeHouse();
+  if(!H.calendarNotes[dateKey]) H.calendarNotes[dateKey]=[];
+  const now=new Date().toISOString();
+  H.calendarNotes[dateKey].unshift({id:houseUid('house_note'),text,type,done:false,createdAt:now,updatedAt:now,by:currentActorName()});
+  H.transactions.unshift({id:houseUid('house_tx'),label:`Calendario Casa: ${noteTypeLabel(type)} - ${text}`,amount:0,date:dateKey,by:currentActorName(),createdAt:now,refType:'houseCalendar'});
+  houseCalDate=dateKey;
+  await saveHouse(); closeModal(); renderCurrentView(); showToast('Agregado al calendario de Casa');
+}
+
+async function toggleHouseCalendarNote(dateKey,id) {
+  const n=((H.calendarNotes||{})[dateKey]||[]).find(x=>x.id===id);
+  if(n){n.done=!n.done; n.updatedAt=new Date().toISOString(); await saveHouse(); renderCurrentView();}
+}
+
+async function rescheduleHouseCalendarNote(oldDate,id,newDate) {
+  if(!newDate){showToast('Selecciona una fecha');return;}
+  const list=(H.calendarNotes||{})[oldDate]||[];
+  const note=list.find(x=>x.id===id);
+  if(!note) return;
+  H.calendarNotes[oldDate]=list.filter(x=>x.id!==id);
+  if(!H.calendarNotes[newDate]) H.calendarNotes[newDate]=[];
+  H.calendarNotes[newDate].unshift({...note,done:false,updatedAt:new Date().toISOString()});
+  houseCalDate=newDate;
+  await saveHouse(); closeModal(); renderCurrentView(); showToast('Pendiente movido');
+}
+
+async function deleteHouseCalendarNote(dateKey,id) {
+  if(!confirm('¿Eliminar este pendiente de Casa?')) return;
+  H.calendarNotes[dateKey]=((H.calendarNotes||{})[dateKey]||[]).filter(x=>x.id!==id);
+  H.deletedCalendarNotes=[...new Set([...(H.deletedCalendarNotes||[]),id])];
+  await saveHouse(); renderCurrentView(); showToast('Pendiente eliminado');
+}
+
+async function saveHouseShoppingList(dateKey) {
+  const title=(document.getElementById('mTitle')?.value||'Lista de Casa').trim();
+  const lines=(document.getElementById('mShoppingItems')?.value||'').split('\n').map(x=>x.trim()).filter(Boolean);
+  if(!title){showToast('Escribe un título');return;}
+  const now=new Date().toISOString();
+  H.shoppingLists.unshift({id:houseUid('house_list'),title,date:dateKey,completed:false,items:lines.map(name=>({id:houseUid('house_list_item'),name,done:false,createdAt:now,updatedAt:now})),createdAt:now,updatedAt:now,by:currentActorName()});
+  H.transactions.unshift({id:houseUid('house_tx'),label:`Creo lista ${title}`,amount:0,date:dateKey,by:currentActorName(),createdAt:now,refType:'houseShoppingList',refId:H.shoppingLists[0].id});
+  houseCalDate=dateKey;
+  await saveHouse(); closeModal(); renderCurrentView(); showToast('Lista de Casa creada');
+}
+
+async function saveHouseShoppingListMeta(listId) {
+  const list=(H.shoppingLists||[]).find(x=>x.id===listId);
+  if(!list) return;
+  list.title=(document.getElementById('mTitle')?.value||list.title).trim()||list.title;
+  list.date=document.getElementById('mDate')?.value||list.date;
+  list.updatedAt=new Date().toISOString();
+  houseCalDate=list.date;
+  await saveHouse(); closeModal(); renderCurrentView(); showToast('Lista actualizada');
+}
+
+async function completeHouseShoppingList(listId) {
+  const list=(H.shoppingLists||[]).find(x=>x.id===listId);
+  if(!list) return;
+  list.completed=!list.completed;
+  (list.items||[]).forEach(item=>item.done=list.completed);
+  list.updatedAt=new Date().toISOString();
+  await saveHouse(); openModal('houseShoppingListDetail',listId); renderCurrentView();
+}
+
+async function addHouseShoppingItem(listId) {
+  const list=(H.shoppingLists||[]).find(x=>x.id===listId), input=document.getElementById('shopInput');
+  const name=(input&&input.value||'').trim();
+  if(!list||!name) return;
+  const now=new Date().toISOString();
+  list.items=list.items||[];
+  list.items.push({id:houseUid('house_list_item'),name,done:false,createdAt:now,updatedAt:now});
+  list.completed=false; list.updatedAt=now;
+  await saveHouse(); openModal('houseShoppingListDetail',listId);
+}
+
+async function toggleHouseShoppingItem(listId,itemId) {
+  const list=(H.shoppingLists||[]).find(x=>x.id===listId), item=list&&(list.items||[]).find(x=>x.id===itemId);
+  if(!item) return;
+  item.done=!item.done; item.updatedAt=new Date().toISOString();
+  list.completed=(list.items||[]).length>0&&(list.items||[]).every(x=>x.done);
+  list.updatedAt=item.updatedAt;
+  await saveHouse(); openModal('houseShoppingListDetail',listId);
+}
+
+async function editHouseShoppingItem(listId,itemId,value) {
+  const list=(H.shoppingLists||[]).find(x=>x.id===listId), item=list&&(list.items||[]).find(x=>x.id===itemId);
+  if(item){item.name=(value||'').trim()||item.name; item.updatedAt=new Date().toISOString(); list.updatedAt=item.updatedAt; await saveHouse();}
+}
+
+async function deleteHouseShoppingItem(listId,itemId) {
+  const list=(H.shoppingLists||[]).find(x=>x.id===listId);
+  if(!list || !confirm('¿Eliminar este item de la lista?')) return;
+  list.items=(list.items||[]).filter(x=>x.id!==itemId);
+  list.updatedAt=new Date().toISOString();
+  await saveHouse(); openModal('houseShoppingListDetail',listId);
+}
+
+async function deleteHouseShoppingList(listId) {
+  if(!confirm('¿Borrar esta lista de Casa?')) return;
+  H.shoppingLists=(H.shoppingLists||[]).filter(x=>x.id!==listId);
+  H.deletedShoppingLists=[...new Set([...(H.deletedShoppingLists||[]),listId])];
+  await saveHouse(); closeModal(); renderCurrentView(); showToast('Lista borrada');
+}
+
+async function saveHousePlan(id=null) {
+  const label=(document.getElementById('mLabel')?.value||'Plan de Casa').trim();
+  const date=document.getElementById('mDate')?.value||houseCalDate||isoToday();
+  const note=(document.getElementById('mNote')?.value||'').trim();
+  const items=_customPlanItems.filter(x=>x.name&&(parseFloat(x.amount)||0)>0).map(x=>({name:x.name,amount:parseFloat(x.amount)||0,type:x.type||'pay'}));
+  if(!label){showToast('Escribe un título');return;}
+  const now=new Date().toISOString();
+  if(id) {
+    const plan=(H.plans||[]).find(x=>x.id===id);
+    if(plan) Object.assign(plan,{label,date,note,items,updatedAt:now,updatedBy:currentActorName()});
+  } else {
+    H.plans.unshift({id:houseUid('house_plan'),label,date,note,items,completed:false,createdAt:now,updatedAt:now,by:currentActorName()});
+  }
+  houseCalDate=date;
+  await saveHouse(); closeModal(); renderCurrentView(); showToast('Plan de Casa guardado');
+}
+
+async function toggleHousePlan(id) {
+  const plan=(H.plans||[]).find(x=>x.id===id);
+  if(plan){plan.completed=!plan.completed; plan.updatedAt=new Date().toISOString(); await saveHouse(); openModal('housePlanDetail',id); renderCurrentView();}
+}
+
+async function deleteHousePlan(id) {
+  if(!confirm('¿Eliminar este plan de Casa?')) return;
+  H.plans=(H.plans||[]).filter(x=>x.id!==id);
+  H.deletedPlans=[...new Set([...(H.deletedPlans||[]),id])];
+  await saveHouse(); closeModal(); renderCurrentView(); showToast('Plan eliminado');
 }
 
 async function deleteHouseItem(id) {
@@ -2964,6 +3324,77 @@ function openModal(type, id, extra) {
     </div>`;
   }
 
+  else if(type==='homeCreateChoice') {
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">Crear</h3>
+    <div class="grid grid-cols-2 gap-2">
+      <button onclick="openModal('addFinanceChoice')" class="card p-4 text-left"><div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2">${renderIcon('card','w-5 h-5')}</div><div class="font-bold text-indigo-700">Pago</div><div class="text-xs text-slate-400">Factura o pago único</div></button>
+      <button onclick="openModal('addLoanChoice')" class="card p-4 text-left"><div class="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-2">${renderIcon('bank','w-5 h-5')}</div><div class="font-bold text-purple-700">Préstamo</div><div class="text-xs text-slate-400">Recibido o realizado</div></button>
+      <button onclick="openModal('addExpense',null,{paid:false})" class="card p-4 text-left"><div class="w-9 h-9 rounded-xl bg-red-50 text-red-500 flex items-center justify-center mb-2">${renderIcon('receipt','w-5 h-5')}</div><div class="font-bold text-red-600">Gasto</div><div class="text-xs text-slate-400">Registrar gasto</div></button>
+      <button onclick="openModal('addCalendarNote','${isoToday()}')" class="card p-4 text-left"><div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2">${noteTypeIcon('pendiente')}</div><div class="font-bold text-indigo-700">Nota</div><div class="text-xs text-slate-400">Tarea o recordatorio</div></button>
+    </div>`;
+  }
+
+  else if(type==='homeUpcomingDetail') {
+    const [kind,pid,paymentId,dateKey]=String(id||'').split(':');
+    let title='Detalle', subtitle='', icon='pin', amount=null, rows=[];
+    if(['bill','onetime','expense','borrowed','house'].includes(kind)) {
+      const item=getMonthPayments(monthKey(parseDate(dateKey||isoToday()))).find(p=>p.kind===kind&&p.id===pid&&(!paymentId||p.paymentId===paymentId)&&(!dateKey||p.date===dateKey));
+      if(item) {
+        title=item.name;
+        subtitle=`${item.category||'Pago'} · ${fmtDate(item.date)} · ${item.paid?'Pagado':'Pendiente'}`;
+        icon=item.emoji||'pin';
+        amount=item.amount||item.originalAmount||0;
+        rows=[
+          ['Tipo', kind==='house'?'Casa':kind==='borrowed'?'Préstamo recibido':kind==='onetime'?'Pago único':kind==='expense'?'Gasto':'Factura'],
+          ['Fecha', fmtDate(item.date)],
+          ['Estado', item.paid?'Pagado':'Pendiente'],
+          ['Categoría', item.category||'pago']
+        ];
+      }
+    } else if(kind==='income') {
+      const p=(S.paychecks||[]).find(x=>x.id===pid);
+      if(p) { title=paycheckSourceLabel(p); subtitle=`Ingreso · ${fmtDate(p.date)}`; icon=p.emoji||'brief'; amount=p.amount||0; rows=[['Tipo',paycheckFreqLabel(p)],['Fecha',fmtDate(p.date)],['Método',methodLabel(p.method||'deposito')],['Nota',p.note||'Sin nota']]; }
+    } else if(kind==='task') {
+      const n=((S.calendarNotes||{})[dateKey]||[]).find(x=>x.id===pid);
+      if(n) { title=n.text; subtitle=`${noteTypeLabel(n.type)} · ${fmtDate(dateKey)}`; icon='pin'; rows=[['Tipo',noteTypeLabel(n.type)],['Fecha',fmtDate(dateKey)],['Estado',n.done?'Completada':'Pendiente']]; }
+    } else if(kind==='shopping') {
+      const list=(S.shoppingLists||[]).find(x=>x.id===pid);
+      if(list) { const pending=(list.items||[]).filter(x=>!x.done).length; title=list.title; subtitle=`Lista · ${fmtDate(list.date)}`; icon='cart'; rows=[['Items',`${pending} pendientes de ${(list.items||[]).length}`],['Estado',list.completed?'Completada':'Pendiente']]; }
+    } else if(kind==='plan') {
+      const plan=(S.plans||[]).find(x=>x.id===pid);
+      if(plan) { title=plan.label; subtitle=`Plan · ${fmtDate(plan.date)}`; icon='receipt'; amount=plan.amount||0; rows=[['Items',`${(plan.items||[]).length}`],['Estado',plan.completed?'Completado':'Pendiente'],['Nota',plan.note||'Sin nota']]; }
+    }
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">${title}</h3>
+    <p class="text-sm text-slate-500 mb-4">${subtitle}</p>
+    <div class="flex items-center gap-3 card p-3 mb-3">
+      <div class="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center">${renderStoredIcon(icon,kind,'')}</div>
+      <div class="flex-1 min-w-0"><div class="text-xs text-indigo-400 font-bold uppercase">Resumen</div><div class="font-bold text-slate-800 truncate">${amount!==null?fmt(amount):title}</div></div>
+    </div>
+    <div class="card p-3 space-y-2 text-sm">
+      ${rows.map(([label,value])=>`<div class="flex justify-between gap-3"><span class="text-slate-400">${label}</span><span class="font-semibold text-slate-700 text-right">${value}</span></div>`).join('')}
+    </div>`;
+  }
+
+  else if(type==='analysisCategoryDetail') {
+    const category=decodeURIComponent(id||'');
+    const detailMonth=extra||analysisMonth||monthKey(today());
+    const rows=analysisCategoryItems(category,detailMonth);
+    const total=rows.reduce((s,p)=>s+(p.originalAmount||p.amount||0),0);
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">${category}</h3>
+    <p class="text-sm text-slate-500 mb-4">${monthTitle(detailMonth)} · ${rows.length} pagos · ${fmt(total)}</p>
+    <div class="space-y-2">
+      ${rows.length?rows.map(item=>{
+        const paidValue=(item.paidAmount||0)||(item.paid?(item.originalAmount||item.amount||0):0);
+        const left=Math.max(0,(item.originalAmount||item.amount||0)-paidValue);
+        return `<button onclick="openModal('paymentDetail','${item.kind}:${item.id}:${item.date}')" class="w-full text-left border border-indigo-50 rounded-2xl p-3 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center">${renderStoredIcon(item.emoji||'pin',item.kind,item.category||'')}</div>
+          <div class="flex-1 min-w-0"><div class="font-semibold text-slate-800 text-sm truncate">${item.name}</div><div class="text-xs text-slate-400">${fmtDate(item.date)} · ${item.paid?'Pagado':'Pendiente'}</div></div>
+          <div class="text-right"><div class="font-bold text-slate-800 text-sm">${fmt(item.originalAmount||item.amount||0)}</div>${left?`<div class="text-[10px] text-red-500">${fmt(left)} pendiente</div>`:''}</div>
+        </button>`;
+      }).join(''):`<div class="text-sm text-indigo-300 text-center py-5">No hay pagos en esta categoría.</div>`}
+    </div>`;
+  }
+
   else if(type==='addLoanChoice') {
     html=`<h3 class="text-lg font-bold text-slate-800 mb-4">Registrar préstamo</h3>
     <div class="space-y-2">
@@ -2991,7 +3422,7 @@ function openModal(type, id, extra) {
       <div class="flex gap-3">
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Frecuencia</label>
         <select id="mFreq" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
-          ${['monthly','every_two_weeks','weekly'].map(f=>`<option value="${f}" ${b&&(b.frequency===f||(b.frequency==='biweekly'&&f==='every_two_weeks'))?'selected':''}>${freqLabel(f)}</option>`).join('')}
+          ${['weekly','every_two_weeks','semimonthly','monthly'].map(f=>`<option value="${f}" ${(!b&&f==='monthly')||(b&&(b.frequency===f||(b.frequency==='biweekly'&&f==='every_two_weeks')||(b.frequency==='quincenal'&&f==='semimonthly')))?'selected':''}>${freqLabel(f)}</option>`).join('')}
         </select></div>
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
         <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
@@ -3045,7 +3476,7 @@ function openModal(type, id, extra) {
       </div>
       <div id="recWrap" class="${p&&p.paymentType==='unico'?'hidden':''} bg-indigo-50 border border-indigo-100 rounded-xl p-3 space-y-2">
         <div class="flex gap-2">
-          <div class="flex-1"><label class="text-xs text-indigo-500 font-bold uppercase">Cada cuánto</label><select id="mRecFreq" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"><option value="weekly" ${p&&p.recurrenceFreq==='weekly'?'selected':''}>Semanal</option><option value="every_two_weeks" ${!p||!p.recurrenceFreq||p.recurrenceFreq==='biweekly'||p.recurrenceFreq==='every_two_weeks'?'selected':''}>Cada 2 semanas</option><option value="monthly" ${p&&p.recurrenceFreq==='monthly'?'selected':''}>Mensual</option></select></div>
+          <div class="flex-1"><label class="text-xs text-indigo-500 font-bold uppercase">Cada cuánto</label><select id="mRecFreq" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"><option value="weekly" ${p&&p.recurrenceFreq==='weekly'?'selected':''}>Semanal</option><option value="every_two_weeks" ${!p||!p.recurrenceFreq||p.recurrenceFreq==='biweekly'||p.recurrenceFreq==='every_two_weeks'?'selected':''}>Cada 2 semanas</option><option value="semimonthly" ${p&&(p.recurrenceFreq==='semimonthly'||p.recurrenceFreq==='quincenal')?'selected':''}>Quincenal</option><option value="monthly" ${p&&p.recurrenceFreq==='monthly'?'selected':''}>Mensual</option></select></div>
           <div class="flex-1"><label class="text-xs text-indigo-500 font-bold uppercase">Duración</label><select id="mRecTerm" onchange="updatePaycheckRecurringFields()" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"><option value="indefinite" ${!p||p.recurrenceTerm!=='term'?'selected':''}>Indefinido</option><option value="term" ${p&&p.recurrenceTerm==='term'?'selected':''}>Con término</option></select></div>
         </div>
         <div id="recCountWrap" class="${p&&p.recurrenceTerm==='term'?'':'hidden'}"><label class="text-xs text-indigo-500 font-bold uppercase">Cantidad de pagos</label><input type="number" id="mRecCount" min="1" value="${p&&p.recurrenceCount?p.recurrenceCount:1}" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"></div>
@@ -3080,7 +3511,7 @@ function openModal(type, id, extra) {
         <label class="text-xs font-bold text-indigo-700 uppercase">Frecuencia y duración</label>
         <div class="grid grid-cols-2 gap-2 mt-1">
           <select id="mFreq" onchange="document.getElementById('oneTimeTermWrap').classList.toggle('hidden', this.value==='once')" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 text-sm">
-            ${[['once','Único'],['weekly','Semanal'],['every_two_weeks','Cada 2 semanas'],['monthly','Mensual']].map(([v,l])=>`<option value="${v}" ${(!o&&v==='once')||(o&&(o.frequency===v||(o.frequency==='biweekly'&&v==='every_two_weeks')))?'selected':''}>${l}</option>`).join('')}
+            ${[['once','Único'],['weekly','Semanal'],['every_two_weeks','Cada 2 semanas'],['semimonthly','Quincenal'],['monthly','Mensual']].map(([v,l])=>`<option value="${v}" ${(!o&&v==='once')||(o&&(o.frequency===v||(o.frequency==='biweekly'&&v==='every_two_weeks')||(o.frequency==='quincenal'&&v==='semimonthly')))?'selected':''}>${l}</option>`).join('')}
           </select>
           <select id="mTermType" onchange="document.getElementById('oneTimeCountWrap').classList.toggle('hidden', this.value!=='term')" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 text-sm">
             <option value="indefinite" ${o&&o.frequency!=='once'&&o.termType!=='term'?'selected':''}>Indefinido</option>
@@ -3188,13 +3619,12 @@ function openModal(type, id, extra) {
             <input type="number" id="mRecAmt" value="${hasRec?l.recurring.amount:''}" class="w-full border border-purple-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"></div>
             <div class="flex-1"><label class="text-xs text-purple-600">Frecuencia</label>
             <select id="mRecFreq" class="w-full border border-purple-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm">
-              ${['weekly','every_two_weeks','monthly'].map(f=>`<option value="${f}" ${hasRec&&(l.recurring.freq===f||(l.recurring.freq==='biweekly'&&f==='every_two_weeks'))?'selected':''}>${freqLabel(f)}</option>`).join('')}
+              ${['weekly','every_two_weeks','semimonthly','monthly'].map(f=>`<option value="${f}" ${hasRec&&(l.recurring.freq===f||(l.recurring.freq==='biweekly'&&f==='every_two_weeks')||(l.recurring.freq==='quincenal'&&f==='semimonthly'))?'selected':''}>${freqLabel(f)}</option>`).join('')}
             </select></div>
           </div>
           <div><label class="text-xs text-purple-600">Próxima fecha</label>
           <input type="date" id="mRecNext" value="${hasRec?l.recurring.nextDate:isoToday()}" class="w-full border border-purple-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"></div>
-          <div><label class="text-xs text-purple-600">Cantidad de pagos (opcional)</label>
-          <input type="number" id="mRecCount" value="${hasRec&&l.recurring.totalPayments?l.recurring.totalPayments:''}" class="w-full border border-purple-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"></div>
+          <div class="text-xs text-purple-500 bg-white/70 border border-purple-100 rounded-xl px-3 py-2">La cantidad de pagos se calcula automáticamente con el monto del préstamo dividido por el monto de cada pago.</div>
         </div>
       </div>
       <button onclick="saveLoan(${l?`'${id}'`:'null'})" class="w-full btn-primary py-3">${l?'Guardar':'Registrar préstamo'}</button>
@@ -3206,6 +3636,7 @@ function openModal(type, id, extra) {
     if(type==='editBorrowedLoan'&&!l) return;
     normalizeBorrowedLoan(l);
     const borrowedIcon=normalizeIcon(l?l.emoji:'bank','borrowed');
+    const isSingle=l&&(l.frequency==='once'||(l.paymentsCount||1)===1);
     html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${l?'Editar':'Préstamo recibido'}</h3>
     <div class="space-y-3">
       <div class="flex gap-3">
@@ -3214,11 +3645,17 @@ function openModal(type, id, extra) {
       </div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Monto total ($)</label><input type="number" id="mAmount" value="${l?l.totalAmount||l.amount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1" oninput="calcBorrowedPmt()"></div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Fecha de primer pago</label><input type="date" id="mDate" value="${l?l.startDate||l.dueDate:(extra&&extra.date)||isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
-      <div class="grid grid-cols-2 gap-2">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Tipo de pago</label>
+        <select id="mBorrowedType" onchange="updateBorrowedTypeFields();calcBorrowedPmt()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+          <option value="installments" ${!isSingle?'selected':''}>Pagos recurrentes / cuotas</option>
+          <option value="once" ${isSingle?'selected':''}>Único</option>
+        </select>
+      </div>
+      <div id="borrowedRecurringWrap" class="${isSingle?'hidden':''} grid grid-cols-2 gap-2">
         <div><label class="text-xs font-bold text-slate-500 uppercase">Cantidad de pagos</label><input type="number" id="mPayments" value="${l?l.paymentsCount||1:1}" min="1" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1" oninput="calcBorrowedPmt()"></div>
         <div><label class="text-xs font-bold text-slate-500 uppercase">Frecuencia</label>
           <select id="mFreq" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
-            ${['weekly','every_two_weeks','monthly'].map(f=>`<option value="${f}" ${l&&l.frequency===f?'selected':''}>${freqLabel(f)}</option>`).join('')}
+            ${['weekly','every_two_weeks','semimonthly','monthly'].map(f=>`<option value="${f}" ${l&&(l.frequency===f||(l.frequency==='quincenal'&&f==='semimonthly'))?'selected':''}>${freqLabel(f)}</option>`).join('')}
           </select>
         </div>
       </div>
@@ -3377,6 +3814,119 @@ function openModal(type, id, extra) {
     </div>`;
   }
 
+  else if(type==='houseCalendarAddChoice') {
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">Agregar en Casa</h3>
+    <p class="text-sm text-slate-500 mb-4">${fmtDateLong(id)}</p>
+    <div class="grid grid-cols-2 gap-2">
+      <button onclick="openModal('addHouseItem',null,{date:'${id}'})" class="card p-4 text-left"><div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2">${renderIcon('card','w-5 h-5')}</div><div class="font-bold text-indigo-700">Pago</div><div class="text-xs text-slate-400">Pago de Casa</div></button>
+      <button onclick="openModal('addHouseShoppingList','${id}')" class="card p-4 text-left"><div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2">${renderIcon('cart','w-5 h-5')}</div><div class="font-bold text-indigo-700">Lista</div><div class="text-xs text-slate-400">Compras o pendientes</div></button>
+      <button onclick="openModal('addHousePlan','${id}')" class="card p-4 text-left"><div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2">${renderIcon('receipt','w-5 h-5')}</div><div class="font-bold text-indigo-700">Plan</div><div class="text-xs text-slate-400">Plan de casa</div></button>
+      <button onclick="openModal('addHouseCalendarNote','${id}','cita')" class="card p-4 text-left"><div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2">${noteTypeIcon('cita')}</div><div class="font-bold text-indigo-700">Cita</div><div class="text-xs text-slate-400">Recordatorio con fecha</div></button>
+      <button onclick="openModal('addHouseCalendarNote','${id}','pendiente')" class="card p-4 text-left col-span-2"><div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2">${noteTypeIcon('pendiente')}</div><div class="font-bold text-indigo-700">Pendiente</div><div class="text-xs text-slate-400">Tarea o nota de Casa</div></button>
+    </div>`;
+  }
+
+  else if(type==='addHouseCalendarNote') {
+    const defaultType=extra||'pendiente';
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">Nota de Casa</h3>
+    <p class="text-sm text-slate-500 mb-4">${fmtDateLong(id)}</p>
+    <div class="space-y-3">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Tipo</label>
+      <select id="mNoteType" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+        ${['pendiente','cita','otro'].map(t=>`<option value="${t}" ${defaultType===t?'selected':''}>${noteTypeLabel(t)}</option>`).join('')}
+      </select></div>
+      <textarea id="mNoteText" rows="4" placeholder="Escribe la cita, pendiente o recordatorio..." class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm resize-none"></textarea>
+      <button onclick="saveHouseCalendarNote('${id}')" class="w-full btn-primary py-3">Guardar</button>
+    </div>`;
+  }
+
+  else if(type==='rescheduleHouseCalendarNote') {
+    const n=((H.calendarNotes||{})[id]||[]).find(x=>x.id===extra);
+    if(!n) return;
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">Mover pendiente de Casa</h3>
+    <p class="text-sm text-slate-500 mb-4">${n.text}</p>
+    <div class="space-y-3">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Nueva fecha</label>
+      <input type="date" id="mDate" value="${id}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <button onclick="rescheduleHouseCalendarNote('${id}','${extra}',document.getElementById('mDate').value)" class="w-full btn-primary py-3">Reprogramar</button>
+    </div>`;
+  }
+
+  else if(type==='addHouseShoppingList') {
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">Lista de Casa</h3>
+    <p class="text-sm text-slate-500 mb-4">${fmtDateLong(id)}</p>
+    <div class="space-y-3">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Título</label><input id="mTitle" value="Lista de Casa" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Ítems</label><textarea id="mShoppingItems" rows="6" placeholder="Un item por línea" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-sm resize-none"></textarea></div>
+      <button onclick="saveHouseShoppingList('${id}')" class="w-full btn-primary py-3">Crear lista</button>
+    </div>`;
+  }
+
+  else if(type==='houseShoppingListDetail') {
+    const list=(H.shoppingLists||[]).find(x=>x.id===id);
+    if(!list) return;
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">${list.title}</h3>
+    <p class="text-sm text-slate-500 mb-4">${fmtDateLong(list.date)}</p>
+    <div class="flex gap-2 mb-3">
+      <button onclick="completeHouseShoppingList('${list.id}')" class="flex-1 ${list.completed?'bg-green-100 text-green-700':'bg-green-50 text-green-700'} font-semibold py-2 rounded-xl text-sm">${list.completed?'Completada':'Marcar completada'}</button>
+      <button onclick="openModal('editHouseShoppingList','${list.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl text-sm">Editar</button>
+    </div>
+    <div class="space-y-2 mb-3">
+      ${(list.items||[]).map(item=>`<div class="flex items-center gap-2 border border-indigo-50 rounded-xl px-3 py-2">
+        <button onclick="toggleHouseShoppingItem('${list.id}','${item.id}')" class="w-6 h-6 rounded-md border-2 flex-shrink-0 flex items-center justify-center ${item.done?'bg-indigo-500 border-indigo-500':'border-slate-300'}">${item.done?'✓':''}</button>
+        <input class="shopping-item-input text-sm ${item.done?'line-through text-slate-400':'text-slate-700'}" value="${item.name}" onchange="editHouseShoppingItem('${list.id}','${item.id}',this.value)">
+        <button onclick="deleteHouseShoppingItem('${list.id}','${item.id}')" class="text-slate-300 hover:text-red-400 text-lg leading-none">×</button>
+      </div>`).join('') || '<div class="text-sm text-indigo-300 text-center py-3">Sin items.</div>'}
+    </div>
+    <div class="flex gap-2">
+      <input id="shopInput" placeholder="Agregar item..." class="flex-1 border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2 text-sm" onkeydown="if(event.key==='Enter')addHouseShoppingItem('${list.id}')">
+      <button onclick="addHouseShoppingItem('${list.id}')" class="btn-primary px-3 py-2 text-sm">+</button>
+    </div>
+    <button onclick="deleteHouseShoppingList('${list.id}')" class="w-full mt-3 bg-red-50 text-red-500 font-semibold py-2.5 rounded-xl text-sm">Borrar lista completa</button>`;
+  }
+
+  else if(type==='editHouseShoppingList') {
+    const list=(H.shoppingLists||[]).find(x=>x.id===id);
+    if(!list) return;
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">Editar lista de Casa</h3>
+    <div class="space-y-3">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Nombre</label><input id="mTitle" value="${list.title}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Fecha</label><input type="date" id="mDate" value="${list.date}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <button onclick="saveHouseShoppingListMeta('${list.id}')" class="w-full btn-primary py-3">Guardar cambios</button>
+    </div>`;
+  }
+
+  else if(type==='addHousePlan'||type==='editHousePlan') {
+    const plan=type==='editHousePlan'?(H.plans||[]).find(x=>x.id===id):null;
+    if(type==='editHousePlan'&&!plan) return;
+    _customPlanItems=plan?[...(plan.items||[])]:[];
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${plan?'Editar':'Crear'} plan de Casa</h3>
+    <div class="space-y-3">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Título</label><input type="text" id="mLabel" value="${plan?plan.label:''}" placeholder="ej. Plan de limpieza o compras" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Fecha</label><input type="date" id="mDate" value="${plan?plan.date:id}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div id="customPlanItems" class="space-y-2"><label class="text-xs font-bold text-slate-500 uppercase">Items</label></div>
+      <button onclick="addCustomPlanItemRow()" class="w-full border-2 border-dashed border-indigo-200 text-indigo-400 font-semibold py-2 rounded-xl text-sm">+ Agregar item</button>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Nota</label><textarea id="mNote" rows="2" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2 mt-1 text-sm resize-none">${plan?plan.note||'':''}</textarea></div>
+      <button onclick="saveHousePlan(${plan?`'${plan.id}'`:'null'})" class="w-full btn-primary py-3">Guardar plan</button>
+    </div>`;
+  }
+
+  else if(type==='housePlanDetail') {
+    const plan=(H.plans||[]).find(x=>x.id===id);
+    if(!plan) return;
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">${plan.label}</h3>
+    <p class="text-sm text-slate-500 mb-4">${fmtDateLong(plan.date)}${plan.note?' · '+plan.note:''}</p>
+    <div class="space-y-2">
+      ${(plan.items||[]).length?(plan.items||[]).map(item=>`<div class="flex justify-between py-2 border-t border-slate-50 text-sm"><span class="font-semibold text-slate-700">${item.name}</span><span class="font-bold text-slate-800">${fmt(item.amount||0)}</span></div>`).join(''):'<div class="text-sm text-indigo-300 text-center py-3">Sin items.</div>'}
+    </div>
+    <div class="card p-3 mt-3 flex justify-between"><span class="text-sm text-slate-500 font-semibold">Total</span><span class="font-bold text-indigo-700">${fmt(housePlanTotal(plan))}</span></div>
+    <div class="flex gap-2 mt-4">
+      <button onclick="toggleHousePlan('${plan.id}')" class="flex-1 ${plan.completed?'bg-slate-100 text-slate-500':'bg-green-50 text-green-700'} font-semibold py-3 rounded-xl text-sm">${plan.completed?'Reabrir':'Completar'}</button>
+      <button onclick="openModal('editHousePlan','${plan.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl text-sm">Editar</button>
+      <button onclick="deleteHousePlan('${plan.id}')" class="bg-red-50 text-red-500 font-semibold px-4 rounded-xl text-sm">Borrar</button>
+    </div>`;
+  }
+
   else if(type==='addHouseItem'||type==='editHouseItem') {
     const item=type==='editHouseItem'?H.items.find(x=>x.id===id):null;
     const houseIcon=normalizeIcon(item?item.emoji:'home','house');
@@ -3391,10 +3941,10 @@ function openModal(type, id, extra) {
       <input type="number" id="mAmount" value="${item?item.amount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold text-lg"></div>
       <div class="flex gap-3">
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Fecha</label>
-        <input type="date" id="mDate" value="${item&&item.dueDate?item.dueDate:isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+        <input type="date" id="mDate" value="${item&&item.dueDate?item.dueDate:(extra&&extra.date)||isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Frecuencia</label>
         <select id="mFreq" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
-          ${[['once','Único'],['weekly','Semanal'],['every_two_weeks','Cada 2 semanas'],['monthly','Mensual']].map(([v,l])=>`<option value="${v}" ${item&&(item.frequency===v||(item.frequency==='biweekly'&&v==='every_two_weeks'))?'selected':''}>${l}</option>`).join('')}
+          ${[['once','Único'],['weekly','Semanal'],['every_two_weeks','Cada 2 semanas'],['semimonthly','Quincenal'],['monthly','Mensual']].map(([v,l])=>`<option value="${v}" ${(!item&&v==='once')||(item&&(item.frequency===v||(item.frequency==='biweekly'&&v==='every_two_weeks')||(item.frequency==='quincenal'&&v==='semimonthly')))?'selected':''}>${l}</option>`).join('')}
         </select></div>
       </div>
       <div class="bg-indigo-50 rounded-xl p-3">
@@ -3591,10 +4141,11 @@ function openModal(type, id, extra) {
   }
 
   document.getElementById('modalContent').innerHTML=html;
-  if(type==='editCustomPlan') {
+  if(type==='editCustomPlan'||type==='editHousePlan'||type==='addHousePlan') {
     const rows=[..._customPlanItems];
     _customPlanItems=[];
-    rows.forEach(x=>addCustomPlanItemRow(x.name,x.amount,x.type));
+    if(rows.length) rows.forEach(x=>addCustomPlanItemRow(x.name,x.amount,x.type));
+    else if(type==='addHousePlan') addCustomPlanItemRow();
   }
   decorateMoneyInputs(document.getElementById('modalContent'));
   document.getElementById('modalOverlay').classList.remove('hidden');
@@ -3752,7 +4303,12 @@ function saveLoan(id) {
   if(!personName||!totalAmount){showToast('❌ Completa los campos');return;}
   const isRec=document.getElementById('mRecurring').checked;
   let recurring=null;
-  if(isRec){recurring={freq:document.getElementById('mRecFreq').value,amount:parseFloat(document.getElementById('mRecAmt').value)||0,nextDate:document.getElementById('mRecNext').value,totalPayments:parseInt(document.getElementById('mRecCount').value)||null};}
+  if(isRec){
+    const recAmount=parseFloat(document.getElementById('mRecAmt').value)||0;
+    const nextDate=document.getElementById('mRecNext').value;
+    if(!recAmount||!nextDate){showToast('Completa monto del pago y próxima fecha');return;}
+    recurring={freq:document.getElementById('mRecFreq').value,amount:recAmount,nextDate,totalPayments:Math.max(1,Math.ceil(totalAmount/recAmount))};
+  }
   if(id){const l=S.loans.find(x=>x.id===id);if(l)Object.assign(l,{personName,totalAmount,note,emoji,recurring});}
   else {
     const raw=document.getElementById('mSource').value;
@@ -3767,23 +4323,30 @@ function saveLoan(id) {
 
 function calcBorrowedPmt() {
   const amount=parseFloat(document.getElementById('mAmount')?.value)||0;
-  const count=parseInt(document.getElementById('mPayments')?.value)||1;
+  const isOnce=document.getElementById('mBorrowedType')?.value==='once';
+  const count=isOnce?1:(parseInt(document.getElementById('mPayments')?.value)||1);
   const preview=document.getElementById('borrowedPmtPreview');
   if(!preview) return;
   if(amount>0 && count>0) {
     const pmt=amount/count;
-    preview.textContent=`Pago por cuota: $${pmt.toFixed(2)}`;
+    preview.textContent=isOnce?`Pago único: $${pmt.toFixed(2)}`:`Pago por cuota: $${pmt.toFixed(2)}`;
     preview.classList.remove('hidden');
   } else {
     preview.classList.add('hidden');
   }
 }
+function updateBorrowedTypeFields() {
+  const isOnce=document.getElementById('mBorrowedType')?.value==='once';
+  const wrap=document.getElementById('borrowedRecurringWrap');
+  if(wrap) wrap.classList.toggle('hidden', isOnce);
+}
 function saveBorrowedLoan(id=null) {
   const personName=document.getElementById('mName').value.trim(), amount=parseFloat(document.getElementById('mAmount').value), dueDate=document.getElementById('mDate').value;
   const description=document.getElementById('mDesc').value.trim();
   const emoji=normalizeIcon(document.getElementById('mEmoji')?.value.trim()||'bank','borrowed');
-  const paymentsCount=parseInt(document.getElementById('mPayments').value)||1;
-  const frequency=document.getElementById('mFreq')?.value||'monthly';
+  const isOnce=document.getElementById('mBorrowedType')?.value==='once';
+  const paymentsCount=isOnce?1:(parseInt(document.getElementById('mPayments').value)||1);
+  const frequency=isOnce?'once':(document.getElementById('mFreq')?.value||'monthly');
   const perPayment=amount/paymentsCount;
   if(!personName||!amount||!dueDate){showToast('Completa persona, monto y fecha');return;}
   const existing=id?S.borrowedLoans.find(x=>x.id===id):null;
