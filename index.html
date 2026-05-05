@@ -214,8 +214,8 @@
   <div id="authForm" class="bg-white rounded-3xl p-6 w-full max-w-sm" style="box-shadow:0 20px 60px rgba(79,70,229,0.18)">
     <div class="text-center mb-6">
       <img src="logo sin texto.png" alt="BearAgenda"
-        class="w-32 h-32 rounded-3xl object-contain mx-auto mb-3"
-        style="box-shadow:0 8px 32px rgba(79,70,229,0.2);transform:scale(1.42);transform-origin:center center;">
+        class="w-24 h-24 rounded-2xl object-contain mx-auto mb-4"
+        style="box-shadow:0 8px 28px rgba(79,70,229,0.16);">
       <h2 class="hidden text-2xl font-extrabold text-slate-800">BearAgenda</h2>
       <p class="text-sm text-slate-400 mt-1">Finanzas personales y planeación</p>
     </div>
@@ -1180,7 +1180,12 @@ function getTransactions(limit=8) {
   });
   S.expenses.filter(e=>e.paid).forEach(e=>tx.push({date:e.paidDate||e.date,createdAt:e.paidAt||e.createdAt,type:'Gasto',name:e.name,amount:e.amount,sign:'-'}));
   S.borrowedLoans.forEach(l=>borrowedInstallments(l).filter(p=>p.paid).forEach(p=>tx.push({date:p.paidDate||p.date,createdAt:p.paidAt,type:'Pago',name:`Pago préstamo a ${l.personName}`,amount:p.amount,sign:'-'})));
-  (H.items||[]).forEach(item=>(item.payments||[]).forEach(p=>tx.push({date:p.date,createdAt:p.createdAt,type:'Casa',name:`Casa: ${item.name}`,amount:p.amount||0,sign:'-'})));
+  const housePerson=currentHousePerson();
+  (H.items||[]).forEach(item=>{
+    const assigned=item.assignedTo||'both';
+    if(!(assigned==='both'||assigned===housePerson)) return;
+    (item.payments||[]).forEach(p=>tx.push({date:p.date,createdAt:p.createdAt,type:'Casa',name:`Casa: ${item.name}`,amount:p.amount||0,sign:'-'}));
+  });
   return tx.sort((a,b)=>(parseDate(b.date)-parseDate(a.date))||(new Date(b.createdAt||b.date)-new Date(a.createdAt||a.date))).slice(0,limit);
 }
 
@@ -1705,6 +1710,8 @@ const ICON_DEFS = {
   heart:   {l:'Especial',     p:'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z'},
   bed:     {l:'Dormitorio',   p:'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'},
   box:     {l:'Paquete',      p:'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'},
+  cat:     {l:'Gato',         p:'M4 4l4 3 4-3 4 3 4-3v8a8 8 0 11-16 0V4zm6 8h.01M14 12h.01M9 16c1.6 1.2 4.4 1.2 6 0'},
+  cannabis:{l:'Mata de marihuana',p:'M12 22V12m0 0C9 9 7 6 7 2c3 1 5 4 5 10zm0 0c3-3 5-6 5-10 3 2 4 6 2 10-2 1-4 1-7 0zm0 0C9 11 6 11 3 13c2 2 5 3 9-1zm0 0c3-1 6-1 9 1-2 2-5 3-9-1zm0 0c-2 2-4 4-6 7 3 0 5-2 6-7zm0 0c2 2 4 4 6 7-3 0-5-2-6-7z'},
 };
 const EMOJI_TO_KEY = {
   '💳':'card','🏠':'home','🛡️':'shield','📱':'phone','💡':'light','💧':'drop','🔥':'fire',
@@ -1713,14 +1720,15 @@ const EMOJI_TO_KEY = {
   '📚':'book','🧰':'tools','🧹':'broom','🎁':'gift','✈️':'plane','🧳':'bag','💸':'coin',
   '📌':'pin','💼':'brief','💰':'coin','🎯':'chart','🌱':'heart','🛏️':'bed','📦':'box',
   '🛋️':'home','🧺':'broom','🧽':'broom','🔧':'tools','🎨':'heart','🤝':'brief','🚨':'pin',
+  '🐱':'cat','🐈':'cat','🌿':'cannabis',
 };
 const ICON_KEYS = {
-  finance:['card','home','shield','phone','light','drop','fire','wifi','bank','car','fuel','cart','food','game','film','music','health','paw','cut','receipt','book','tools','broom','gift','plane','bag','coin','pin','brief','chart','heart','box'],
-  income: ['brief','coin','bank','chart','receipt','card','heart','pin','gift','plane','tools','box'],
-  loan:   ['brief','bank','card','coin','chart','receipt','heart','pin','home','car','tools','box'],
-  borrowed:['bank','card','receipt','coin','brief','pin','home','car','tools','heart'],
-  pocket: ['brief','coin','chart','home','car','plane','gift','paw','cart','health','book','tools','receipt','card','bag','pin','heart','box'],
-  house:  ['home','drop','light','fire','wifi','cart','food','tools','broom','paw','car','receipt','bag','gift','chart','heart','pin','bed','box']
+  finance:['card','home','shield','phone','light','drop','fire','wifi','bank','car','fuel','cart','food','game','film','music','health','paw','cat','cannabis','cut','receipt','book','tools','broom','gift','plane','bag','coin','pin','brief','chart','heart','box'],
+  income: ['brief','coin','bank','chart','receipt','card','heart','pin','gift','plane','tools','cat','cannabis','box'],
+  loan:   ['brief','bank','card','coin','chart','receipt','heart','pin','home','car','tools','cat','cannabis','box'],
+  borrowed:['bank','card','receipt','coin','brief','pin','home','car','tools','heart','cat','cannabis'],
+  pocket: ['brief','coin','chart','home','car','plane','gift','paw','cat','cannabis','cart','health','book','tools','receipt','card','bag','pin','heart','box'],
+  house:  ['home','drop','light','fire','wifi','cart','food','tools','broom','paw','cat','cannabis','car','receipt','bag','gift','chart','heart','pin','bed','box']
 };
 function renderIcon(key,size='w-5 h-5') {
   const d=ICON_DEFS[key]; if(!d) return null;
@@ -1743,7 +1751,7 @@ function setIconChoice(value) {
   const el=document.getElementById('mEmoji');
   if(el) el.value=value;
   const display=document.getElementById('iconPickerDisplay');
-  if(display) display.innerHTML=renderIcon(value,'w-5 h-5')||value;
+  if(display) display.innerHTML=renderIcon(value,'w-6 h-6')||value;
   const dropdown=document.getElementById('iconPickerDropdown');
   if(dropdown) dropdown.classList.add('hidden');
   const chevron=document.getElementById('iconPickerChevron');
@@ -1760,17 +1768,24 @@ function toggleIconPicker() {
   const chevron=document.getElementById('iconPickerChevron');
   if(chevron) chevron.style.transform=dropdown.classList.contains('hidden')?'':'rotate(180deg)';
 }
-function iconPicker(group='finance', current='') {
+function iconPicker(group='finance', current='', compact=false) {
   const selected=normalizeIcon(current,group);
-  const selSvg=renderIcon(selected,'w-5 h-5')||selected;
+  const selSvg=renderIcon(selected,compact?'w-6 h-6':'w-5 h-5')||selected;
+  const btnClass=compact
+    ? 'mt-1 w-full h-[46px] flex items-center justify-center border border-indigo-100 bg-indigo-50 rounded-xl text-indigo-500'
+    : 'mt-1 w-full flex items-center gap-3 border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5';
+  const dropdownStyle=compact
+    ? 'width:min(18rem, calc(100vw - 3rem));max-height:220px;overflow-y:auto'
+    : 'max-height:220px;overflow-y:auto';
   return `<div class="relative">
     <label class="text-xs font-bold text-slate-500 uppercase">Ícono</label>
-    <button type="button" id="iconPickerBtn" onclick="toggleIconPicker()" class="mt-1 w-full flex items-center gap-3 border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5">
+    <input type="hidden" id="mEmoji" value="${selected}">
+    <button type="button" id="iconPickerBtn" onclick="toggleIconPicker()" class="${btnClass}" title="Cambiar ícono">
       <span id="iconPickerDisplay" class="text-indigo-500 flex items-center">${selSvg}</span>
-      <span class="flex-1 text-sm text-slate-500 text-left">Cambiar ícono</span>
-      <svg id="iconPickerChevron" class="w-4 h-4 text-slate-400 transition-transform" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+      ${compact?'':`<span class="flex-1 text-sm text-slate-500 text-left">Cambiar ícono</span>
+      <svg id="iconPickerChevron" class="w-4 h-4 text-slate-400 transition-transform" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>`}
     </button>
-    <div id="iconPickerDropdown" class="icon-picker-dropdown hidden absolute z-50 w-full mt-1 rounded-2xl bg-white border border-indigo-100 p-3 shadow-xl" style="max-height:200px;overflow-y:auto">
+    <div id="iconPickerDropdown" class="icon-picker-dropdown hidden absolute z-50 mt-1 rounded-2xl bg-white border border-indigo-100 p-3 shadow-xl" style="${dropdownStyle}">
       <div class="grid grid-cols-7 gap-2">
         ${iconChoices(group).map(k=>{
           const svg=renderIcon(k,'w-5 h-5'); if(!svg) return '';
@@ -1900,8 +1915,9 @@ function renderBills() {
     const totalBudget=historyItems.reduce((s,item)=>s+(item.originalAmount||item.amount||0),0);
     const pendingTotal=Math.max(0,totalBudget-paidTotal);
     html+=`<div class="grid grid-cols-2 gap-2 mb-3"><div class="card p-3"><div class="text-xs text-slate-400">Pagado</div><div class="font-bold text-red-500">${fmt(paidTotal)}</div></div><div class="card p-3"><div class="text-xs text-slate-400">Pendiente</div><div class="font-bold text-amber-600">${fmt(pendingTotal)}</div></div></div>`;
-    if(!historyItems.length) html+=`<div class="text-center text-indigo-300 py-8">Sin pagos registrados en este mes.</div>`;
-    historyItems.forEach(item=>{
+    const paidHistoryItems=historyItems.filter(item=>item.paid);
+    if(!paidHistoryItems.length) html+=`<div class="text-center text-indigo-300 py-8">Sin pagos realizados en este mes.</div>`;
+    paidHistoryItems.forEach(item=>{
       const paidValue=(item.paidAmount||0)||(item.paid?(item.originalAmount||item.amount||0):0);
       const pendingValue=Math.max(0,(item.originalAmount||item.amount||0)-paidValue);
       const status=item.paid?{cls:'status-paid',label:'Pagado'}:getStatusInfo(daysUntil(item.date));
@@ -2962,12 +2978,10 @@ function openModal(type, id, extra) {
     html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${b?'Editar':'Nueva'} factura</h3>
     <div class="space-y-3">
       <div class="flex gap-3">
-        <div class="w-20"><label class="text-xs font-bold text-slate-500 uppercase">Emoji</label>
-        <input type="text" id="mEmoji" value="${billIcon}" readonly class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-center text-xl"></div>
+        <div class="w-20">${iconPicker('finance',billIcon,true)}</div>
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Nombre</label>
         <input type="text" id="mName" value="${b?b.name:''}" placeholder="ej. Netflix" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       </div>
-      ${iconPicker('finance',billIcon)}
       <div class="flex gap-3">
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Monto ($)</label>
         <input type="number" id="mAmount" value="${b?b.amount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
@@ -3003,12 +3017,10 @@ function openModal(type, id, extra) {
     html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${p?'Editar':'Agregar'} cheque</h3>
     <div class="space-y-3">
       <div class="flex gap-3">
-        <div class="w-20"><label class="text-xs font-bold text-slate-500 uppercase">Emoji</label>
-        <input type="text" id="mEmoji" value="${paycheckIcon}" readonly class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-center text-xl"></div>
+        <div class="w-20">${iconPicker('income',paycheckIcon,true)}</div>
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Fecha</label>
         <input type="date" id="mDate" value="${p?p.date:(extra&&extra.date)||''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       </div>
-      ${iconPicker('income',paycheckIcon)}
       <div><label class="text-xs font-bold text-slate-500 uppercase">Monto neto ($)</label>
       <input type="number" id="mAmount" value="${p?p.amount:1742}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
@@ -3050,12 +3062,10 @@ function openModal(type, id, extra) {
     html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${o?'Editar':'Nuevo'} pago único</h3>
     <div class="space-y-3">
       <div class="flex gap-3">
-        <div class="w-20"><label class="text-xs font-bold text-slate-500 uppercase">Emoji</label>
-        <input type="text" id="mEmoji" value="${oneTimeIcon}" readonly class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-center text-xl"></div>
+        <div class="w-20">${iconPicker('finance',oneTimeIcon,true)}</div>
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Descripción</label>
         <input type="text" id="mName" value="${o?o.name:''}" placeholder="ej. Reparación carro" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       </div>
-      ${iconPicker('finance',oneTimeIcon)}
       <div class="flex gap-3">
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Monto ($)</label>
         <input type="number" id="mAmount" value="${o?o.amount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
@@ -3121,12 +3131,10 @@ function openModal(type, id, extra) {
     html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${pk?'Editar':'Nuevo'} bolsillo</h3>
     <div class="space-y-3">
       <div class="flex gap-3">
-        <div class="w-20"><label class="text-xs font-bold text-slate-500 uppercase">Emoji</label>
-        <input type="text" id="mEmoji" value="${pocketIcon}" readonly class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-center text-xl"></div>
+        <div class="w-20">${iconPicker('pocket',pocketIcon,true)}</div>
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Nombre</label>
         <input type="text" id="mName" value="${pk?pk.name:''}" placeholder="ej. Fondo emergencia" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       </div>
-      ${iconPicker('pocket',pocketIcon)}
       <div class="flex gap-3">
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Saldo actual ($)</label>
         <input type="number" id="mSaved" value="${pk?pk.saved:''}" placeholder="0" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold text-lg"></div>
@@ -3156,12 +3164,10 @@ function openModal(type, id, extra) {
     html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${l?'Editar':'Nuevo'} préstamo</h3>
     <div class="space-y-3">
       <div class="flex gap-3">
-        <div class="w-20"><label class="text-xs font-bold text-slate-500 uppercase">Emoji</label>
-        <input type="text" id="mEmoji" value="${loanIcon}" readonly class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-center text-xl"></div>
+        <div class="w-20">${iconPicker('loan',loanIcon,true)}</div>
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Nombre de la persona</label>
         <input type="text" id="mName" value="${l?l.personName:''}" placeholder="ej. Carlos" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       </div>
-      ${iconPicker('loan',loanIcon)}
       <div><label class="text-xs font-bold text-slate-500 uppercase">Monto total prestado ($)</label>
       <input type="number" id="mAmount" value="${l?l.totalAmount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold text-lg"></div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">De donde salio el dinero</label>
@@ -3203,11 +3209,9 @@ function openModal(type, id, extra) {
     html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${l?'Editar':'Préstamo recibido'}</h3>
     <div class="space-y-3">
       <div class="flex gap-3">
-        <div class="w-20"><label class="text-xs font-bold text-slate-500 uppercase">Emoji</label>
-        <input type="text" id="mEmoji" value="${borrowedIcon}" readonly class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-center text-xl"></div>
+        <div class="w-20">${iconPicker('borrowed',borrowedIcon,true)}</div>
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Persona</label><input id="mName" value="${l?l.personName:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1" placeholder="Nombre"></div>
       </div>
-      ${iconPicker('borrowed',borrowedIcon)}
       <div><label class="text-xs font-bold text-slate-500 uppercase">Monto total ($)</label><input type="number" id="mAmount" value="${l?l.totalAmount||l.amount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1" oninput="calcBorrowedPmt()"></div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Fecha de primer pago</label><input type="date" id="mDate" value="${l?l.startDate||l.dueDate:(extra&&extra.date)||isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       <div class="grid grid-cols-2 gap-2">
@@ -3379,12 +3383,10 @@ function openModal(type, id, extra) {
     html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${item?'Editar':'Nuevo'} item de Casa</h3>
     <div class="space-y-3">
       <div class="flex gap-3">
-        <div class="w-20"><label class="text-xs font-bold text-slate-500 uppercase">Emoji</label>
-        <input type="text" id="mEmoji" value="${houseIcon}" readonly class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-center text-xl"></div>
+        <div class="w-20">${iconPicker('house',houseIcon,true)}</div>
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Nombre</label>
         <input type="text" id="mName" value="${item?item.name:''}" placeholder="ej. Renta, compra, deposito" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       </div>
-      ${iconPicker('house',houseIcon)}
       <div><label class="text-xs font-bold text-slate-500 uppercase">Monto total ($)</label>
       <input type="number" id="mAmount" value="${item?item.amount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold text-lg"></div>
       <div class="flex gap-3">
@@ -3533,12 +3535,10 @@ function openModal(type, id, extra) {
     html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${pk?'Editar':'Nuevo'} bolsillo de Casa</h3>
     <div class="space-y-3">
       <div class="flex gap-3">
-        <div class="w-20"><label class="text-xs font-bold text-slate-500 uppercase">Emoji</label>
-        <input type="text" id="mEmoji" value="${housePocketIcon}" readonly class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-center text-xl"></div>
+        <div class="w-20">${iconPicker('pocket',housePocketIcon,true)}</div>
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Nombre</label>
         <input type="text" id="mName" value="${pk?pk.name:''}" placeholder="ej. Muebles, emergencias casa" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       </div>
-      ${iconPicker('pocket',housePocketIcon)}
       <div class="flex gap-3">
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Saldo actual ($)</label>
         <input type="number" id="mSaved" value="${pk?pk.saved:''}" placeholder="0" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold text-lg"></div>
