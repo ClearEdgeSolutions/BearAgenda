@@ -36,8 +36,8 @@
     .plan-ok { border-left: 4px solid #fbbf24; }
     .plan-great { border-left: 4px solid #34d399; }
     input, select, textarea { outline: none; -webkit-appearance: none; }
-    .pill-tab.active { background: #4f46e5; color: white; }
-    .pill-tab { background: #ede9fe; color: #6d28d9; min-height: 32px; padding: .45rem .7rem !important; font-size: 11px; }
+    .pill-tab.active { background: #0891b2; color: white; }
+    .pill-tab { background: #ecfeff; color: #0e7490; min-height: 32px; padding: .45rem .7rem !important; font-size: 11px; border: 1px solid #cffafe; border-radius: 9999px; }
     ::-webkit-scrollbar { display: none; }
     .card { background: white; border-radius: 20px; box-shadow: 0 1px 4px rgba(79,70,229,0.08); }
     .btn-primary { background: linear-gradient(135deg,#6366f1,#4f46e5); color: white; border-radius: 14px; font-weight: 700; }
@@ -143,8 +143,8 @@
     body.dark .status-upcoming { background: #1c1c2c !important; color: #8080b0 !important; }
     body.dark .origin-badge { background: #1e2032 !important; color: #8590be !important; border-color: #2c2f42 !important; }
     /* tabs y nav */
-    body.dark .pill-tab { background: #1e2032 !important; color: #9098c8 !important; border: none !important; }
-    body.dark .pill-tab.active { background: #3a3f6a !important; color: #c4caf5 !important; }
+    body.dark .pill-tab { background: #19303a !important; color: #8fc8d6 !important; border: 1px solid #24424d !important; }
+    body.dark .pill-tab.active { background: #2a6f7f !important; color: #e8fbff !important; }
     body.dark .m-inactive { background: #1c1f28 !important; color: #7a82ae !important; border-color: #2c2f42 !important; }
     body.dark .m-active { background: #3a3f6a !important; color: #c4caf5 !important; }
     body.dark .nav-btn.active { color: #9098c8 !important; }
@@ -296,7 +296,7 @@
     <div class="px-4 py-5">
       <div class="module-top-row flex items-center justify-between mb-4">
         <div>
-          <h2 class="module-title-inline text-lg font-bold text-slate-800">Casa</h2>
+          <h2 class="module-title-inline text-lg font-bold text-slate-800">Espacios</h2>
         </div>
         <div class="flex gap-2">
           <button id="houseAddBtn" onclick="houseAddAction()" class="btn-primary text-sm px-4 py-2.5 shrink-0 mobile-fab-add">+ Agregar pago</button>
@@ -346,7 +346,7 @@
 </button>
         <button onclick="exportData()" class="w-full bg-indigo-50 text-indigo-700 font-semibold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>Exportar datos</button>
         <button onclick="confirmFormatProfile()" class="w-full bg-amber-50 text-amber-600 font-semibold py-2.5 rounded-xl text-sm">Limpiar este perfil</button>
-        <button onclick="confirmClearHouse()" class="w-full bg-orange-50 text-orange-600 font-semibold py-2.5 rounded-xl text-sm">Limpiar Casa</button>
+        <button onclick="confirmClearHouse()" class="w-full bg-orange-50 text-orange-600 font-semibold py-2.5 rounded-xl text-sm">Limpiar espacio actual</button>
         <button onclick="confirmReset()" class="w-full bg-red-50 text-red-500 font-semibold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Reiniciar app</button>
       </div>
       <div class="card p-4 space-y-2">
@@ -356,7 +356,7 @@
           <button onclick="formatModule('Finanzas')" class="bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl text-xs">Finanzas</button>
           <button onclick="formatModule('Ingresos')" class="bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl text-xs">Ingresos</button>
           <button onclick="formatModule('Bolsillos personales')" class="bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl text-xs">Bolsillos personales</button>
-          <button onclick="formatModule('Casa')" class="bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl text-xs">Casa</button>
+          <button onclick="formatModule('Casa')" class="bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl text-xs">Espacios</button>
           <button onclick="formatModule('Calendario')" class="bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl text-xs">Calendario</button>
           <button onclick="formatModule('Lista de compras')" class="bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl text-xs">Lista de compras</button>
           <button onclick="formatModule('Proyecciones / Planes')" class="bg-slate-50 text-slate-600 font-semibold py-2.5 rounded-xl text-xs">Proyecciones / Planes</button>
@@ -387,8 +387,8 @@
       <span class="text-[10px] font-semibold">Calendario</span>
     </button>
     <button class="nav-btn flex flex-col items-center gap-1 flex-1 py-2.5 text-slate-400" onclick="showView('casa')">
-      <svg class="w-[22px] h-[22px]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-      <span class="text-[10px] font-semibold">Casa</span>
+      <svg class="w-[22px] h-[22px]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+      <span class="text-[10px] font-semibold">Espacios</span>
     </button>
   </div>
 </nav>
@@ -407,10 +407,14 @@
       </div>
     </div>
     <div id="sideMenuItems" class="p-2.5 space-y-1.5 flex-1"></div>
-    <div class="p-3 border-t border-indigo-50">
+    <div class="p-3 border-t border-indigo-50 space-y-2">
       <button onclick="closeAppMenu();showView('config')" class="w-full bg-indigo-50 text-indigo-700 font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         <span>Configuración</span>
+      </button>
+      <button onclick="closeAppMenu();logoutUser()" class="w-full bg-slate-100 text-slate-500 font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        <span>Cerrar sesión</span>
       </button>
     </div>
   </aside>
@@ -438,7 +442,6 @@ window.addEventListener('error', function(e) {
 // ═══════════════════════════════════════
 const SK = 'fh_v2_data';
 const HOUSE_SK = 'fh_v2_house_shared';
-const HOUSE_CLOUD_ID = 'main';
 const SUPABASE_URL = 'https://bzstxpifsknhqjtvlmes.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6c3R4cGlmc2tuaHFqdHZsbWVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MzQxNTUsImV4cCI6MjA5MzQxMDE1NX0.RweRjy9Byzd1pwS9HQ5xSYg412yktwu1wpC2WcW5Xj8';
 
@@ -487,6 +490,7 @@ const INIT = {
   paidBills: [], // {billId, dateKey:'YYYY-MM-DD', paidDate, paidAmount}
   expenses: [],  // {id,name,amount,date,category,paid,dueDate,paidDate}
   pockets: [],   // {id,name,emoji,target,saved,color}
+  pocketTransactions: [],
   loans: [],     // {id,personName,totalAmount,note,source,payments:[{id,amount,date,note}],recurring:{freq,amount,nextDate,totalPayments}|null}
   borrowedLoans: [], // {id,personName,amount,dueDate,description,paid}
   incomeCategories: ['Trabajo','Préstamo','Otro'],
@@ -496,6 +500,7 @@ const INIT = {
   shoppingList: [], // {id,name,done}
   shoppingLists: [], // {id,title,date,items:[{id,name,done,createdAt,updatedAt}],createdAt,updatedAt}
   nextId: 100,
+  // spaces se inicializa vía migrateToSpaces(), no en INIT
 };
 
 const EMPTY_PROFILE = {
@@ -524,6 +529,7 @@ const EMPTY_PROFILE = {
 const HOUSE_INIT = {
   items: [],
   pockets: [],
+  pocketTransactions: [],
   transactions: [],
   calendarNotes: {},
   shoppingLists: [],
@@ -537,6 +543,7 @@ const HOUSE_INIT = {
   deletedPlans: [],
   nextId: 1,
   updatedAt: null,
+  members: [], // [{id,name,email,joinedAt}]
 };
 
 const PLAN_DATA = [
@@ -591,6 +598,8 @@ let incomeTab = 'active';
 let incomeMonth = '';
 let calDate = null;
 let homeUpcomingFilter = 'all';
+let currentSpaceId = null;
+let currentSpaceName = '';
 let lastUndoAction = null;
 
 function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
@@ -643,6 +652,7 @@ function normalizeBorrowedLoan(l) {
   if(!l.frequency) l.frequency = 'monthly';
   if(l.frequency==='biweekly') l.frequency='every_two_weeks';
   if(l.frequency==='quincenal') l.frequency='semimonthly';
+  if(!l.category) l.category = 'deuda';
   if(!l.emoji) l.emoji = 'bank';
   if(!l.perPayment) l.perPayment = (l.totalAmount||l.amount||0) / Math.max(1,l.paymentsCount||1);
   if(!l.dueDate && l.startDate) l.dueDate = l.startDate;
@@ -675,6 +685,7 @@ function normalizeState() {
   if (S.profileFormatted === undefined) S.profileFormatted = false;
   if (S.showDefaultPlans === undefined) S.showDefaultPlans = true;
   if (!S.pockets) S.pockets = [];
+  if (!S.pocketTransactions) S.pocketTransactions = [];
   if (!S.loans) S.loans = [];
   if (!S.customPlans) S.customPlans = [];
   if (!S.calendarNotes) S.calendarNotes = {};
@@ -700,6 +711,7 @@ function normalizeState() {
   }
   S.plans.forEach(p=>{ if(!p.id) p.id=uid(); if(!p.items) p.items=[]; p.isCustom=true; });
   S.bills.forEach(b => {
+    if (!b.startDate) b.startDate = fmtISO(getBillDueDate(b, today()));
     if (!b.frequency) b.frequency = 'monthly';
     if (b.frequency === 'biweekly') b.frequency = 'every_two_weeks';
     if (b.frequency === 'quincenal') b.frequency = 'semimonthly';
@@ -731,6 +743,7 @@ function normalizeState() {
   S.loans.forEach(l => {
     if (!l.payments) l.payments = [];
     if (!l.source) l.source = {type:'balance',id:null};
+    if (!l.category) l.category = 'personal';
     if (!l.emoji) l.emoji = 'brief';
     if (l.recurring && l.recurring.freq === 'biweekly') l.recurring.freq = 'every_two_weeks';
     if (l.recurring && l.recurring.freq === 'quincenal') l.recurring.freq = 'semimonthly';
@@ -761,6 +774,7 @@ function normalizeHouse() {
   if (!H.deletedShoppingLists) H.deletedShoppingLists = [];
   if (!H.deletedPlans) H.deletedPlans = [];
   if (!H.nextId) H.nextId = 1;
+  if (!H.members) H.members = [];
   H.items.forEach(item=>{
     if(!item.frequency) item.frequency='once';
     if(item.frequency==='biweekly') item.frequency='every_two_weeks';
@@ -886,8 +900,14 @@ function load() {
   houseMonth = finMonth;
 }
 
+function houseLocalKey(spaceId) {
+  const sid = spaceId !== undefined ? spaceId : currentSpaceId;
+  return (!sid || sid === 'main') ? HOUSE_SK : `fh_v2_space_${sid}`;
+}
+
 function loadHouseLocal() {
-  try { const d = localStorage.getItem(HOUSE_SK); H = d ? {...HOUSE_INIT,...JSON.parse(d)} : clone(HOUSE_INIT); }
+  const key = houseLocalKey();
+  try { const d = localStorage.getItem(key); H = d ? {...HOUSE_INIT,...JSON.parse(d)} : clone(HOUSE_INIT); }
   catch(e) { H = clone(HOUSE_INIT); }
   normalizeHouse();
 }
@@ -904,15 +924,16 @@ async function save() {
 }
 
 async function saveHouse(attempt=0) {
+  if (!currentSpaceId) return;
   H.updatedAt = new Date().toISOString();
-  localStorage.setItem(HOUSE_SK, JSON.stringify(H));
+  localStorage.setItem(houseLocalKey(), JSON.stringify(H));
   if (!supabase || !CURRENT_USER) { houseSyncStatus='local'; houseSyncMessage='Sin sesión o conexión cloud'; return; }
   try {
     const { data: cloudRow, error: readError } = await supabase
-      .from('house_data').select('data,updated_at').eq('id', HOUSE_CLOUD_ID).maybeSingle();
+      .from('house_data').select('data,updated_at').eq('id', currentSpaceId).maybeSingle();
     if(readError) {
       houseSyncStatus='error';
-      houseSyncMessage=readError.message||'No se pudo leer Casa antes de guardar';
+      houseSyncMessage=readError.message||'No se pudo leer el espacio antes de guardar';
       console.warn('read shared house before save:', readError);
       return;
     }
@@ -920,13 +941,13 @@ async function saveHouse(attempt=0) {
     if(cloudRow&&cloudRow.data) {
       H=mergeHouseData(H,cloudRow.data);
       H.updatedAt=new Date().toISOString();
-      localStorage.setItem(HOUSE_SK, JSON.stringify(H));
+      localStorage.setItem(houseLocalKey(), JSON.stringify(H));
     }
     let error=null, saved=null;
     if(cloudRow) {
       const res = await supabase.from('house_data')
         .update({ data: {houseShared:true, ...H}, updated_at: H.updatedAt })
-        .eq('id', HOUSE_CLOUD_ID)
+        .eq('id', currentSpaceId)
         .eq('updated_at', cloudUpdatedAt)
         .select('updated_at')
         .maybeSingle();
@@ -938,7 +959,7 @@ async function saveHouse(attempt=0) {
       }
     } else {
       const res = await supabase.from('house_data')
-        .insert({ id: HOUSE_CLOUD_ID, data: {houseShared:true, ...H}, updated_at: H.updatedAt })
+        .insert({ id: currentSpaceId, data: {houseShared:true, ...H}, updated_at: H.updatedAt })
         .select('updated_at')
         .maybeSingle();
       error=res.error; saved=res.data;
@@ -949,34 +970,35 @@ async function saveHouse(attempt=0) {
     }
     if(error) {
       houseSyncStatus='error';
-      houseSyncMessage=error.message||'No se pudo guardar Casa en la nube';
+      houseSyncMessage=error.message||'No se pudo guardar el espacio en la nube';
       console.warn('save shared house fallback local:', error);
       return;
     }
     if(!saved && attempt>=4) {
       houseSyncStatus='error';
-      houseSyncMessage='Casa cambió mientras guardabas. Pulsa ↻ y vuelve a intentar.';
+      houseSyncMessage='El espacio cambió mientras guardabas. Pulsa ↻ y vuelve a intentar.';
       return;
     }
     houseSyncStatus='cloud';
-    houseSyncMessage='Casa sincronizada';
+    houseSyncMessage='Espacio sincronizado';
     scheduleHouseFollowupSync();
   } catch(e) {
     houseSyncStatus='error';
-    houseSyncMessage=e.message||'No se pudo guardar Casa en la nube';
+    houseSyncMessage=e.message||'No se pudo guardar el espacio en la nube';
     console.warn('save shared house fallback local:', e);
   }
 }
 
 async function loadHouseCloud() {
+  if (!currentSpaceId) return;
   loadHouseLocal();
   if (!supabase || !CURRENT_USER) { houseSyncStatus='local'; houseSyncMessage='Sin sesión o conexión cloud'; return; }
   try {
     const { data, error } = await supabase
-      .from('house_data').select('data').eq('id', HOUSE_CLOUD_ID).maybeSingle();
+      .from('house_data').select('data').eq('id', currentSpaceId).maybeSingle();
     if (error) {
       houseSyncStatus='error';
-      houseSyncMessage=error.message||'No se pudo leer Casa compartida';
+      houseSyncMessage=error.message||'No se pudo leer el espacio compartido';
       console.warn('load shared house fallback local:', error);
       return;
     }
@@ -984,27 +1006,28 @@ async function loadHouseCloud() {
       H = mergeHouseData(H, data.data);
       H.updatedAt = new Date().toISOString();
       normalizeHouse();
-      localStorage.setItem(HOUSE_SK, JSON.stringify(H));
+      localStorage.setItem(houseLocalKey(), JSON.stringify(H));
       houseSyncStatus='cloud';
-      houseSyncMessage='Casa sincronizada';
+      houseSyncMessage='Espacio sincronizado';
     } else if ((H.items||[]).length || (H.transactions||[]).length) {
       await saveHouse();
     } else {
       houseSyncStatus='cloud';
-      houseSyncMessage='Casa lista para sincronizar';
+      houseSyncMessage='Espacio listo para sincronizar';
     }
   } catch(e) {
     houseSyncStatus='error';
-    houseSyncMessage=e.message||'No se pudo leer Casa compartida';
+    houseSyncMessage=e.message||'No se pudo leer el espacio compartido';
     console.warn('load shared house:', e);
   }
 }
 
 async function refreshHouseData(showResult=true) {
-  if(showResult) showToast('Sincronizando Casa...');
+  if (!currentSpaceId) return;
+  if(showResult) showToast('Sincronizando...');
   await loadHouseCloud();
-  if(currentView==='casa') renderHouse();
-  if(showResult) showToast(houseSyncStatus==='cloud'?'Casa sincronizada':`Casa local: ${houseSyncMessage}`);
+  if(currentView==='casa' && currentSpaceId) renderHouse();
+  if(showResult) showToast(houseSyncStatus==='cloud'?'Sincronizado':`Local: ${houseSyncMessage}`);
 }
 
 function scheduleHouseFollowupSync() {
@@ -1012,6 +1035,311 @@ function scheduleHouseFollowupSync() {
   clearTimeout(houseFollowupSyncTimer2);
   houseFollowupSyncTimer1=setTimeout(()=>refreshHouseData(false),900);
   houseFollowupSyncTimer2=setTimeout(()=>refreshHouseData(false),2400);
+}
+
+// ═══════════════════════════════════════
+// ESPACIOS COMPARTIDOS
+// ═══════════════════════════════════════
+
+// Colores para avatares de miembros
+const MEMBER_COLORS=['#6366f1','#f43f5e','#f59e0b','#10b981','#8b5cf6','#0891b2'];
+function memberColor(i){ return MEMBER_COLORS[i%MEMBER_COLORS.length]; }
+function memberInitials(name, single=false){ const s=(name||'?').trim().split(/\s+/).map(w=>w[0]||'').join('').toUpperCase(); return s.slice(0,single?1:2)||'?'; }
+
+function renderMemberAvatars(members=[],size=28,single=false){
+  if(!members.length) return '';
+  return `<div class="flex items-center" style="gap:0">
+    ${members.slice(0,5).map((m,i)=>`<div title="${m.name}" style="width:${size}px;height:${size}px;border-radius:50%;background:${memberColor(i)};border:2px solid white;margin-left:${i?-6:0}px;display:flex;align-items:center;justify-content:center;font-size:${size<28?9:10}px;font-weight:800;color:white;flex-shrink:0">${memberInitials(m.name,single)}</div>`).join('')}
+  </div>`;
+}
+
+// Registrar al usuario actual como miembro del espacio activo
+async function registerMemberInSpace() {
+  if(!currentSpaceId||!CURRENT_USER) return;
+  normalizeHouse();
+  const myName=profileDisplayName()||CURRENT_USER.email||'Usuario';
+  const myId=CURRENT_USER.id||CURRENT_USER.email;
+  if(!(H.members||[]).some(m=>m.id===myId)) {
+    if(!H.members) H.members=[];
+    H.members.push({id:myId,name:myName,email:CURRENT_USER.email||'',joinedAt:isoToday()});
+    await saveHouse();
+  }
+  // Guardar miembros localmente en S.spaces para mostrarlos sin entrar al espacio
+  const idx=(S.spaces||[]).findIndex(sp=>sp.id===currentSpaceId);
+  if(idx>=0){ S.spaces[idx].members=H.members; await save(); }
+}
+
+const SPACE_EMOJIS=['🏠','🏡','❤️','💛','🧡','💙','💚','💜','🌟','✨','🎯','🌸','🍀','🌈','🎁','🦋','🌺','🏢','🛋️','🌻','🐻','🤍','🫧','🌙'];
+
+function spaceEmojiPicker(selectedEmoji='🏠',inputId='spaceEmojiInput'){
+  return `<div>
+    <label class="text-xs font-bold text-slate-500 uppercase">Icono del espacio</label>
+    <input type="hidden" id="${inputId}" value="${selectedEmoji}">
+    <div class="flex flex-wrap gap-1.5 mt-2">${SPACE_EMOJIS.map(e=>`<button type="button" onclick="document.getElementById('${inputId}').value='${e}';document.querySelectorAll('.sp-emoji-btn[data-picker=\\'${inputId}\\']').forEach(b=>{b.classList.toggle('ring-2',b.dataset.emoji==='${e}');b.classList.toggle('ring-indigo-400',b.dataset.emoji==='${e}');b.classList.toggle('bg-indigo-50',b.dataset.emoji==='${e}');})" class="sp-emoji-btn text-lg w-9 h-9 rounded-xl flex items-center justify-center ${e===selectedEmoji?'ring-2 ring-indigo-400 bg-indigo-50':'bg-slate-50'}" data-emoji="${e}" data-picker="${inputId}">${e}</button>`).join('')}</div>
+  </div>`;
+}
+
+function generateSpaceCode() {
+  const alpha='ABCDEFGHJKLMNPQRSTUVWXYZ', nums='23456789';
+  const r=s=>s[Math.floor(Math.random()*s.length)];
+  return `${r(alpha)}${r(alpha)}-${r(nums)}${r(nums)}${r(nums)}${r(nums)}`;
+}
+
+async function migrateToSpaces() {
+  S.spaces=[];
+  // Siempre agregar el espacio 'main' para usuarios existentes
+  let spaceCode='', spaceName='casa ositos';
+  if(supabase&&CURRENT_USER) {
+    try {
+      const {data}=await supabase.from('house_data').select('data').eq('id','main').maybeSingle();
+      if(data&&data.data) {
+        if(data.data.spaceCode) {
+          spaceCode=data.data.spaceCode;
+          spaceName=data.data.spaceName||spaceName;
+        } else {
+          spaceCode=generateSpaceCode();
+          // Intentar actualizar cloud — ignorar si RLS bloquea
+          try {
+            await supabase.from('house_data')
+              .update({data:{...data.data,spaceName,spaceCode,spaceCreatedBy:CURRENT_USER.email||''}})
+              .eq('id','main');
+          } catch(e){ console.warn('migration update blocked by RLS (expected):', e); }
+        }
+      } else {
+        // No existe row 'main' aún — generar código igualmente
+        spaceCode=generateSpaceCode();
+      }
+    } catch(e){ spaceCode=generateSpaceCode(); }
+  } else {
+    // Sin conexión — generar código local
+    spaceCode=generateSpaceCode();
+  }
+  if(!spaceCode) spaceCode=generateSpaceCode();
+  // Registrar usuario actual como miembro en el cloud si es posible
+  let seedMembers=[];
+  if(supabase&&CURRENT_USER) {
+    try {
+      const {data:hd}=await supabase.from('house_data').select('data').eq('id','main').maybeSingle();
+      seedMembers=(hd&&hd.data&&Array.isArray(hd.data.members))?hd.data.members:[];
+      const myId=CURRENT_USER.id||CURRENT_USER.email;
+      const myName=(S&&S.profileName&&S.profileName.trim())||CURRENT_USER.email.split('@')[0].replace(/[._-]+/g,' ')||'Usuario';
+      if(!seedMembers.some(m=>m.id===myId)){
+        seedMembers.push({id:myId,name:myName,email:CURRENT_USER.email||'',joinedAt:isoToday()});
+        try {
+          const newData=hd&&hd.data?{...hd.data,members:seedMembers}:{...clone(HOUSE_INIT),members:seedMembers};
+          await supabase.from('house_data').update({data:newData}).eq('id','main');
+        } catch(e){ console.warn('migration: no se pudo registrar miembro en cloud:', e); }
+      }
+    } catch(e){ seedMembers=[]; }
+  }
+  // SIEMPRE agregar 'main' al listado de espacios del usuario
+  S.spaces=[{id:'main',name:spaceName,code:spaceCode,emoji:'🏠',role:'owner',joinedAt:isoToday(),members:seedMembers}];
+  await save();
+}
+
+async function enterSpace(spaceId, spaceName) {
+  currentSpaceId=spaceId;
+  currentSpaceName=spaceName;
+  houseTab='payments';
+  houseMonth=monthKey(today());
+  H=clone(HOUSE_INIT);
+  loadHouseLocal();
+  updateHouseAddButton();
+  updateHeaderTitle();
+  renderHouse();
+  loadHouseCloud().then(async()=>{
+    if(currentView==='casa'&&currentSpaceId===spaceId) {
+      await registerMemberInSpace();
+      renderHouse();
+    }
+  });
+}
+
+function exitSpace() {
+  currentSpaceId=null;
+  currentSpaceName='';
+  updateHouseAddButton();
+  updateHeaderTitle();
+  renderSpacesList();
+}
+
+function renderEspacios() {
+  if(currentSpaceId) renderHouse();
+  else renderSpacesList();
+  updateHouseAddButton();
+  updateHeaderTitle();
+}
+
+function renderSpacesList() {
+  const spaces=S.spaces||[];
+  let html='';
+  if(!spaces.length) {
+    html+=`<div class="card p-6 text-center mb-4"><div class="text-3xl mb-2">🤝</div><div class="font-bold text-slate-700 mb-1">Sin espacios todavía</div><div class="text-sm text-slate-400">Crea un espacio o únete con un código de invitación.</div></div>`;
+  } else {
+    html+=`<div class="space-y-3 mb-4">`;
+    spaces.forEach(sp=>{
+      const members=sp.members||[];
+      const emoji=sp.emoji||'🏠';
+      const safeName=sp.name.replace(/'/g,'&#39;');
+      html+=`<div class="card p-4 flex items-center gap-3">
+        <button onclick="enterSpace('${sp.id}','${safeName}')" class="flex items-center gap-3 flex-1 min-w-0 text-left">
+          <div class="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center flex-shrink-0 text-2xl">${emoji}</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-bold text-slate-800 text-base">${sp.name}</span>
+              ${members.length?renderMemberAvatars(members,24,true):''}
+            </div>
+            <div class="text-xs text-slate-400 mt-0.5">
+              Código: <span class="font-mono font-bold text-indigo-500">${sp.code}</span>
+              ${!members.length?'· Tú solo por ahora':''}
+            </div>
+          </div>
+          <svg class="w-5 h-5 text-slate-300 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+        </button>
+        <button onclick="event.stopPropagation();openModal('editSpace','${sp.id}')" class="w-8 h-8 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center flex-shrink-0 text-sm">✏️</button>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+  html+=`<div class="grid grid-cols-2 gap-3">
+    <button onclick="openModal('createSpace')" class="btn-primary py-3.5 text-sm font-bold rounded-2xl flex items-center justify-center gap-2">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>Crear espacio
+    </button>
+    <button onclick="openModal('joinSpace')" class="bg-white border-2 border-indigo-200 text-indigo-700 py-3.5 text-sm font-bold rounded-2xl flex items-center justify-center gap-2">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>Unirse con código
+    </button>
+  </div>`;
+  document.getElementById('houseContent').innerHTML=html;
+}
+
+async function submitCreateSpace() {
+  const nameEl=document.getElementById('spaceNameInput');
+  const name=(nameEl?nameEl.value.trim():'')||'Espacio compartido';
+  const emojiEl=document.getElementById('spaceEmojiInput');
+  const emoji=(emojiEl?emojiEl.value:'') ||'🏠';
+  const code=generateSpaceCode();
+  const spaceId=houseUid('sp');
+  const msgEl=document.getElementById('spaceCreateMsg');
+  if(msgEl) msgEl.textContent='Creando...';
+  const now=new Date().toISOString();
+  const spaceData={...clone(HOUSE_INIT),spaceName:name,spaceEmoji:emoji,spaceCode:code,spaceCreatedBy:CURRENT_USER?CURRENT_USER.email:'',houseShared:true,updatedAt:now};
+  let cloudOk=false;
+  if(supabase&&CURRENT_USER) {
+    try {
+      const {error}=await supabase.from('house_data').insert({id:spaceId,data:spaceData,updated_at:now});
+      if(error) {
+        // RLS u otro error — guardar solo local y avisar
+        console.warn('create space cloud error (RLS?):', error.message);
+        if(msgEl) msgEl.textContent='Guardado local. Para sync ve a Supabase y agrega políticas en house_data.';
+      } else { cloudOk=true; }
+    } catch(e){ console.warn('create space cloud error:', e); }
+  }
+  // Guardar siempre localmente
+  localStorage.setItem(houseLocalKey(spaceId),JSON.stringify(spaceData));
+  if(!S.spaces) S.spaces=[];
+  S.spaces.unshift({id:spaceId,name,code,emoji,role:'owner',joinedAt:isoToday(),members:[]});
+  await save();
+  closeModal();
+  showToast(cloudOk?`Espacio "${name}" creado`:`Espacio "${name}" creado (solo local)`);
+  openModal('showSpaceCode',spaceId,code+'|'+name);
+}
+
+async function saveEditSpace(spaceId) {
+  const nameEl=document.getElementById('editSpaceNameInput');
+  const emojiEl=document.getElementById('editSpaceEmojiInput');
+  const sp=(S.spaces||[]).find(x=>x.id===spaceId);
+  if(!sp) return;
+  if(nameEl&&nameEl.value.trim()) sp.name=nameEl.value.trim();
+  if(emojiEl&&emojiEl.value) sp.emoji=emojiEl.value;
+  // Actualizar también en cloud si es el owner
+  if(supabase&&CURRENT_USER) {
+    try {
+      const {data}=await supabase.from('house_data').select('data').eq('id',spaceId).maybeSingle();
+      if(data&&data.data) {
+        await supabase.from('house_data').update({data:{...data.data,spaceName:sp.name,spaceEmoji:sp.emoji}}).eq('id',spaceId);
+      }
+    } catch(e){ console.warn('editSpace cloud update:', e); }
+  }
+  await save();
+  closeModal();
+  showToast('Espacio actualizado');
+  renderSpacesList();
+}
+
+async function addMemberToSpace(spaceId) {
+  const inp=document.getElementById('addMemberNameInput');
+  const name=(inp?inp.value.trim():'');
+  if(!name){ showToast('Escribe un nombre'); return; }
+  const sp=(S.spaces||[]).find(x=>x.id===spaceId);
+  if(!sp) return;
+  if(!sp.members) sp.members=[];
+  const placeholder='manual_'+Date.now();
+  sp.members.push({id:placeholder,name,email:'',joinedAt:isoToday()});
+  // Sync to cloud house_data
+  if(supabase&&CURRENT_USER) {
+    try {
+      const {data}=await supabase.from('house_data').select('data').eq('id',spaceId).maybeSingle();
+      if(data&&data.data) {
+        const existing=Array.isArray(data.data.members)?data.data.members:[];
+        existing.push({id:placeholder,name,email:'',joinedAt:isoToday()});
+        await supabase.from('house_data').update({data:{...data.data,members:existing}}).eq('id',spaceId);
+      }
+    } catch(e){ console.warn('addMember cloud:', e); }
+  }
+  await save();
+  if(inp) inp.value='';
+  showToast(`${name} agregado al espacio`);
+  openModal('editSpace',spaceId); // rerender modal
+}
+
+async function removeMemberFromSpace(spaceId, memberId) {
+  const sp=(S.spaces||[]).find(x=>x.id===spaceId);
+  if(!sp) return;
+  sp.members=(sp.members||[]).filter(m=>m.id!==memberId);
+  if(supabase&&CURRENT_USER) {
+    try {
+      const {data}=await supabase.from('house_data').select('data').eq('id',spaceId).maybeSingle();
+      if(data&&data.data) {
+        await supabase.from('house_data').update({data:{...data.data,members:(data.data.members||[]).filter(m=>m.id!==memberId)}}).eq('id',spaceId);
+      }
+    } catch(e){ console.warn('removeMember cloud:', e); }
+  }
+  await save();
+  openModal('editSpace',spaceId);
+}
+
+async function leaveSpace(spaceId) {
+  S.spaces=(S.spaces||[]).filter(sp=>sp.id!==spaceId);
+  localStorage.removeItem(houseLocalKey(spaceId));
+  await save();
+  closeModal();
+  if(currentSpaceId===spaceId) exitSpace();
+  else renderSpacesList();
+  showToast('Saliste del espacio');
+}
+
+async function submitJoinSpace() {
+  const codeEl=document.getElementById('spaceCodeInput');
+  const code=(codeEl?codeEl.value.trim().toUpperCase():'');
+  const msgEl=document.getElementById('spaceJoinMsg');
+  if(!code){ if(msgEl) msgEl.textContent='Escribe el código'; return; }
+  if((S.spaces||[]).some(sp=>sp.code===code)){ if(msgEl) msgEl.textContent='Ya eres miembro de este espacio'; return; }
+  if(msgEl) msgEl.textContent='Buscando...';
+  if(!supabase||!CURRENT_USER){ if(msgEl) msgEl.textContent='Necesitas conexión para unirte'; return; }
+  try {
+    const {data,error}=await supabase.from('house_data').select('id,data').filter('data->>spaceCode','eq',code).maybeSingle();
+    if(error||!data){ if(msgEl) msgEl.textContent='Código no encontrado'; return; }
+    const spaceName=(data.data&&data.data.spaceName)||'Espacio compartido';
+    const spaceEmoji=(data.data&&data.data.spaceEmoji)||'🏠';
+    const spaceMembers=(data.data&&data.data.members)||[];
+    if(!S.spaces) S.spaces=[];
+    S.spaces.push({id:data.id,name:spaceName,code,emoji:spaceEmoji,role:'member',joinedAt:isoToday(),members:spaceMembers});
+    await save();
+    closeModal();
+    showToast(`¡Te uniste a "${spaceName}"!`);
+    // Entrar al espacio para registrar al usuario como miembro
+    enterSpace(data.id,spaceName);
+  } catch(e){ if(msgEl) msgEl.textContent='Error de conexión'; }
 }
 
 function profileDisplayName() {
@@ -1076,7 +1404,7 @@ async function loadCloudData() {
       await supabase.from('app_data').insert({ user_id: CURRENT_USER.id, data: S });
     }
   } catch(e) { console.error('loadCloudData:', e); }
-  await loadHouseCloud();
+  if (!Array.isArray(S.spaces) || S.spaces.length === 0) await migrateToSpaces();
   updateHeaderBalance();
 }
 function setLastAction() { S.lastActionTime = new Date().toISOString(); save(); updateHeaderBalance(); }
@@ -1153,8 +1481,26 @@ function paycheckSourceLabel(p) {
 function billPaidCount(bill) { return S.paidBills.filter(p=>p.billId===bill.id).length; }
 function isBillActiveForMonth(bill, forMonth) {
   if(!bill.active) return false;
-  if(bill.termType==='term' && bill.totalPayments && billPaidCount(bill)>=bill.totalPayments) return false;
   return true;
+}
+function scheduledRowsAll(startDate, frequency='once', amount=0, opts={}) {
+  if(!startDate) return [];
+  const freq=frequency||'once';
+  const rows=[];
+  const maxCount=freq==='once'?1:(opts.totalPayments||360);
+  let current=fmtISO(parseDate(startDate));
+  for(let n=1;n<=maxCount&&rows.length<(opts.limit||360);n++) {
+    if(n>1) current=nextDateByFrequency(current,freq,1);
+    rows.push({date:current,amount,label:opts.totalPayments?`Pago ${n}/${opts.totalPayments}`:`Pago ${n}`});
+  }
+  return rows;
+}
+function billScheduledRowsForMonth(bill, month) {
+  const [y,m]=month.split('-').map(Number);
+  const monthDate=new Date(y,m-1,1);
+  const startDate=bill.startDate||fmtISO(getBillDueDate(bill, monthDate));
+  const rows=scheduledRowsAll(startDate,bill.frequency||'monthly',bill.amount,{totalPayments:bill.termType==='term'?bill.totalPayments:null,limit:360});
+  return rows.filter(r=>monthKey(parseDate(r.date))===month);
 }
 function availableForPocket(excludeId=null) {
   const other=S.pockets.filter(p=>p.id!==excludeId).reduce((s,p)=>s+(p.saved||0),0);
@@ -1209,15 +1555,17 @@ function getMonthPayments(month=finMonth) {
   const items=[];
   S.bills.forEach(b=>{
     if(!isBillActiveForMonth(b,cm)) return;
-    const due=getBillDueDate(b,cm), dk=fmtISO(due);
-    const paidAmount=billPaidAmount(b.id,dk), left=Math.max(0,(b.amount||0)-paidAmount);
-    items.push({kind:'bill',id:b.id,date:dk,name:b.name,amount:left||b.amount,originalAmount:b.amount,paidAmount,emoji:b.emoji||'card',paid:left<=0,category:b.category,frequency:b.frequency});
+    billScheduledRowsForMonth(b,month).forEach(row=>{
+      const dk=row.date;
+      const paidAmount=billPaidAmount(b.id,dk), left=Math.max(0,(b.amount||0)-paidAmount);
+      items.push({kind:'bill',id:b.id,date:dk,name:b.name,amount:left||b.amount,originalAmount:b.amount,paidAmount,emoji:b.emoji||'card',paid:left<=0,category:b.category,frequency:b.frequency,termType:b.termType,totalPayments:b.totalPayments});
+    });
   });
   S.oneTimePayments.forEach(o=>{
     const freq=o.frequency||'once';
     const rows=freq==='once'
       ? [{date:o.dueDate,amount:o.amount,label:'Pago único'}]
-      : scheduledRows(o.dueDate,freq,o.amount,{totalPayments:o.termType==='term'?o.totalPayments:null,limit:240});
+      : scheduledRowsAll(o.dueDate,freq,o.amount,{totalPayments:o.termType==='term'?o.totalPayments:null,limit:360});
     rows.forEach(row=>{
       if(monthKey(parseDate(row.date))!==month) return;
       const paidAmount=oneTimePaidAmount(o,row.date), left=Math.max(0,(o.amount||0)-paidAmount);
@@ -1236,7 +1584,7 @@ function getMonthPayments(month=finMonth) {
   });
   S.borrowedLoans.forEach(l=>{
     borrowedInstallments(l).forEach(p=>{
-      if(monthKey(parseDate(p.date))===month) items.push({kind:'borrowed',id:l.id,paymentId:p.id,date:p.date,name:`Pagar préstamo a ${l.personName} (${p.number}/${l.paymentsCount||1})`,amount:p.amount,emoji:l.emoji||'bank',paid:p.paid,category:`préstamo recibido · ${freqLabel(l.frequency)}`});
+      if(monthKey(parseDate(p.date))===month) items.push({kind:'borrowed',id:l.id,paymentId:p.id,date:p.date,name:`Pagar préstamo a ${l.personName} (${p.number}/${l.paymentsCount||1})`,amount:p.amount,emoji:l.emoji||'bank',paid:p.paid,category:l.category||'deuda'});
     });
   });
   const who=currentHousePerson();
@@ -1499,7 +1847,7 @@ function renderHome() {
   <div class="flex items-center justify-between gap-2">
     <h3 class="font-bold text-indigo-700 text-xs uppercase tracking-wide">Próximos 14 días</h3>
     <div class="flex gap-1 overflow-x-auto">
-      ${Object.entries(filterLabels).map(([key,label])=>`<button onclick="setHomeUpcomingFilter('${key}')" class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${homeUpcomingFilter===key?'bg-indigo-600 text-white':'bg-indigo-50 text-indigo-600'}">${label}</button>`).join('')}
+      ${Object.entries(filterLabels).map(([key,label])=>`<button onclick="setHomeUpcomingFilter('${key}')" class="pill-tab shrink-0 ${homeUpcomingFilter===key?'active':''}">${label}</button>`).join('')}
     </div>
   </div>`;
 
@@ -1581,9 +1929,9 @@ function completeShoppingList(listId, stay=false) {
 }
 
 function updateHeaderTitle() {
-  const titles={home:'Inicio',cheques:'Ingresos',facturas:'Finanzas',cal:'Calendario',casa:'Casa',bolsillos:'Bolsillos',plan:'Planes',analysis:'Análisis',config:'Configuración'};
+  const titles={home:'Inicio',cheques:'Ingresos',facturas:'Finanzas',cal:'Calendario',casa:'Espacios',bolsillos:'Bolsillos',plan:'Planes',analysis:'Análisis',config:'Configuración'};
   const el=document.getElementById('headerTitle');
-  if(el) el.textContent=titles[currentView]||'BearAgenda';
+  if(el) el.textContent=(currentView==='casa'&&currentSpaceId&&currentSpaceName)?currentSpaceName:(titles[currentView]||'BearAgenda');
 }
 function addShoppingItem(listId) {
   const list=(S.shoppingLists||[]).find(x=>x.id===listId), input=document.getElementById('shopInput');
@@ -1950,7 +2298,7 @@ function itemIcon(kind, category) {
 // PLAN
 // ═══════════════════════════════════════
 function facturaAddAction() {
-  const actions={monthly:'addFinanceChoice',bolsillos:'addPocket',prestamos:'addLoanChoice'};
+  const actions={monthly:'addOneTime',bolsillos:'addPocket',prestamos:'addLoanChoice'};
   openModal(actions[currentTab]||'addBill');
 }
 
@@ -2009,7 +2357,7 @@ function renderBills() {
       if(item.kind==='expense') action=item.paid?`<button onclick="event.stopPropagation();unmarkExpensePaid('${item.id}')" class="flex-1 bg-slate-100 text-slate-500 text-sm py-2 rounded-xl">Deshacer</button>`:`<button onclick="event.stopPropagation();markExpensePaid('${item.id}')" class="flex-1 btn-primary py-2 text-sm">Marcar pagado</button>`;
       if(item.kind==='loan') action=`<button onclick="event.stopPropagation();openModal('addLoanPayment','${item.id}')" class="flex-1 bg-purple-50 text-purple-700 font-semibold text-sm py-2 rounded-xl">Registrar abono</button>`;
       if(item.kind==='borrowed') action=item.paid?`<button onclick="event.stopPropagation();unmarkBorrowedPaid('${item.id}','${item.paymentId||''}')" class="flex-1 bg-slate-100 text-slate-500 text-sm py-2 rounded-xl">Deshacer</button>`:`<button onclick="event.stopPropagation();markBorrowedPaid('${item.id}','${item.paymentId||''}')" class="flex-1 btn-primary py-2 text-sm">Pagar</button>`;
-      if(item.kind==='house') action=item.paid?`<button onclick="event.stopPropagation();showView('casa')" class="flex-1 bg-slate-100 text-slate-500 text-sm py-2 rounded-xl">Ver Casa</button>`:`<button onclick="event.stopPropagation();openModal('addHousePayment','${item.id}')" class="flex-1 bg-green-50 text-green-700 font-semibold text-sm py-2 rounded-xl">Abonar en Casa</button>`;
+      if(item.kind==='house') action=item.paid?`<button onclick="event.stopPropagation();showView('casa')" class="flex-1 bg-slate-100 text-slate-500 text-sm py-2 rounded-xl">Ver Espacios</button>`:`<button onclick="event.stopPropagation();openModal('addHousePayment','${item.id}')" class="flex-1 bg-green-50 text-green-700 font-semibold text-sm py-2 rounded-xl">Abonar en Espacio</button>`;
       const canEditHouse=item.kind==='house'&&((H.items||[]).find(x=>x.id===item.id)?.assignedTo===currentHousePerson());
       html+=`<div onclick="openModal('paymentDetail','${item.kind}:${item.id}:${item.date}')" class="card p-4 mb-2.5">
         <div class="flex items-center gap-3">
@@ -2066,7 +2414,7 @@ function renderBills() {
     if(!S.pockets.length) html+=`<div class="text-center text-indigo-300 py-8 space-y-2"><div class="flex justify-center"><svg class="w-10 h-10" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div><div>Sin bolsillos todavía.</div><div class="text-xs">Crea categorías principales para separar dinero con propósito.</div></div>`;
     S.pockets.forEach(pk=>{
       const pct=pk.target>0?Math.min(100,Math.round((pk.saved||0)/pk.target*100)):0;
-      html+=`<div class="card p-4 mb-3 border border-indigo-50">
+      html+=`<div onclick="openModal('pocketDetail','${pk.id}')" class="card p-4 mb-3 border border-indigo-50 active:scale-[.99] transition">
         <div class="flex items-center gap-3">
           <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-400 flex items-center justify-center"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div>
           <div class="flex-1"><div class="font-bold text-slate-800">${pk.name}</div><div class="text-xs text-slate-400">${pk.target?`Meta ${fmt(pk.target)} · ${pct}%`:'Sin meta definida'}</div></div>
@@ -2074,8 +2422,8 @@ function renderBills() {
         </div>
         ${pk.target?`<div class="mt-3"><div class="w-full bg-indigo-50 rounded-full h-2.5"><div class="bg-gradient-to-r from-indigo-400 to-violet-400 h-2.5 rounded-full" style="width:${pct}%"></div></div></div>`:''}
         <div class="flex gap-2 mt-3 pt-3 border-t border-slate-50">
-          <button onclick="openModal('movePocket','${pk.id}')" class="flex-1 bg-indigo-50 text-indigo-700 font-semibold text-sm py-2 rounded-xl">Mover dinero</button>
-          <button onclick="deletePocket('${pk.id}')" class="bg-red-50 text-red-400 text-sm px-3 py-2 rounded-xl">Borrar</button>
+          <button onclick="event.stopPropagation();openModal('movePocket','${pk.id}')" class="flex-1 bg-indigo-50 text-indigo-700 font-semibold text-sm py-2 rounded-xl">Mover dinero</button>
+          <button onclick="event.stopPropagation();deletePocket('${pk.id}')" class="bg-red-50 text-red-400 text-sm px-3 py-2 rounded-xl">Borrar</button>
         </div>
       </div>`;
     });
@@ -2166,15 +2514,8 @@ function planDurationLabel(obj={}, paidCount=0) {
 
 function scheduledRows(startDate, frequency='once', amount=0, opts={}) {
   if(!startDate) return [];
-  const freq=frequency||'once';
-  const rows=[], start=parseDate(startDate), todayDate=today();
-  const maxCount=freq==='once'?1:(opts.totalPayments||36);
-  let current=fmtISO(start);
-  for(let n=1;n<=maxCount&&rows.length<(opts.limit||12);n++) {
-    if(n>1) current=nextDateByFrequency(current,freq,1);
-    if(parseDate(current)>=todayDate) rows.push({date:current,amount,label:opts.totalPayments?`Pago ${n}/${opts.totalPayments}`:`Pago ${n}`});
-  }
-  return rows;
+  const rows=scheduledRowsAll(startDate,frequency,amount,{...opts,limit:opts.limit||120});
+  return opts.fromToday===false ? rows : rows.filter(r=>parseDate(r.date)>=today());
 }
 
 function renderSchedulePreview(rows=[], modalType='', modalId='', show=4) {
@@ -2186,6 +2527,7 @@ function renderSchedulePreview(rows=[], modalType='', modalId='', show=4) {
 }
 
 function houseAddAction() {
+  if(!currentSpaceId) return;
   if(houseTab==='pockets') openModal('addHousePocket');
   else if(houseTab==='calendar') openModal('houseCalendarAddChoice',houseCalDate||isoToday());
   else openModal('addHouseItem');
@@ -2194,7 +2536,7 @@ function houseAddAction() {
 function updateHouseAddButton() {
   const btn=document.getElementById('houseAddBtn');
   if(btn) {
-    btn.classList.toggle('hidden', houseTab==='history');
+    btn.classList.toggle('hidden', !currentSpaceId || houseTab==='history');
     btn.textContent=houseTab==='pockets'?'+ Agregar bolsillo':houseTab==='calendar'?'+ Agregar':'+ Agregar pago';
   }
 }
@@ -2215,11 +2557,29 @@ function renderHouse() {
   updateHouseAddButton();
   if(!houseMonth) houseMonth=monthKey(today());
   const [hy,hm]=houseMonth.split('-').map(Number);
+  const currentSpace=(S.spaces||[]).find(sp=>sp.id===currentSpaceId);
+  const currentSpaceCode=currentSpace?currentSpace.code:'';
+  const currentSpaceMembers=H.members||currentSpace?.members||[];
+  const syncIcon=houseSyncStatus==='cloud'?'☁️':houseSyncStatus==='error'?'⚠️':'💾';
   const visibleItems=(H.items||[]).filter(i=>monthKey(parseDate(i.dueDate||i.createdAt&&i.createdAt.slice(0,10)||isoToday()))===houseMonth);
   const total=visibleItems.reduce((s,i)=>s+(i.amount||0),0);
   const paid=visibleItems.reduce((s,i)=>s+housePaid(i),0);
   const pending=Math.max(0,total-paid);
-  let html=`<div class="grid grid-cols-4 gap-1 mb-3">
+  let html=`<div class="flex items-center gap-2 mb-4">
+    <button onclick="exitSpace()" class="bg-white border border-indigo-100 text-indigo-500 rounded-xl px-3 py-2 text-sm font-bold flex items-center gap-1 flex-shrink-0">
+      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+      Espacios
+    </button>
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-2">
+        <div class="font-bold text-slate-800 truncate text-sm">${currentSpaceName}</div>
+        ${currentSpaceMembers.length?renderMemberAvatars(currentSpaceMembers,24):''}
+      </div>
+      ${currentSpaceCode?`<div class="text-[10px] text-slate-400">Código: <span class="font-mono font-bold">${currentSpaceCode}</span></div>`:''}
+    </div>
+    <button onclick="refreshHouseData(true)" title="${houseSyncMessage}" class="text-lg flex-shrink-0">${syncIcon}</button>
+  </div>
+  <div class="grid grid-cols-4 gap-1 mb-3">
     <button class="pill-tab ${houseTab==='payments'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="setHouseTab('payments')">Pagos</button>
     <button class="pill-tab ${houseTab==='pockets'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="setHouseTab('pockets')">Bolsillos</button>
     <button class="pill-tab ${houseTab==='calendar'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="setHouseTab('calendar')">Calendario</button>
@@ -2227,7 +2587,7 @@ function renderHouse() {
   </div>
   ${houseTab!=='pockets'&&houseTab!=='calendar'?`<div class="finance-month-nav mb-3">
     <button onclick="changeHouseMonth(-1)" class="bg-white text-indigo-500 border border-indigo-100 rounded-xl px-3 py-2 text-sm font-bold">‹</button>
-    <div class="text-center"><h2>${['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'][hm-1]}</h2><p class="text-xs text-slate-400">Casa ${hy}</p></div>
+    <div class="text-center"><h2>${['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'][hm-1]}</h2><p class="text-xs text-slate-400">${currentSpaceName||'Espacio'} ${hy}</p></div>
     <button onclick="changeHouseMonth(1)" class="bg-white text-indigo-500 border border-indigo-100 rounded-xl px-3 py-2 text-sm font-bold">›</button>
   </div>`:''}`;
 
@@ -2239,7 +2599,7 @@ function renderHouse() {
   </div>`;
 
     if(!visibleItems.length) {
-      html+=`<div class="card p-5 text-center text-indigo-300 text-sm">Casa esta limpia. Agreguen pagos compartidos, compras o metas de la casa aqui.</div>`;
+      html+=`<div class="card p-5 text-center text-indigo-300 text-sm">Este espacio está vacío. Agreguen pagos compartidos, compras o metas aquí.</div>`;
     } else {
       [...visibleItems].sort((a,b)=>(a.done===b.done?0:a.done?1:-1)||new Date(b.createdAt||0)-new Date(a.createdAt||0)).forEach(item=>{
         const itemPaid=housePaid(item), left=Math.max(0,(item.amount||0)-itemPaid), pct=item.amount?Math.min(100,Math.round(itemPaid/item.amount*100)):0;
@@ -2264,7 +2624,7 @@ function renderHouse() {
     }
   } else if(houseTab==='pockets') {
     const totalSaved=housePocketTotal();
-    html+=`<div class="card p-4 bg-indigo-50 border border-indigo-100"><div class="text-xs text-indigo-500 font-bold uppercase">Total en bolsillos de Casa</div><div class="text-2xl font-extrabold text-indigo-700">${fmt(totalSaved)}</div><div class="text-xs text-indigo-400 mt-1">Visible y compartido para ambos perfiles.</div></div>`;
+    html+=`<div class="card p-4 bg-indigo-50 border border-indigo-100"><div class="text-xs text-indigo-500 font-bold uppercase">Total en bolsillos del espacio</div><div class="text-2xl font-extrabold text-indigo-700">${fmt(totalSaved)}</div><div class="text-xs text-indigo-400 mt-1">Visible y compartido para todos los miembros.</div></div>`;
     if(!H.pockets.length) {
       html+=`<div class="card p-5 text-center text-indigo-300 text-sm">Sin bolsillos compartidos todavía.</div>`;
     } else {
@@ -2321,7 +2681,7 @@ function renderHouseCalendarContent() {
   const selected=houseCalDate, day=houseCalendarItemsForDate(selected);
   let html=`<div class="grid grid-cols-3 items-center mb-4">
     <button onclick="changeHouseCalendarMonth(-1)" class="bg-white text-indigo-500 border border-indigo-100 rounded-xl px-3 py-2 text-sm font-bold justify-self-start">‹</button>
-    <div class="text-center"><h2 class="text-3xl font-extrabold text-slate-800 leading-tight">${['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'][m]}</h2><p class="text-xs text-slate-400">Calendario Casa ${y}</p></div>
+    <div class="text-center"><h2 class="text-3xl font-extrabold text-slate-800 leading-tight">${['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'][m]}</h2><p class="text-xs text-slate-400">Calendario ${currentSpaceName||'Espacio'} ${y}</p></div>
     <button onclick="changeHouseCalendarMonth(1)" class="bg-white text-indigo-500 border border-indigo-100 rounded-xl px-3 py-2 text-sm font-bold justify-self-end">›</button>
   </div>
   <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400 mb-1">${['D','L','M','M','J','V','S'].map(d=>`<div>${d}</div>`).join('')}</div>
@@ -2334,10 +2694,10 @@ function renderHouseCalendarContent() {
   html+=`</div>
   <div class="card p-4">
     <div class="flex justify-between items-center mb-3">
-      <div><div class="font-bold text-slate-800">Casa para ${fmtDateLong(selected)}</div><div class="text-xs text-slate-400">Listas, planes, citas, pendientes y pagos compartidos</div></div>
+      <div><div class="font-bold text-slate-800">${currentSpaceName||'Espacio'} — ${fmtDateLong(selected)}</div><div class="text-xs text-slate-400">Listas, planes, citas, pendientes y pagos compartidos</div></div>
       <button onclick="openModal('houseCalendarAddChoice','${selected}')" class="btn-primary text-sm px-4 py-2.5 shrink-0 mobile-fab-add">+ Agregar</button>
     </div>`;
-  if(!day.payments.length&&!day.notes.length&&!day.lists.length&&!day.plans.length) html+=`<div class="text-center text-indigo-300 py-6 text-sm">Nada de Casa programado para este día.</div>`;
+  if(!day.payments.length&&!day.notes.length&&!day.lists.length&&!day.plans.length) html+=`<div class="text-center text-indigo-300 py-6 text-sm">Nada programado en este espacio para este día.</div>`;
   day.payments.forEach(item=>{
     const paid=housePaid(item), left=Math.max(0,(item.amount||0)-paid);
     html+=`<button onclick="openModal('houseItemDetail','${item.id}')" class="w-full text-left py-2 border-t border-slate-50 flex items-center gap-3">
@@ -2403,12 +2763,14 @@ function spendByCategory(month) {
   const rows={};
   const add=(cat,amount)=>{ rows[cat]=(rows[cat]||0)+(amount||0); };
   getMonthPayments(month).filter(p=>p.kind!=='loan').forEach(p=>add(p.category||p.kind||'pagos',p.originalAmount||p.amount||0));
+  (S.loans||[]).filter(l=>l.createdAt&&monthKey(parseDate(l.createdAt.slice(0,10)))===month).forEach(l=>add(l.category||'personal',l.totalAmount||0));
   return Object.entries(rows).map(([name,amount])=>({name,amount})).sort((a,b)=>b.amount-a.amount);
 }
 
 function analysisCategoryItems(category, month=analysisMonth) {
-  return getMonthPayments(month)
-    .filter(p=>p.kind!=='loan' && (p.category||p.kind||'pagos')===category)
+  const loanRows=(S.loans||[]).filter(l=>l.createdAt&&monthKey(parseDate(l.createdAt.slice(0,10)))===month).map(l=>({kind:'loanout',id:l.id,date:l.createdAt.slice(0,10),name:`Préstamo a ${l.personName}`,amount:l.totalAmount||0,originalAmount:l.totalAmount||0,emoji:l.emoji||'brief',paid:true,category:l.category||'personal'}));
+  return [...getMonthPayments(month).filter(p=>p.kind!=='loan'),...loanRows]
+    .filter(p=>(p.category||p.kind||'pagos')===category)
     .sort((a,b)=>parseDate(a.date)-parseDate(b.date));
 }
 
@@ -3316,21 +3678,18 @@ function openModal(type, id, extra) {
   }
 
   else if(type==='addFinanceChoice') {
-    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">Agregar pago</h3>
-    <div class="space-y-2">
-      <button onclick="openModal('addBill')" class="w-full card p-4 text-left"><div class="font-bold text-indigo-700">Factura recurrente</div><div class="text-xs text-slate-400">Pago que se repite cada mes o cada periodo.</div></button>
-      <button onclick="openModal('addOneTime')" class="w-full card p-4 text-left"><div class="font-bold text-indigo-700">Pago único</div><div class="text-xs text-slate-400">Un pago con una sola fecha.</div></button>
-      <button onclick="openModal('addBorrowedLoan')" class="w-full card p-4 text-left"><div class="font-bold text-indigo-700">Préstamo recibido</div><div class="text-xs text-slate-400">Dinero que alguien te prestó y debes devolver.</div></button>
-    </div>`;
+    openModal('addOneTime');
+    return;
   }
 
   else if(type==='homeCreateChoice') {
     html=`<h3 class="text-lg font-bold text-slate-800 mb-4">Crear</h3>
     <div class="grid grid-cols-2 gap-2">
+      <button onclick="openModal('addPaycheck')" class="card p-4 text-left"><div class="w-9 h-9 rounded-xl bg-green-50 text-green-600 flex items-center justify-center mb-2">${renderIcon('coin','w-5 h-5')}</div><div class="font-bold text-green-700">Ingreso</div><div class="text-xs text-slate-400">Cheque o ingreso</div></button>
       <button onclick="openModal('addFinanceChoice')" class="card p-4 text-left"><div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2">${renderIcon('card','w-5 h-5')}</div><div class="font-bold text-indigo-700">Pago</div><div class="text-xs text-slate-400">Factura o pago único</div></button>
       <button onclick="openModal('addLoanChoice')" class="card p-4 text-left"><div class="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-2">${renderIcon('bank','w-5 h-5')}</div><div class="font-bold text-purple-700">Préstamo</div><div class="text-xs text-slate-400">Recibido o realizado</div></button>
       <button onclick="openModal('addExpense',null,{paid:false})" class="card p-4 text-left"><div class="w-9 h-9 rounded-xl bg-red-50 text-red-500 flex items-center justify-center mb-2">${renderIcon('receipt','w-5 h-5')}</div><div class="font-bold text-red-600">Gasto</div><div class="text-xs text-slate-400">Registrar gasto</div></button>
-      <button onclick="openModal('addCalendarNote','${isoToday()}')" class="card p-4 text-left"><div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2">${noteTypeIcon('pendiente')}</div><div class="font-bold text-indigo-700">Nota</div><div class="text-xs text-slate-400">Tarea o recordatorio</div></button>
+      <button onclick="openModal('addCalendarNote','${isoToday()}')" class="card p-4 text-left col-span-2"><div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2">${noteTypeIcon('pendiente')}</div><div class="font-bold text-indigo-700">Nota</div><div class="text-xs text-slate-400">Tarea o recordatorio</div></button>
     </div>`;
   }
 
@@ -3426,7 +3785,7 @@ function openModal(type, id, extra) {
         </select></div>
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
         <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
-          ${['vivienda','seguro','servicios','deuda','suscripción','otros'].map(c=>`<option value="${c}" ${b&&b.category===c?'selected':''}>${c}</option>`).join('')}
+          ${['comida','servicios publicos','telefono','internet','gasolina','seguro','alquiler','entretenimiento','salud','supermercado','deuda','transporte','personal','inversion','ahorro'].map(c=>`<option value="${c}" ${b&&b.category===c?'selected':''}>${c}</option>`).join('')}
         </select></div>
       </div>
       <div class="bg-indigo-50 rounded-xl p-3">
@@ -3505,7 +3864,7 @@ function openModal(type, id, extra) {
       </div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
       <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
-        ${['comida','servicios','teléfono','gasolina','seguro','arriendo','entretenimiento','salud','supermercado','transporte','otros'].map(c=>`<option value="${c}" ${o&&o.category===c?'selected':''}>${c}</option>`).join('')}
+        ${['comida','servicios publicos','telefono','internet','gasolina','seguro','alquiler','entretenimiento','salud','supermercado','deuda','transporte','personal','inversion','ahorro'].map(c=>`<option value="${c}" ${o&&o.category===c?'selected':''}>${c}</option>`).join('')}
       </select></div>
       <div class="bg-indigo-50 rounded-xl p-3">
         <label class="text-xs font-bold text-indigo-700 uppercase">Frecuencia y duración</label>
@@ -3549,10 +3908,22 @@ function openModal(type, id, extra) {
       </div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
       <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
-        ${['comida','servicios','teléfono','gasolina','seguro','arriendo','entretenimiento','salud','supermercado','restaurante','ropa','transporte','otros'].map(c=>`<option value="${c}" ${q.category===c?'selected':''}>${c}</option>`).join('')}
+        ${['comida','servicios publicos','telefono','internet','gasolina','seguro','alquiler','entretenimiento','salud','supermercado','deuda','transporte','personal','inversion','ahorro'].map(c=>`<option value="${c}" ${q.category===c?'selected':''}>${c}</option>`).join('')}
       </select></div>
       <button onclick="saveExpense(${type==='editExpense'?`'${id}'`:'null'})" class="w-full btn-primary py-3">Guardar gasto</button>
     </div>`;
+  }
+
+  else if(type==='pocketDetail') {
+    const pk=S.pockets.find(x=>x.id===id); if(!pk) return;
+    const pct=pk.target>0?Math.min(100,Math.round((pk.saved||0)/pk.target*100)):0;
+    const moves=(S.pocketTransactions||[]).filter(t=>t.pocketId===pk.id).sort((a,b)=>parseDate(b.date)-parseDate(a.date));
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">${pk.name}</h3>
+    <p class="text-sm text-slate-500 mb-4">Bolsillo personal</p>
+    <div class="card p-4 mb-3"><div class="flex justify-between items-center"><div><div class="text-xs text-cyan-500 font-bold uppercase">Guardado</div><div class="text-2xl font-extrabold text-cyan-700">${fmt(pk.saved||0)}</div></div><div class="text-right"><div class="text-xs text-slate-400">Meta</div><div class="font-bold text-slate-700">${pk.target?fmt(pk.target):'Sin meta'}</div></div></div>${pk.target?`<div class="mt-3"><div class="w-full bg-cyan-50 rounded-full h-2.5"><div class="bg-gradient-to-r from-cyan-400 to-teal-400 h-2.5 rounded-full" style="width:${pct}%"></div></div></div>`:''}</div>
+    <div class="font-bold text-indigo-700 text-xs uppercase mb-2">Historial de transacciones</div>
+    ${moves.length?moves.map(m=>`<div class="flex justify-between py-2 border-t border-slate-50 text-sm"><div><div class="font-semibold text-slate-700">${m.label}</div><div class="text-xs text-slate-400">${fmtDate(m.date)}</div></div><div class="font-bold ${m.amount>=0?'text-green-600':'text-red-500'}">${m.amount>=0?'+':'-'}${fmt(Math.abs(m.amount||0))}</div></div>`).join(''):'<div class="text-sm text-indigo-300 text-center py-3">Sin movimientos todavía.</div>'}
+    <div class="flex gap-2 mt-4"><button onclick="openModal('movePocket','${pk.id}')" class="flex-1 btn-primary py-3">Mover dinero</button><button onclick="openModal('editPocket','${pk.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Editar</button></div>`;
   }
 
   else if(type==='addPocket'||type==='editPocket') {
@@ -3590,7 +3961,7 @@ function openModal(type, id, extra) {
 
   else if(type==='addLoan'||type==='editLoan') {
     const l=type==='editLoan'?S.loans.find(x=>x.id===id):null;
-    const hasRec=l&&l.recurring;
+    const hasRec=l&&l.recurring&&l.recurring.freq!=='once';
     const loanIcon=normalizeIcon(l?l.emoji:'brief','loan');
     html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${l?'Editar':'Nuevo'} préstamo</h3>
     <div class="space-y-3">
@@ -3601,6 +3972,10 @@ function openModal(type, id, extra) {
       </div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Monto total prestado ($)</label>
       <input type="number" id="mAmount" value="${l?l.totalAmount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold text-lg"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría para análisis</label>
+      <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+        ${['comida','servicios publicos','telefono','internet','gasolina','seguro','alquiler','entretenimiento','salud','supermercado','deuda','transporte','personal','inversion','ahorro'].map(c=>`<option value="${c}" ${l&&l.category===c?'selected':''}>${c}</option>`).join('')}
+      </select></div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">De donde salio el dinero</label>
       <select id="mSource" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1" ${l?'disabled':''}>
         <option value="balance" ${!l||!l.source||l.source.type==='balance'?'selected':''}>Balance libre (${fmt(freeBalance())})</option>
@@ -3626,6 +4001,8 @@ function openModal(type, id, extra) {
           <input type="date" id="mRecNext" value="${hasRec?l.recurring.nextDate:isoToday()}" class="w-full border border-purple-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"></div>
           <div class="text-xs text-purple-500 bg-white/70 border border-purple-100 rounded-xl px-3 py-2">La cantidad de pagos se calcula automáticamente con el monto del préstamo dividido por el monto de cada pago.</div>
         </div>
+        <div id="singleLoanDateWrap" class="${hasRec?'hidden':''} mt-2"><label class="text-xs text-purple-600">Fecha de cobro único</label>
+          <input type="date" id="mSingleDate" value="${l&&l.recurring?l.recurring.nextDate:isoToday()}" class="w-full border border-purple-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"></div>
       </div>
       <button onclick="saveLoan(${l?`'${id}'`:'null'})" class="w-full btn-primary py-3">${l?'Guardar':'Registrar préstamo'}</button>
     </div>`;
@@ -3644,6 +4021,11 @@ function openModal(type, id, extra) {
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Persona</label><input id="mName" value="${l?l.personName:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1" placeholder="Nombre"></div>
       </div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Monto total ($)</label><input type="number" id="mAmount" value="${l?l.totalAmount||l.amount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1" oninput="calcBorrowedPmt()"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría para análisis</label>
+        <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+          ${['comida','servicios publicos','telefono','internet','gasolina','seguro','alquiler','entretenimiento','salud','supermercado','deuda','transporte','personal','inversion','ahorro'].map(c=>`<option value="${c}" ${(!l&&c==='deuda')||l&&l.category===c?'selected':''}>${c}</option>`).join('')}
+        </select>
+      </div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Fecha de primer pago</label><input type="date" id="mDate" value="${l?l.startDate||l.dueDate:(extra&&extra.date)||isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Tipo de pago</label>
         <select id="mBorrowedType" onchange="updateBorrowedTypeFields();calcBorrowedPmt()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
@@ -3927,10 +4309,80 @@ function openModal(type, id, extra) {
     </div>`;
   }
 
+  else if(type==='createSpace') {
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">Crear espacio compartido</h3>
+    <p class="text-sm text-slate-500 mb-4">Dale un nombre e ícono. Luego comparte el código con la otra persona.</p>
+    <div class="space-y-4">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Nombre del espacio</label>
+      <input type="text" id="spaceNameInput" placeholder="Ej: casa ositos, Gastos Mayo…" maxlength="40"
+        class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold"></div>
+      ${spaceEmojiPicker('🏠','spaceEmojiInput')}
+      <p id="spaceCreateMsg" class="text-xs text-slate-400 min-h-[16px]"></p>
+      <button onclick="submitCreateSpace()" class="w-full btn-primary py-3">Crear espacio →</button>
+    </div>`;
+  }
+
+  else if(type==='editSpace') {
+    const sp=(S.spaces||[]).find(x=>x.id===id);
+    if(!sp) return;
+    const members=sp.members||[];
+    const membersHtml=members.length?`<div class="flex flex-wrap gap-2">${members.map((m,i)=>`<div class="flex items-center gap-1.5 bg-slate-100 rounded-full pl-1 pr-2 py-1"><div style="width:22px;height:22px;border-radius:50%;background:${memberColor(i)};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:white;flex-shrink:0">${memberInitials(m.name,true)}</div><span class="text-xs font-semibold text-slate-700">${m.name.split(' ')[0]}</span><button onclick="removeMemberFromSpace('${id}','${m.id}')" class="text-slate-400 hover:text-red-400 text-xs leading-none ml-0.5">✕</button></div>`).join('')}</div>`:'<p class="text-xs text-slate-400">Sin participantes aún.</p>';
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">Editar espacio</h3>
+    <div class="space-y-4">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Nombre</label>
+      <input type="text" id="editSpaceNameInput" value="${sp.name}" maxlength="40"
+        class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold"></div>
+      ${spaceEmojiPicker(sp.emoji||'🏠','editSpaceEmojiInput')}
+      <button onclick="saveEditSpace('${id}')" class="w-full btn-primary py-3">Guardar cambios</button>
+      <div class="border-t border-slate-100 pt-3">
+        <label class="text-xs font-bold text-slate-500 uppercase">Participantes</label>
+        <div class="mt-2 mb-3">${membersHtml}</div>
+        <div class="flex gap-2">
+          <input type="text" id="addMemberNameInput" placeholder="Nombre del participante" maxlength="30"
+            class="flex-1 border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2 text-sm text-slate-800">
+          <button onclick="addMemberToSpace('${id}')" class="bg-indigo-500 text-white font-bold px-3 py-2 rounded-xl text-sm">+ Agregar</button>
+        </div>
+      </div>
+      <button onclick="if(confirm('¿Salir de este espacio? Solo se borra de tu lista, no para los demás.'))leaveSpace('${id}')" class="w-full bg-red-50 text-red-500 font-semibold py-2.5 rounded-xl text-sm">Salir del espacio</button>
+    </div>`;
+  }
+
+  else if(type==='joinSpace') {
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">Unirse a un espacio</h3>
+    <p class="text-sm text-slate-500 mb-4">Escribe el código de invitación que te compartieron.</p>
+    <div class="space-y-3">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Código de invitación</label>
+      <input type="text" id="spaceCodeInput" placeholder="AB-1234" maxlength="7"
+        style="text-transform:uppercase;letter-spacing:0.15em"
+        class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-3 mt-1 text-slate-800 font-extrabold text-center text-2xl"
+        oninput="this.value=this.value.toUpperCase()"></div>
+      <p id="spaceJoinMsg" class="text-xs text-red-400 min-h-[16px]"></p>
+      <button onclick="submitJoinSpace()" class="w-full btn-primary py-3">Unirse al espacio →</button>
+    </div>`;
+  }
+
+  else if(type==='showSpaceCode') {
+    const parts=String(extra||'').split('|');
+    const code=parts[0]||'', name=parts[1]||'Espacio compartido';
+    html=`<div class="text-center mb-4">
+      <div class="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center mx-auto mb-3">
+        <svg class="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      </div>
+      <h3 class="text-lg font-bold text-slate-800 mb-1">¡Espacio creado!</h3>
+      <p class="text-sm text-slate-500">Comparte este código con la otra persona para que se una.</p>
+    </div>
+    <div class="card bg-indigo-50 border border-indigo-100 p-5 text-center mb-5">
+      <div class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-2">Código de invitación</div>
+      <div class="text-4xl font-extrabold text-indigo-600 tracking-widest font-mono">${code}</div>
+      <div class="text-xs text-slate-500 mt-2 font-semibold">${name}</div>
+    </div>
+    <button onclick="closeModal();enterSpace('${id}','${name}')" class="w-full btn-primary py-3">Entrar al espacio →</button>`;
+  }
+
   else if(type==='addHouseItem'||type==='editHouseItem') {
     const item=type==='editHouseItem'?H.items.find(x=>x.id===id):null;
     const houseIcon=normalizeIcon(item?item.emoji:'home','house');
-    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${item?'Editar':'Nuevo'} item de Casa</h3>
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${item?'Editar':'Nuevo'} item del espacio</h3>
     <div class="space-y-3">
       <div class="flex gap-3">
         <div class="w-20">${iconPicker('house',houseIcon,true)}</div>
@@ -4168,7 +4620,10 @@ function addCustomPlanItemRow(name='',amount='',type='pay') {
 
 function toggleRecurringFields() {
   const el=document.getElementById('recurringFields');
-  el&&el.classList.toggle('hidden');
+  const checked=!!document.getElementById('mRecurring')?.checked;
+  if(el) el.classList.toggle('hidden', !checked);
+  const single=document.getElementById('singleLoanDateWrap');
+  if(single) single.classList.toggle('hidden', checked);
 }
 
 function updatePaycheckRecurringFields() {
@@ -4218,9 +4673,10 @@ function saveBill(id) {
   const category=document.getElementById('mCat').value, frequency=document.getElementById('mFreq').value;
   const termType=document.getElementById('mTermType')?document.getElementById('mTermType').value:'indefinite';
   const totalPayments=termType==='term'?(parseInt(document.getElementById('mTotalPayments').value)||1):null;
+  const startDate=fmtISO(getBillDueDate({dueDay}, parseDate(`${finMonth||monthKey(today())}-01`)));
   if(!name||!amount||!dueDay){showToast('❌ Completa los campos');return;}
-  if(id){const b=S.bills.find(x=>x.id===id);if(b)Object.assign(b,{name,amount,dueDay,emoji,category,frequency,termType,totalPayments});}
-  else S.bills.unshift({id:uid(),name,amount,dueDay,emoji,category,frequency,termType,totalPayments,active:true});
+  if(id){const b=S.bills.find(x=>x.id===id);if(b)Object.assign(b,{name,amount,dueDay,emoji,category,frequency,termType,totalPayments,startDate:b.startDate||startDate});}
+  else S.bills.unshift({id:uid(),name,amount,dueDay,emoji,category,frequency,termType,totalPayments,startDate,active:true});
   save(); closeModal(); renderCurrentView(); showToast('✅ Factura guardada');
 }
 
@@ -4291,8 +4747,8 @@ function savePocket(id) {
   const saved=parseFloat(document.getElementById('mSaved').value)||0, target=parseFloat(document.getElementById('mTarget').value)||0;
   if(!name){showToast('❌ Escribe un nombre');return;}
   if(saved>availableForPocket(id)){showToast('No hay suficiente balance libre');return;}
-  if(id){const p=S.pockets.find(x=>x.id===id);if(p)Object.assign(p,{name,emoji,saved,target});}
-  else S.pockets.unshift({id:uid(),name,emoji,saved,target});
+  if(id){const p=S.pockets.find(x=>x.id===id);if(p){const diff=saved-(p.saved||0);Object.assign(p,{name,emoji,saved,target});if(diff) S.pocketTransactions.unshift({id:uid(),pocketId:id,label:'Ajuste manual',amount:diff,date:isoToday(),createdAt:new Date().toISOString()});}}
+  else {const newId=uid();S.pockets.unshift({id:newId,name,emoji,saved,target});if(saved) S.pocketTransactions.unshift({id:uid(),pocketId:newId,label:'Saldo inicial',amount:saved,date:isoToday(),createdAt:new Date().toISOString()});}
   setLastAction(); closeModal(); renderCurrentView(); showToast('✅ Bolsillo guardado');
 }
 
@@ -4300,6 +4756,7 @@ function saveLoan(id) {
   const personName=document.getElementById('mName').value.trim(), totalAmount=parseFloat(document.getElementById('mAmount').value);
   const note=document.getElementById('mNote').value.trim();
   const emoji=normalizeIcon(document.getElementById('mEmoji')?.value.trim()||'brief','loan');
+  const category=document.getElementById('mCat')?.value||'personal';
   if(!personName||!totalAmount){showToast('❌ Completa los campos');return;}
   const isRec=document.getElementById('mRecurring').checked;
   let recurring=null;
@@ -4308,15 +4765,19 @@ function saveLoan(id) {
     const nextDate=document.getElementById('mRecNext').value;
     if(!recAmount||!nextDate){showToast('Completa monto del pago y próxima fecha');return;}
     recurring={freq:document.getElementById('mRecFreq').value,amount:recAmount,nextDate,totalPayments:Math.max(1,Math.ceil(totalAmount/recAmount))};
+  } else {
+    const nextDate=document.getElementById('mSingleDate')?.value;
+    if(!nextDate){showToast('Completa la fecha de cobro');return;}
+    recurring={freq:'once',amount:totalAmount,nextDate,totalPayments:1};
   }
-  if(id){const l=S.loans.find(x=>x.id===id);if(l)Object.assign(l,{personName,totalAmount,note,emoji,recurring});}
+  if(id){const l=S.loans.find(x=>x.id===id);if(l)Object.assign(l,{personName,totalAmount,note,emoji,category,recurring});}
   else {
     const raw=document.getElementById('mSource').value;
     const source=raw.startsWith('pocket:')?{type:'pocket',id:raw.split(':')[1]}:{type:'balance',id:null};
     if(source.type==='balance' && totalAmount>freeBalance()){showToast('No hay suficiente balance libre');return;}
     if(source.type==='pocket'){const p=S.pockets.find(x=>x.id===source.id); if(!p||totalAmount>(p.saved||0)){showToast('No hay suficiente dinero en ese bolsillo');return;}}
     adjustSource(source,-totalAmount);
-    S.loans.unshift({id:uid(),personName,totalAmount,note,emoji,source,payments:[],recurring,createdAt:new Date().toISOString()});
+    S.loans.unshift({id:uid(),personName,totalAmount,note,emoji,category,source,payments:[],recurring,createdAt:new Date().toISOString()});
   }
   save(); closeModal(); renderCurrentView(); showToast('✅ Préstamo guardado');
 }
@@ -4344,6 +4805,7 @@ function saveBorrowedLoan(id=null) {
   const personName=document.getElementById('mName').value.trim(), amount=parseFloat(document.getElementById('mAmount').value), dueDate=document.getElementById('mDate').value;
   const description=document.getElementById('mDesc').value.trim();
   const emoji=normalizeIcon(document.getElementById('mEmoji')?.value.trim()||'bank','borrowed');
+  const category=document.getElementById('mCat')?.value||'deuda';
   const isOnce=document.getElementById('mBorrowedType')?.value==='once';
   const paymentsCount=isOnce?1:(parseInt(document.getElementById('mPayments').value)||1);
   const frequency=isOnce?'once':(document.getElementById('mFreq')?.value||'monthly');
@@ -4356,7 +4818,7 @@ function saveBorrowedLoan(id=null) {
     const prev=previousPaid.find(p=>p.number===i+1);
     return {id:prev?.id||uid(),number:i+1,amount:perPayment,date:nextDateByFrequency(dueDate,frequency,i),paid:!!prev,paidDate:prev?.paidDate||null,paidAt:prev?.paidAt||null,createdAt:prev?.createdAt||new Date().toISOString()};
   });
-  const payload={personName,totalAmount:amount,amount,dueDate,startDate:dueDate,description,emoji,paymentsCount,frequency,perPayment,installments,paid:installments.every(p=>p.paid),createdDate:existing?.createdDate||isoToday(),createdAt:existing?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+  const payload={personName,totalAmount:amount,amount,dueDate,startDate:dueDate,description,emoji,category,paymentsCount,frequency,perPayment,installments,paid:installments.every(p=>p.paid),createdDate:existing?.createdDate||isoToday(),createdAt:existing?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
   if(existing) Object.assign(existing,payload);
   else S.borrowedLoans.unshift({id:uid(),...payload});
   setLastAction(); closeModal(); renderCurrentView(); showToast('Préstamo recibido guardado');
@@ -4372,7 +4834,7 @@ function moveMoneyToPocket(id) {
   const pk=S.pockets.find(x=>x.id===id), amount=parseFloat(document.getElementById('mAmount').value);
   if(!pk||!amount){showToast('Escribe el monto');return;}
   if(amount>freeBalance()){showToast('No hay suficiente balance disponible');return;}
-  pk.saved=(pk.saved||0)+amount; setLastAction(); closeModal(); renderPocketsView(); updateHeaderBalance(); showToast('Dinero movido');
+  pk.saved=(pk.saved||0)+amount; S.pocketTransactions.unshift({id:uid(),pocketId:id,label:'Movimiento al bolsillo',amount,date:isoToday(),createdAt:new Date().toISOString()}); setLastAction(); closeModal(); renderCurrentView(); updateHeaderBalance(); showToast('Dinero movido');
 }
 
 function saveLoanPayment(loanId) {
@@ -4382,8 +4844,10 @@ function saveLoanPayment(loanId) {
   if(!l) return;
   l.payments.unshift({id:uid(),amount,date,note,createdAt:new Date().toISOString()});
   adjustBalance(amount);
-  if(l.recurring&&l.recurring.nextDate) {
+  if(l.recurring&&l.recurring.nextDate&&l.recurring.freq!=='once') {
     l.recurring.nextDate=nextDateByFrequency(l.recurring.nextDate,l.recurring.freq,1);
+  } else if(l.recurring&&l.recurring.freq==='once') {
+    l.recurring=null;
   }
   setLastAction(); closeModal(); renderCurrentView(); showToast('✅ Abono registrado');
 }
@@ -4447,7 +4911,7 @@ function openAppMenu() {
     ['cheques','Ingresos','Pagos recibidos y próximos ingresos'],
     ['facturas','Finanzas','Pagos, gastos y préstamos'],
     ['cal','Calendario','Pagos, citas, notas y tareas'],
-    ['casa','Casa','Pagos y bolsillos compartidos'],
+    ['casa','Espacios','Espacios compartidos con otras personas'],
     ['plan','Planes','Planes cheque a cheque editables'],
     ['analysis','Análisis mensual','Gráfico de ingresos, egresos y gastos']
   ];
@@ -4478,7 +4942,7 @@ function renderCurrentView() {
   else if(currentView==='bolsillos') renderPocketsView();
   else if(currentView==='plan') renderPlan();
   else if(currentView==='analysis') renderAnalysis();
-  else if(currentView==='casa') renderHouse();
+  else if(currentView==='casa') renderEspacios();
   else if(currentView==='config'){
     const el=document.getElementById('bankBalanceInput');if(el)el.value=S.bankBalance||'';
     const nameEl=document.getElementById('profileNameInput');if(nameEl)nameEl.value=S.profileName||'';
@@ -4521,7 +4985,7 @@ function exportData() {
 }
 
 function confirmFormatProfile(){
-  if(confirm('Esto deja limpio SOLO este perfil personal. La seccion Casa compartida no se borra. ¿Continuar?')){
+  if(confirm('Esto deja limpio SOLO este perfil personal. Los espacios compartidos no se borran. ¿Continuar?')){
     cleanProfile(true);
     save();
     updateHeaderBalance();
@@ -4531,31 +4995,32 @@ function confirmFormatProfile(){
 }
 
 async function confirmClearHouse(){
-  if(!confirm('Esto borra TODO Casa para ambos perfiles: pagos, bolsillos e historial. ¿Continuar?')) return;
-  if(!confirm('Confirmación final: Casa quedará en cero para Felipe y Laura.')) return;
+  if(!currentSpaceId){ showToast('Selecciona un espacio primero'); return; }
+  if(!confirm('Esto borra TODO el espacio compartido: pagos, bolsillos e historial. ¿Continuar?')) return;
+  if(!confirm('Confirmación final: el espacio quedará en cero.')) return;
   H = clone(HOUSE_INIT);
   H.updatedAt = new Date().toISOString();
-  localStorage.setItem(HOUSE_SK, JSON.stringify(H));
+  localStorage.setItem(houseLocalKey(), JSON.stringify(H));
   if(supabase && CURRENT_USER) {
     const { error } = await supabase.from('house_data').upsert(
-      { id: HOUSE_CLOUD_ID, data: {houseShared:true, ...H}, updated_at: H.updatedAt },
+      { id: currentSpaceId, data: {houseShared:true, ...H}, updated_at: H.updatedAt },
       { onConflict: 'id' }
     );
     if(error) {
       houseSyncStatus='error';
-      houseSyncMessage=error.message||'No se pudo limpiar Casa en la nube';
-      showToast('Casa local limpia, nube con error');
+      houseSyncMessage=error.message||'No se pudo limpiar en la nube';
+      showToast('Limpio localmente, error en nube');
     } else {
       houseSyncStatus='cloud';
-      houseSyncMessage='Casa limpia y sincronizada';
-      showToast('Casa limpia');
+      houseSyncMessage='Espacio limpio y sincronizado';
+      showToast('Espacio limpio');
     }
   } else {
     houseSyncStatus='local';
-    houseSyncMessage='Casa limpia localmente';
-    showToast('Casa limpia localmente');
+    houseSyncMessage='Espacio limpio localmente';
+    showToast('Espacio limpio localmente');
   }
-  if(currentView==='casa') renderHouse();
+  if(currentView==='casa'&&currentSpaceId) renderHouse();
 }
 
 async function formatModule(label) {
@@ -4563,7 +5028,7 @@ async function formatModule(label) {
     'Finanzas':'Se borrarán facturas, pagos únicos, gastos y pagos marcados. No se borrarán ingresos ni préstamos.',
     'Ingresos':'Se borrarán cheques e ingresos programados/recibidos.',
     'Bolsillos personales':'Se borrarán tus bolsillos personales. El balance de banco no se reinicia.',
-    'Casa':'Se borrará Casa compartida: pagos, bolsillos e historial para ambos perfiles.',
+    'Casa':'Se borrará el espacio compartido actual: pagos, bolsillos e historial.',
     'Calendario':'Se borrarán notas y tareas del calendario. Las listas de compras quedan aparte.',
     'Lista de compras':'Se borrarán todas las listas de compras.',
     'Proyecciones / Planes':'Se borrarán planes y proyecciones personalizadas.',
@@ -4586,10 +5051,10 @@ function confirmReset(){if(confirm('¿Reiniciar todo?')){localStorage.removeItem
 let pullStartY = null;
 let pullBusy = false;
 document.addEventListener('touchstart', e => {
-  if(currentView==='casa' && window.scrollY===0) pullStartY = e.touches[0].clientY;
+  if(currentView==='casa' && currentSpaceId && window.scrollY===0) pullStartY = e.touches[0].clientY;
 }, {passive:true});
 document.addEventListener('touchmove', e => {
-  if(pullStartY===null || pullBusy || currentView!=='casa') return;
+  if(pullStartY===null || pullBusy || currentView!=='casa' || !currentSpaceId) return;
   const diff=e.touches[0].clientY-pullStartY;
   if(diff>90) {
     pullBusy=true;
