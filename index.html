@@ -11,11 +11,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="BearAgenda">
   <!-- Favicon + iOS home screen icon -->
-  <link rel="icon" type="image/png" sizes="32x32" href="./apple-touch-icon.png?v=20260504">
-  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon-180.png?v=20260504">
-  <link rel="apple-touch-icon" sizes="1024x1024" href="./apple-touch-icon.png?v=20260504">
+  <link rel="icon" type="image/png" sizes="32x32" href="./apple-touch-icon.png?v=20260506">
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon-180.png?v=20260506">
+  <link rel="apple-touch-icon" sizes="1024x1024" href="./apple-touch-icon.png?v=20260506">
   <!-- PWA manifest -->
-  <link rel="manifest" href="manifest.json?v=20260504">
+  <link rel="manifest" href="manifest.json?v=20260506">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -791,6 +791,7 @@ function normalizeHouse() {
     if(item.frequency==='quincenal') item.frequency='semimonthly';
     if(!item.termType) item.termType=item.frequency==='once'?'term':'indefinite';
     if(item.frequency==='once' && !item.totalPayments) item.totalPayments=1;
+    if(!item.category) item.category='personal';
   });
   Object.values(H.calendarNotes||{}).forEach(notes=>{
     (notes||[]).forEach(n=>{ if(!n.type) n.type='pendiente'; if(n.done===undefined) n.done=false; });
@@ -933,6 +934,12 @@ function loadHouseLocal() {
   normalizeHouse();
 }
 
+function currentUserMember() {
+  if(!CURRENT_USER) return null;
+  const name=profileDisplayName()||CURRENT_USER.email||'Usuario';
+  return {id:CURRENT_USER.id||CURRENT_USER.email,name,email:CURRENT_USER.email||'',joinedAt:isoToday()};
+}
+
 async function save() {
   localStorage.setItem(userLocalKey(), JSON.stringify(S));
   if (!supabase || !CURRENT_USER) return;
@@ -1035,10 +1042,13 @@ async function loadHouseCloud() {
       H.updatedAt = new Date().toISOString();
       normalizeHouse();
       localStorage.setItem(houseLocalKey(), JSON.stringify(H));
-      // Actualizar cache de miembros en S.spaces para que se vean en la lista
+      // Actualizar cache de metadatos en S.spaces para que Inicio use el nombre real del espacio
       const spIdx=(S.spaces||[]).findIndex(sp=>sp.id===currentSpaceId);
-      if(spIdx>=0 && Array.isArray(H.members) && H.members.length) {
-        S.spaces[spIdx].members=[...H.members];
+      if(spIdx>=0) {
+        if(data.data.spaceName) S.spaces[spIdx].name=data.data.spaceName;
+        if(data.data.spaceEmoji) S.spaces[spIdx].emoji=data.data.spaceEmoji;
+        if(data.data.spaceCode) S.spaces[spIdx].code=data.data.spaceCode;
+        if(Array.isArray(H.members) && H.members.length) S.spaces[spIdx].members=[...H.members];
         save();
       }
       // Si el cloud no tenía spaceCode, repararlo ahora con el código local
@@ -1103,11 +1113,12 @@ function renderMemberAvatars(members=[],size=28,single=false){
 async function registerMemberInSpace() {
   if(!currentSpaceId||!CURRENT_USER) return;
   normalizeHouse();
-  const myName=profileDisplayName()||CURRENT_USER.email||'Usuario';
-  const myId=CURRENT_USER.id||CURRENT_USER.email;
+  const me=currentUserMember();
+  if(!me) return;
+  const myId=me.id;
   if(!(H.members||[]).some(m=>m.id===myId)) {
     if(!H.members) H.members=[];
-    H.members.push({id:myId,name:myName,email:CURRENT_USER.email||'',joinedAt:isoToday()});
+    H.members.push(me);
     await saveHouse();
   }
   // Guardar miembros localmente en S.spaces para mostrarlos sin entrar al espacio
@@ -1115,13 +1126,41 @@ async function registerMemberInSpace() {
   if(idx>=0){ S.spaces[idx].members=H.members; await save(); }
 }
 
-const SPACE_EMOJIS=['🏠','🏡','❤️','💛','🧡','💙','💚','💜','🌟','✨','🎯','🌸','🍀','🌈','🎁','🦋','🌺','🏢','🛋️','🌻','🐻','🤍','🫧','🌙'];
+const SPACE_EMOJIS=['🏠','✈️','❤️','👩‍👧','👨‍👩‍👧‍👦','🌸','🐻🐻','🎁','🏢','flag-co-us-heart'];
+
+function normalizeSpaceEmoji(value='🏠') {
+  if(value==='🇨🇴') return 'flag-co';
+  if(value==='🇺🇸') return 'flag-us';
+  if(value==='flag-co' || value==='flag-us') return 'flag-co-us-heart';
+  return value||'🏠';
+}
+
+function renderSpaceEmoji(value='🏠') {
+  const v=normalizeSpaceEmoji(value);
+  if(v==='flag-co-us-heart') return `<span class="relative inline-flex items-center justify-center" style="width:31px;height:22px">
+    <span class="inline-flex overflow-hidden rounded-[4px] border border-white/70 shadow-sm" style="position:absolute;left:0;top:2px;width:18px;height:13px;flex-direction:column">
+      <span style="height:50%;background:#fcd116"></span><span style="height:25%;background:#003893"></span><span style="height:25%;background:#ce1126"></span>
+    </span>
+    <span class="relative inline-flex overflow-hidden rounded-[4px] border border-white/70 shadow-sm" style="position:absolute;right:0;bottom:1px;width:18px;height:13px;background:repeating-linear-gradient(to bottom,#b22234 0 1px,#fff 1px 2px)">
+      <span style="position:absolute;left:0;top:0;width:7.8px;height:7px;background:#3c3b6e"></span>
+    </span>
+    <span style="position:absolute;left:10px;top:4px;color:#f43f5e;font-size:12px;line-height:1;text-shadow:0 1px 2px rgba(255,255,255,.9)">♥</span>
+  </span>`;
+  if(v==='flag-co') return `<span class="inline-flex overflow-hidden rounded-[4px] border border-white/70 shadow-sm" style="width:26px;height:18px;flex-direction:column">
+    <span style="height:50%;background:#fcd116"></span><span style="height:25%;background:#003893"></span><span style="height:25%;background:#ce1126"></span>
+  </span>`;
+  if(v==='flag-us') return `<span class="relative inline-flex overflow-hidden rounded-[4px] border border-white/70 shadow-sm" style="width:26px;height:18px;background:repeating-linear-gradient(to bottom,#b22234 0 1.38px,#fff 1.38px 2.76px)">
+    <span style="position:absolute;left:0;top:0;width:11px;height:9.7px;background:#3c3b6e"></span>
+  </span>`;
+  return v;
+}
 
 function spaceEmojiPicker(selectedEmoji='🏠',inputId='spaceEmojiInput'){
+  const selected=normalizeSpaceEmoji(selectedEmoji);
   return `<div>
     <label class="text-xs font-bold text-slate-500 uppercase">Icono del espacio</label>
-    <input type="hidden" id="${inputId}" value="${selectedEmoji}">
-    <div class="flex flex-wrap gap-1.5 mt-2">${SPACE_EMOJIS.map(e=>`<button type="button" onclick="document.getElementById('${inputId}').value='${e}';document.querySelectorAll('.sp-emoji-btn[data-picker=\\'${inputId}\\']').forEach(b=>{b.classList.toggle('ring-2',b.dataset.emoji==='${e}');b.classList.toggle('ring-indigo-400',b.dataset.emoji==='${e}');b.classList.toggle('bg-indigo-50',b.dataset.emoji==='${e}');})" class="sp-emoji-btn text-lg w-9 h-9 rounded-xl flex items-center justify-center ${e===selectedEmoji?'ring-2 ring-indigo-400 bg-indigo-50':'bg-slate-50'}" data-emoji="${e}" data-picker="${inputId}">${e}</button>`).join('')}</div>
+    <input type="hidden" id="${inputId}" value="${selected}">
+    <div class="flex flex-wrap gap-1.5 mt-2">${SPACE_EMOJIS.map(e=>`<button type="button" onclick="document.getElementById('${inputId}').value='${e}';document.querySelectorAll('.sp-emoji-btn[data-picker=\\'${inputId}\\']').forEach(b=>{b.classList.toggle('ring-2',b.dataset.emoji==='${e}');b.classList.toggle('ring-indigo-400',b.dataset.emoji==='${e}');b.classList.toggle('bg-indigo-50',b.dataset.emoji==='${e}');})" class="sp-emoji-btn text-lg w-9 h-9 rounded-xl flex items-center justify-center ${e===selected?'ring-2 ring-indigo-400 bg-indigo-50':'bg-slate-50'}" data-emoji="${e}" data-picker="${inputId}">${renderSpaceEmoji(e)}</button>`).join('')}</div>
   </div>`;
 }
 
@@ -1232,7 +1271,7 @@ function renderSpacesList() {
       const safeName=sp.name.replace(/'/g,'&#39;');
       html+=`<div class="card p-4 flex items-center gap-3">
         <button onclick="enterSpace('${sp.id}','${safeName}')" class="flex items-center gap-3 flex-1 min-w-0 text-left">
-          <div class="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center flex-shrink-0 text-2xl">${emoji}</div>
+          <div class="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center flex-shrink-0 text-2xl">${renderSpaceEmoji(emoji)}</div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
               <span class="font-bold text-slate-800 text-base">${sp.name}</span>
@@ -1271,7 +1310,9 @@ async function submitCreateSpace() {
   const msgEl=document.getElementById('spaceCreateMsg');
   if(msgEl) msgEl.textContent='Creando...';
   const now=new Date().toISOString();
-  const spaceData={...clone(HOUSE_INIT),spaceName:name,spaceEmoji:emoji,spaceCode:code,spaceCreatedBy:CURRENT_USER?CURRENT_USER.email:'',houseShared:true,updatedAt:now};
+  const me=currentUserMember();
+  const members=me?[me]:[];
+  const spaceData={...clone(HOUSE_INIT),spaceName:name,spaceEmoji:emoji,spaceCode:code,spaceCreatedBy:CURRENT_USER?CURRENT_USER.email:'',houseShared:true,members,updatedAt:now};
   let cloudOk=false;
   if(supabase&&CURRENT_USER) {
     try {
@@ -1286,7 +1327,7 @@ async function submitCreateSpace() {
   // Guardar siempre localmente
   localStorage.setItem(houseLocalKey(spaceId),JSON.stringify(spaceData));
   if(!S.spaces) S.spaces=[];
-  S.spaces.unshift({id:spaceId,name,code,emoji,role:'owner',joinedAt:isoToday(),members:[]});
+  S.spaces.unshift({id:spaceId,name,code,emoji,role:'owner',joinedAt:isoToday(),members});
   await save();
   closeModal();
   showToast(cloudOk?`Espacio "${name}" creado`:`Espacio "${name}" creado (solo local)`);
@@ -1371,18 +1412,35 @@ async function leaveSpace(spaceId) {
 // Carga los ítems de TODOS los espacios del usuario para Finance y Calendar cross-space
 async function loadAllSpaceItems() {
   spaceItemsCache={};
+  const seenSpaces=new Set();
+  S.spaces=(S.spaces||[]).filter(sp=>{
+    if(!sp||!sp.id||seenSpaces.has(sp.id)) return false;
+    seenSpaces.add(sp.id); return true;
+  });
   const spaces=S.spaces||[];
+  let metaChanged=false;
   for(const sp of spaces) {
     try {
       // Primero intentar desde localStorage (caché local del espacio)
       const lk=houseLocalKey(sp.id);
       const ld=localStorage.getItem(lk);
-      if(ld){ const p=JSON.parse(ld); if(Array.isArray(p.items)) spaceItemsCache[sp.id]=[...p.items]; }
+      if(ld){
+        const p=JSON.parse(ld);
+        if(p.spaceName && sp.name!==p.spaceName){ sp.name=p.spaceName; metaChanged=true; }
+        if(p.spaceEmoji && sp.emoji!==p.spaceEmoji){ sp.emoji=p.spaceEmoji; metaChanged=true; }
+        if(p.spaceCode && sp.code!==p.spaceCode){ sp.code=p.spaceCode; metaChanged=true; }
+        if(Array.isArray(p.members) && p.members.length){ sp.members=[...p.members]; metaChanged=true; }
+        if(Array.isArray(p.items)) spaceItemsCache[sp.id]=[...p.items];
+      }
       // Luego cloud (sobreescribe local si hay datos más frescos)
       if(supabase&&CURRENT_USER){
         const {data}=await supabase.from('house_data').select('data').eq('id',sp.id).maybeSingle();
-        if(data&&data.data&&Array.isArray(data.data.items)){
-          spaceItemsCache[sp.id]=[...data.data.items];
+        if(data&&data.data){
+          if(data.data.spaceName && sp.name!==data.data.spaceName){ sp.name=data.data.spaceName; metaChanged=true; }
+          if(data.data.spaceEmoji && sp.emoji!==data.data.spaceEmoji){ sp.emoji=data.data.spaceEmoji; metaChanged=true; }
+          if(data.data.spaceCode && sp.code!==data.data.spaceCode){ sp.code=data.data.spaceCode; metaChanged=true; }
+          if(Array.isArray(data.data.members) && data.data.members.length){ sp.members=[...data.data.members]; metaChanged=true; }
+          if(Array.isArray(data.data.items)) spaceItemsCache[sp.id]=[...data.data.items];
           // Guardar en local para futuros usos offline
           const merged={...HOUSE_INIT,...data.data};
           localStorage.setItem(lk,JSON.stringify(merged));
@@ -1390,6 +1448,7 @@ async function loadAllSpaceItems() {
       }
     } catch(e){ console.warn('loadAllSpaceItems',sp.id,e); }
   }
+  if(metaChanged) await save();
 }
 
 async function submitJoinSpace() {
@@ -1431,9 +1490,44 @@ function normalizePersonText(value='') {
   return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
 }
 
-function currentHousePerson() {
-  const raw = ((S.profileName||'') + ' ' + (CURRENT_USER&&CURRENT_USER.email?CURRENT_USER.email:'')).toLowerCase();
-  return raw.includes('laura') ? 'laura' : 'felipe';
+function memberKey(name) {
+  return String(name||'').trim().split(/\s+/)[0].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+
+function membersForSpace(spaceId=currentSpaceId) {
+  const sp=(S.spaces||[]).find(x=>x.id===spaceId);
+  let members=[];
+  if(spaceId===currentSpaceId && Array.isArray(H.members) && H.members.length) members=H.members;
+  else if(sp && Array.isArray(sp.members) && sp.members.length) members=sp.members;
+  const seen=new Set();
+  members=(members||[]).filter(m=>{
+    const k=(m&&m.id)||memberKey(m&&m.name)||normalizePersonText(m&&m.email);
+    if(!k||seen.has(k)) return false;
+    seen.add(k); return true;
+  });
+  const me=currentUserMember();
+  if(!members.length && me) members=[me];
+  return members;
+}
+
+function currentHousePerson(spaceId=currentSpaceId) {
+  const members=membersForSpace(spaceId);
+  const myId=CURRENT_USER&&(CURRENT_USER.id||CURRENT_USER.email);
+  const myEmail=normalizePersonText(CURRENT_USER&&CURRENT_USER.email?CURRENT_USER.email:'');
+  const raw=normalizePersonText(`${S.profileName||''} ${myEmail}`);
+  const me=members.find(m=>{
+    const id=String(m.id||'');
+    const email=normalizePersonText(m.email||'');
+    const name=normalizePersonText(m.name||'');
+    return (myId&&id===String(myId)) || (myEmail&&email===myEmail) || (name&&raw.includes(name)) || (email&&raw.includes(email));
+  });
+  if(me) return memberKey(me.name||me.email||me.id);
+  const fallback=memberKey(profileDisplayName() || (CURRENT_USER&&CURRENT_USER.email?CURRENT_USER.email.split('@')[0]:''));
+  if(fallback) return fallback;
+  const rawLegacy=normalizePersonText((S.profileName||'')+' '+(CURRENT_USER&&CURRENT_USER.email?CURRENT_USER.email:''));
+  if(rawLegacy.includes('laura')) return 'laura';
+  if(rawLegacy.includes('felipe')) return 'felipe';
+  return '';
 }
 
 function isHousePaymentByCurrentActor(payment={}) {
@@ -1444,8 +1538,21 @@ function isHousePaymentByCurrentActor(payment={}) {
   return by.includes(person) || (actor && (by.includes(actor) || actor.includes(by)));
 }
 
-function houseAssigneeLabel(v) {
-  return {felipe:'Felipe',laura:'Laura',both:'Los dos'}[v]||'Los dos';
+function spaceShareLabel(members) { const n=(members||membersForSpace()||[]).length; return n===2?'Los dos':n===3?'Los tres':n>3?`Todos (${n})`:'Todos'; }
+function houseAssigneeLabel(v, members) {
+  const mlist=members||membersForSpace()||[];
+  if(!v||v==='both') return spaceShareLabel(mlist);
+  const m=mlist.find(x=>memberKey(x.name)===v);
+  return m?m.name:(v.charAt(0).toUpperCase()+v.slice(1));
+}
+function houseAssigneeOptions(item) {
+  const members=membersForSpace();
+  const n=Math.max(1,members.length);
+  const pct=Math.round(100/n);
+  const shareLabel=spaceShareLabel(members);
+  let opts=`<option value="both" ${(!item||item.assignedTo==='both')?'selected':''}>${shareLabel}${n>1?` — ${pct}% c/u`:''}</option>`;
+  members.forEach(m=>{ const k=memberKey(m.name); opts+=`<option value="${k}" ${item&&item.assignedTo===k?'selected':''}>${m.name}</option>`; });
+  return opts;
 }
 
 function isLauraProfile() {
@@ -1512,8 +1619,9 @@ async function loadCloudData() {
     }
   } catch(e) { console.error('loadCloudData:', e); }
   if (!Array.isArray(S.spaces) || S.spaces.length === 0) await migrateToSpaces();
-  // Cargar ítems de todos los espacios en background para Finance y Calendar cross-space
-  loadAllSpaceItems().catch(e=>console.warn('loadAllSpaceItems bg:', e));
+  if(!currentSpaceId) H=clone(HOUSE_INIT);
+  // Cargar ítems de todos los espacios antes de pintar Inicio/Finanzas con datos compartidos
+  try { await loadAllSpaceItems(); } catch(e) { console.warn('loadAllSpaceItems:', e); }
   updateHeaderBalance();
 }
 function setLastAction() { S.lastActionTime = new Date().toISOString(); save(); updateHeaderBalance(); }
@@ -1577,7 +1685,11 @@ function isOneTimePaid(o,dateKey=null){ return oneTimePaidAmount(o,dateKey) >= (
 function expensePaidAmount(e){return e?(e.paidAmount||(e.paid?e.amount:0)||0):0;}
 function totalPockets() { return S.pockets.reduce((s,p)=>s+(p.saved||0),0); }
 function loanPaid(loan) { return (loan.payments||[]).reduce((s,p)=>s+p.amount,0); }
-function catLabel(c) { return {trabajo:'Trabajo',deuda:'Deuda',persona:'Persona',otro:'Otro'}[c]||c; }
+const PAYMENT_CATEGORIES=['comida','servicios publicos','telefono','internet','gasolina','seguro','alquiler','entretenimiento','salud','supermercado','deuda','prestamos','tarjetas de credito','mascotas','hierba','transporte','personal','inversion','ahorro'];
+function catLabel(c) { return {trabajo:'Trabajo',deuda:'Deuda',persona:'Persona',otro:'Otro','servicios publicos':'Servicios publicos',prestamos:'Prestamos','tarjetas de credito':'Tarjetas de credito',mascotas:'Mascotas',hierba:'Hierba'}[c]||c; }
+function paymentCategoryOptions(selected='personal') {
+  return PAYMENT_CATEGORIES.map(c=>`<option value="${c}" ${selected===c?'selected':''}>${catLabel(c)}</option>`).join('');
+}
 function methodLabel(m) { return {deposito:'depósito',efectivo:'efectivo',transferencia:'transferencia'}[m]||m; }
 function freqLabel(f) { return {monthly:'Mensual',biweekly:'Cada 2 semanas',every_two_weeks:'Cada 2 semanas',semimonthly:'Quincenal',quincenal:'Quincenal',weekly:'Semanal',once:'Único'}[f]||f; }
 function paycheckFreqLabel(p) { return {weekly:'Semanal',biweekly:'Cada 2 semanas',every_two_weeks:'Cada 2 semanas',semimonthly:'Quincenal',quincenal:'Quincenal',monthly:'Mensual'}[p.recurrenceFreq] || (p.paymentType==='unico'?'Único':'Recurrente'); }
@@ -1708,11 +1820,12 @@ function getMonthPayments(month=finMonth) {
       if(monthKey(parseDate(p.date))===month) items.push({kind:'borrowed',id:l.id,paymentId:p.id,date:p.date,name:`Pagar préstamo a ${l.personName} (${p.number}/${l.paymentsCount||1})`,amount:p.amount,emoji:l.emoji||'bank',paid:p.paid,category:l.category||'deuda'});
     });
   });
-  const who=currentHousePerson();
   // Incluir ítems de TODOS los espacios del usuario (no solo el activo)
   (S.spaces||[]).forEach(sp=>{
     const spaceItems=sp.id===currentSpaceId?(H.items||[]):(spaceItemsCache[sp.id]||[]);
     const spaceName=sp.name||'Espacio';
+    const who=currentHousePerson(sp.id);
+    const members=membersForSpace(sp.id);
     spaceItems.forEach(item=>{
       const assigned=item.assignedTo||'both';
       if(!(assigned==='both'||assigned===who)) return;
@@ -1720,6 +1833,8 @@ function getMonthPayments(month=finMonth) {
       if(!startDate) return;
       const freq=item.frequency||'once';
       const isBoth=assigned==='both';
+      const memberCount=isBoth?Math.max(1,members.length||2):1;
+      const shareLabel=isBoth?Math.round(100/memberCount)+'%':'';
       const rows=freq==='once'
         ?[{date:startDate}]
         :scheduledRowsAll(startDate,freq,item.amount||0,{totalPayments:item.termType==='term'?item.totalPayments:null,limit:360});
@@ -1727,15 +1842,22 @@ function getMonthPayments(month=finMonth) {
         if(monthKey(parseDate(row.date))!==month) return;
         // Calcular la parte que le corresponde a esta persona
         const fullAmount=item.amount||0;
-        const myShare=isBoth?fullAmount/2:fullAmount;
+        const myShare=isBoth?fullAmount/memberCount:fullAmount;
         const left=sp.id===currentSpaceId
           ?myShareLeft(item)
           :(item.paid?0:myShare);
-        items.push({kind:'house',id:item.id,date:row.date,name:`${spaceName}: ${item.name}`,amount:left||myShare,emoji:item.emoji||'home',paid:left<=0,category:`Origen: ${spaceName}`,houseRef:true,spaceId:sp.id,splitBoth:isBoth,fullAmount});
+        items.push({kind:'house',id:item.id,date:row.date,name:`${spaceName}: ${item.name}`,amount:left||myShare,emoji:item.emoji||'home',paid:left<=0,category:item.category||'personal',originLabel:`Origen: ${spaceName}`,houseRef:true,spaceId:sp.id,splitBoth:isBoth,shareLabel,fullAmount});
       });
     });
   });
-  return items.sort((a,b)=>parseDate(a.date)-parseDate(b.date));
+  const seen=new Set();
+  return items
+    .filter(item=>{
+      const key=[item.kind,item.spaceId||'',item.id||'',item.paymentId||'',item.date||''].join('|');
+      if(seen.has(key)) return false;
+      seen.add(key); return true;
+    })
+    .sort((a,b)=>parseDate(a.date)-parseDate(b.date));
 }
 function getTransactions(limit=8) {
   const tx=[];
@@ -1749,16 +1871,26 @@ function getTransactions(limit=8) {
   });
   S.expenses.filter(e=>e.paid).forEach(e=>tx.push({date:e.paidDate||e.date,createdAt:e.paidAt||e.createdAt,type:'Gasto',name:e.name,amount:e.amount,sign:'-'}));
   S.borrowedLoans.forEach(l=>borrowedInstallments(l).filter(p=>p.paid).forEach(p=>tx.push({date:p.paidDate||p.date,createdAt:p.paidAt,type:'Pago',name:`Pago préstamo a ${l.personName}`,amount:p.amount,sign:'-'})));
-  const housePerson=currentHousePerson();
-  (H.items||[]).forEach(item=>{
-    const assigned=item.assignedTo||'both';
-    if(!(assigned==='both'||assigned===housePerson)) return;
-    (item.payments||[]).filter(p=>isHousePaymentByCurrentActor(p)).forEach(p=>{
-      const by=p.by||currentActorName();
-      tx.push({date:p.date,createdAt:p.createdAt,type:'Casa',name:`Casa: ${item.name} · hecho por ${by}`,amount:p.amount||0,sign:'-'});
+  (S.spaces||[]).forEach(sp=>{
+    const spaceItems=sp.id===currentSpaceId?(H.items||[]):(spaceItemsCache[sp.id]||[]);
+    const who=currentHousePerson(sp.id);
+    const spaceName=sp.name||'Espacio';
+    (spaceItems||[]).forEach(item=>{
+      const assigned=item.assignedTo||'both';
+      if(!(assigned==='both'||assigned===who)) return;
+      (item.payments||[]).forEach(p=>{
+        const by=p.by||'Alguien';
+        tx.push({date:p.date,createdAt:p.createdAt,type:'Casa',name:`${spaceName}: ${item.name} · hecho por ${by}`,amount:p.amount||0,sign:'-',spaceId:sp.id,refId:item.id,paymentId:p.id});
+      });
     });
   });
-  return tx.sort((a,b)=>(parseDate(b.date)-parseDate(a.date))||(new Date(b.createdAt||b.date)-new Date(a.createdAt||a.date))).slice(0,limit);
+  const seen=new Set(), unique=[];
+  tx.forEach(t=>{
+    const key=[t.type,t.spaceId||'',t.refId||'',t.paymentId||'',t.date||'',t.name||'',t.amount||0].join('|');
+    if(seen.has(key)) return;
+    seen.add(key); unique.push(t);
+  });
+  return unique.sort((a,b)=>(parseDate(b.date)-parseDate(a.date))||(new Date(b.createdAt||b.date)-new Date(a.createdAt||a.date))).slice(0,limit);
 }
 
 // ═══════════════════════════════════════
@@ -1812,15 +1944,6 @@ function getUpcomingItems(days=14) {
       if(d>=t&&d<=limit) items.push({type:'borrowed',id:l.id,paymentId:p.id,name:`Pagar préstamo a ${l.personName}`,amount:p.amount,date:p.date,days:daysUntil(p.date),emoji:l.emoji||'bank'});
     });
   });
-  const who=currentHousePerson();
-  (H.items||[]).forEach(item=>{
-    const assigned=item.assignedTo||'both';
-    const date=item.dueDate||item.createdAt&&item.createdAt.slice(0,10);
-    if(!date || myShareLeft(item)<=0) return;
-    if(!(assigned==='both'||assigned===who)) return;
-    const d=parseDate(date);
-    if(d>=t&&d<=limit) items.push({type:'house',id:item.id,name:`Casa: ${item.name}`,amount:myShareLeft(item),date,days:daysUntil(date),emoji:item.emoji||'home',splitBoth:assigned==='both',fullAmount:item.amount||0});
-  });
   Object.entries(S.calendarNotes||{}).forEach(([date,notes])=>{
     const d=parseDate(date);
     if(d>=t&&d<=limit) (notes||[]).filter(n=>!n.done).forEach(n=>items.push({type:'task',id:n.id,name:n.text,amount:0,date,dateKey:date,days:daysUntil(date)}));
@@ -1840,12 +1963,12 @@ function getUpcomingItems(days=14) {
       const d=parseDate(p.date);
       if(p.paid || p.kind==='loan' || d<t || d>limit) return;
       const type=p.kind==='bill'?'bill':p.kind==='onetime'?'onetime':p.kind==='expense'?'expense':p.kind==='borrowed'?'borrowed':p.kind==='house'?'house':p.kind;
-      items.push({type,id:p.id,paymentId:p.paymentId,name:p.kind==='house'?`Casa: ${p.name}`:p.name,amount:p.amount,date:p.date,dateKey:p.date,days:daysUntil(p.date),emoji:p.emoji,category:p.category});
+      items.push({type,id:p.id,paymentId:p.paymentId,name:p.name,amount:p.amount,date:p.date,dateKey:p.date,days:daysUntil(p.date),emoji:p.emoji,category:p.category,spaceId:p.spaceId,splitBoth:p.splitBoth,shareLabel:p.shareLabel,fullAmount:p.fullAmount});
     });
   });
   const seen=new Set(), unique=[];
   items.forEach(item=>{
-    const key=[item.type,item.id,item.paymentId||'',item.date||item.dateKey||''].join('|');
+    const key=[item.type,item.spaceId||'',item.id,item.paymentId||'',item.date||item.dateKey||''].join('|');
     if(seen.has(key)) return;
     seen.add(key); unique.push(item);
   });
@@ -2017,7 +2140,7 @@ function renderHome() {
             <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">${item.type==='income'?'Ingreso':item.type==='task'?'Tarea':item.type==='shopping'?'Compras':item.type==='plan'?'Plan':'Pago'}</span>
             <span class="inline-flex items-center justify-center w-8 h-6 shrink-0 rounded-full text-[10px] font-extrabold whitespace-nowrap ${urgentCls}">${Math.max(0,item.days)}D</span>
             <span class="text-xs text-slate-600 font-semibold whitespace-nowrap">${fmtDate(item.date)}</span>
-            ${item.splitBoth?'<span class="text-[10px] bg-cyan-50 text-cyan-600 font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap">50%</span>':''}
+            ${item.splitBoth?`<span class="text-[10px] bg-cyan-50 text-cyan-600 font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap">${item.shareLabel||'50%'}</span>`:''}
           </div>
         </div>
         <div class="text-right">
@@ -2416,7 +2539,10 @@ function iconPicker(group='finance', current='', compact=false) {
 }
 function catEmoji(c) {
   return {gasolina:'fuel',comida:'food',supermercado:'cart',restaurante:'food',
-          entretenimiento:'game',salud:'health',ropa:'bag',transporte:'car',otros:'coin'}[c]||'coin';
+          entretenimiento:'game',salud:'health',ropa:'bag',transporte:'car',
+          'servicios publicos':'receipt',telefono:'phone',internet:'wifi',seguro:'shield',
+          alquiler:'home',deuda:'card',prestamos:'bank','tarjetas de credito':'card',mascotas:'paw',hierba:'cannabis',
+          personal:'person',inversion:'chart',ahorro:'coin',otros:'coin'}[c]||'coin';
 }
 function itemIcon(kind, category) {
   const s=(p,d)=>`<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="${s=>s||'1.8'}" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="${d}"/></svg>`;
@@ -2503,7 +2629,7 @@ function renderBills() {
       html+=`<div onclick="openModal('paymentDetail','${item.kind}:${item.id}:${item.date}')" class="card p-4 mb-2.5">
         <div class="flex items-center gap-3">
           <div class="w-11 h-11 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-500">${renderStoredIcon(item.emoji,item.kind,item.category)}</div>
-          <div class="flex-1 min-w-0"><div class="flex items-center gap-2 flex-wrap"><span class="font-semibold text-slate-800">${item.name}</span><span class="${status.cls} text-xs font-bold px-2.5 py-0.5 rounded-full">${status.label}</span>${item.houseRef?'<span class="origin-badge">Origen: Casa</span>':''}${item.splitBoth?'<span class="text-[10px] bg-cyan-50 text-cyan-600 font-bold px-2 py-0.5 rounded-full">50% tu parte</span>':''}</div>
+          <div class="flex-1 min-w-0"><div class="flex items-center gap-2 flex-wrap"><span class="font-semibold text-slate-800">${item.name}</span><span class="${status.cls} text-xs font-bold px-2.5 py-0.5 rounded-full">${status.label}</span>${item.houseRef?'<span class="origin-badge">Origen: Casa</span>':''}${item.splitBoth?`<span class="text-[10px] bg-cyan-50 text-cyan-600 font-bold px-2 py-0.5 rounded-full">${item.shareLabel||'50%'} tu parte</span>`:''}</div>
           <div class="text-xs text-slate-400 mt-0.5">${fmtDate(item.date)} · ${item.category||'pago'}${item.splitBoth?` · Total: ${fmt(item.fullAmount)}`:''}
           </div></div>
           <div class="font-bold ${item.kind==='loan'?'text-green-600':'text-slate-800'}">${item.kind==='loan'?'+':'-'}${fmt(item.amount)}</div>
@@ -2638,8 +2764,11 @@ function renderPocketsView() {
 function housePaid(item) {
   return (item.payments||[]).reduce((s,p)=>s+(p.amount||0),0);
 }
-// Si el ítem es de "Los dos" (both), cada persona ve/paga solo su mitad
-function myShareFactor(item) { return (item.assignedTo||'both')==='both' ? 0.5 : 1; }
+// Si el ítem es de todos, cada persona ve/paga su parte proporcional
+function myShareFactor(item) {
+  if((item.assignedTo||'both')!=='both') return 1;
+  return 1/Math.max(1,membersForSpace(currentSpaceId).length||2);
+}
 function myShareAmount(item) { return Math.round((item.amount||0) * myShareFactor(item) * 100) / 100; }
 function myShareLeft(item) {
   const total=item.amount||0;
@@ -2765,7 +2894,7 @@ function renderHouse() {
             <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-400 flex items-center justify-center">${renderStoredIcon(item.emoji,'house','')}</div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap"><span class="font-bold text-slate-800">${item.name}</span>${left<=0?'<span class="status-paid text-xs font-bold px-2 py-0.5 rounded-full">Listo</span>':''}</div>
-              <div class="text-xs text-slate-400">${fmtDate(item.dueDate||isoToday())} · ${houseAssigneeLabel(item.assignedTo||'both')} · ${freqLabel(item.frequency)}</div>
+              <div class="text-xs text-slate-400">${fmtDate(item.dueDate||isoToday())} · ${catLabel(item.category||'personal')} · ${houseAssigneeLabel(item.assignedTo||'both')} · ${freqLabel(item.frequency)}</div>
             </div>
             <div class="text-right"><div class="font-bold text-slate-800">${fmt(item.amount||0)}</div><div class="text-xs text-red-500">${fmt(left)} pendiente</div></div>
           </div>
@@ -2808,7 +2937,7 @@ function renderHouse() {
   } else {
     const completed=visibleItems.filter(item=>housePaid(item)>0).sort((a,b)=>new Date(b.updatedAt||b.createdAt||0)-new Date(a.updatedAt||a.createdAt||0));
     const recent=(H.transactions||[]).filter(t=>txMonthMatches(t.date,houseMonth)).slice(0,30);
-    html+=`<div class="card p-4"><div class="font-semibold text-indigo-700 text-sm mb-3">Pagos realizados</div>${completed.length?completed.map(item=>`<button onclick="openModal('houseItemDetail','${item.id}')" class="w-full text-left flex justify-between py-2 border-t border-slate-50"><div class="flex items-center gap-2 min-w-0"><span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0">${renderStoredIcon(item.emoji||'home','house','')}</span><div class="min-w-0"><div class="text-sm font-semibold text-slate-700 truncate">${item.name}</div><div class="text-xs text-slate-400">${houseAssigneeLabel(item.assignedTo||'both')} · ${fmtDate(item.dueDate||isoToday())}</div></div></div><div class="font-bold text-green-600">${fmt(housePaid(item))}</div></button>`).join(''):`<div class="text-sm text-indigo-300 text-center py-3">Aún no hay pagos realizados.</div>`}</div>`;
+    html+=`<div class="card p-4"><div class="font-semibold text-indigo-700 text-sm mb-3">Pagos realizados</div>${completed.length?completed.map(item=>`<button onclick="openModal('houseItemDetail','${item.id}')" class="w-full text-left flex justify-between py-2 border-t border-slate-50"><div class="flex items-center gap-2 min-w-0"><span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0">${renderStoredIcon(item.emoji||'home','house','')}</span><div class="min-w-0"><div class="text-sm font-semibold text-slate-700 truncate">${item.name}</div><div class="text-xs text-slate-400">${catLabel(item.category||'personal')} · ${houseAssigneeLabel(item.assignedTo||'both')} · ${fmtDate(item.dueDate||isoToday())}</div></div></div><div class="font-bold text-green-600">${fmt(housePaid(item))}</div></button>`).join(''):`<div class="text-sm text-indigo-300 text-center py-3">Aún no hay pagos realizados.</div>`}</div>`;
     html+=`<div class="card p-4"><div class="font-semibold text-indigo-700 text-sm mb-3">Actividad compartida</div>${recent.length?recent.map(t=>`<div class="flex justify-between py-2 border-t border-slate-50"><div><div class="text-sm font-semibold text-slate-700">${t.label}</div><div class="text-xs text-slate-400">${fmtDate(t.date)} · ${t.by||'Casa'}</div></div><div class="font-bold ${t.amount>=0?'text-green-600':'text-red-500'}">${fmt(Math.abs(t.amount||0))}</div></div>`).join(''):`<div class="text-sm text-indigo-300 text-center py-3">Sin actividad todavía.</div>`}</div>`;
   }
   document.getElementById('houseContent').innerHTML=html;
@@ -3445,14 +3574,15 @@ async function saveHouseItem(id=null) {
   const termType=document.getElementById('mTermType')?document.getElementById('mTermType').value:(frequency==='once'?'term':'indefinite');
   const totalPayments=termType==='term'?(parseInt(document.getElementById('mTotalPayments')?.value)||1):(frequency==='once'?1:null);
   const assignedTo=document.getElementById('mAssigned')?document.getElementById('mAssigned').value:'both';
+  const category=document.getElementById('mCat')?document.getElementById('mCat').value:'personal';
   const alreadyPaid=document.getElementById('mPaid')?document.getElementById('mPaid').checked:false;
   if(!name||!amount){showToast('Completa nombre y monto');return;}
   normalizeHouse();
   if(id) {
     const item=H.items.find(x=>x.id===id);
-    if(item) Object.assign(item,{name,amount,emoji,note,dueDate,frequency,termType,totalPayments,assignedTo,updatedAt:new Date().toISOString(),updatedBy:currentActorName()});
+    if(item) Object.assign(item,{name,amount,emoji,category,note,dueDate,frequency,termType,totalPayments,assignedTo,updatedAt:new Date().toISOString(),updatedBy:currentActorName()});
   } else {
-    const item={id:houseUid('house_item'),name,amount,emoji,note,dueDate,frequency,termType,totalPayments,assignedTo,createdAt:new Date().toISOString(),createdBy:currentActorName(),payments:[]};
+    const item={id:houseUid('house_item'),name,amount,emoji,category,note,dueDate,frequency,termType,totalPayments,assignedTo,createdAt:new Date().toISOString(),createdBy:currentActorName(),payments:[]};
     if(alreadyPaid) item.payments.unshift({id:houseUid('house_pay'),amount,date:dueDate||isoToday(),note:'Registrado como realizado',by:currentActorName(),createdAt:new Date().toISOString()});
     H.items.unshift(item);
     H.transactions.unshift({id:houseUid('house_tx'),label:`Agrego ${name}`,amount:alreadyPaid?amount:0,date:dueDate||isoToday(),by:currentActorName(),createdAt:new Date().toISOString(),refType:'houseItem',refId:item.id});
@@ -3766,7 +3896,7 @@ function openModal(type, id, extra) {
       title=`Casa: ${item.name}`; subtitle=`Origen: Casa · ${houseAssigneeLabel(item.assignedTo||'both')} · ${planDurationLabel(item,null)}`; amount=left||item.amount||0;
       rows=(item.payments||[]).map(p=>`<div class="flex justify-between py-2 border-t border-slate-50"><span>${fmtDate(p.date)} · ${p.by||'Casa'}</span><span class="font-bold text-green-600">${fmt(p.amount)}</span></div>`).join('');
       future=renderSchedulePreview(scheduledRows(item.dueDate||pdate,item.frequency||'once',item.amount||0,{totalPayments:item.termType==='term'?item.totalPayments:null,limit:24}),'paymentDetail',`${kind}:${pid}:${pdate}`,showCount);
-      details=`<div class="card p-3 mb-3 space-y-2 text-sm"><div class="flex justify-between"><span class="text-slate-400">Frecuencia</span><span class="font-semibold text-slate-700">${freqLabel(item.frequency)}</span></div><div class="flex justify-between"><span class="text-slate-400">Duración</span><span class="font-semibold text-slate-700">${planDurationLabel(item,null)}</span></div><div class="flex justify-between"><span class="text-slate-400">Responsable</span><span class="font-semibold text-slate-700">${houseAssigneeLabel(item.assignedTo||'both')}</span></div></div>`;
+      details=`<div class="card p-3 mb-3 space-y-2 text-sm"><div class="flex justify-between"><span class="text-slate-400">Frecuencia</span><span class="font-semibold text-slate-700">${freqLabel(item.frequency)}</span></div><div class="flex justify-between"><span class="text-slate-400">Duración</span><span class="font-semibold text-slate-700">${planDurationLabel(item,null)}</span></div><div class="flex justify-between"><span class="text-slate-400">Categoría</span><span class="font-semibold text-slate-700">${catLabel(item.category||'personal')}</span></div><div class="flex justify-between"><span class="text-slate-400">Responsable</span><span class="font-semibold text-slate-700">${houseAssigneeLabel(item.assignedTo||'both')}</span></div></div>`;
       const canNoPayHouse=(item.assignedTo||'both')===currentHousePerson();
       actions=left>0?`<button onclick="openModal('addHousePayment','${item.id}')" class="flex-1 btn-primary py-3">Abonar en Casa</button>${canNoPayHouse?`<button onclick="openModal('skipPayment','house:${item.id}::${item.dueDate||pdate}')" class="bg-amber-50 text-amber-700 font-semibold px-4 rounded-xl">No pagar</button>`:''}<button onclick="showView('casa');closeModal()" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Ver Casa</button>`:`<button onclick="showView('casa');closeModal()" class="flex-1 bg-slate-100 text-slate-600 font-semibold py-3 rounded-xl">Ver Casa</button>`;
     }
@@ -3918,14 +4048,15 @@ function openModal(type, id, extra) {
       const item=getMonthPayments(monthKey(parseDate(dateKey||isoToday()))).find(p=>p.kind===kind&&p.id===pid&&(!paymentId||p.paymentId===paymentId)&&(!dateKey||p.date===dateKey));
       if(item) {
         title=item.name;
-        subtitle=`${item.category||'Pago'} · ${fmtDate(item.date)} · ${item.paid?'Pagado':'Pendiente'}`;
+        subtitle=`${kind==='house'&&item.originLabel?item.originLabel:item.category||'Pago'} · ${fmtDate(item.date)} · ${item.paid?'Pagado':'Pendiente'}`;
         icon=item.emoji||'pin';
         amount=item.amount||item.originalAmount||0;
         rows=[
           ['Tipo', kind==='house'?'Casa':kind==='borrowed'?'Préstamo recibido':kind==='onetime'?'Pago único':kind==='expense'?'Gasto':'Factura'],
           ['Fecha', fmtDate(item.date)],
           ['Estado', item.paid?'Pagado':'Pendiente'],
-          ['Categoría', item.category||'pago']
+          ['Categoría', catLabel(item.category||'pago')],
+          ...(kind==='house'&&item.originLabel?[['Origen', item.originLabel.replace('Origen: ','')]]:[])
         ];
       }
     } else if(kind==='loan') {
@@ -4022,7 +4153,7 @@ function openModal(type, id, extra) {
         </select></div>
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
         <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
-          ${['comida','servicios publicos','telefono','internet','gasolina','seguro','alquiler','entretenimiento','salud','supermercado','deuda','transporte','personal','inversion','ahorro'].map(c=>`<option value="${c}" ${b&&b.category===c?'selected':''}>${c}</option>`).join('')}
+          ${paymentCategoryOptions(b&&b.category?b.category:'personal')}
         </select></div>
       </div>
       <div class="bg-indigo-50 rounded-xl p-3">
@@ -4101,7 +4232,7 @@ function openModal(type, id, extra) {
       </div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
       <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
-        ${['comida','servicios publicos','telefono','internet','gasolina','seguro','alquiler','entretenimiento','salud','supermercado','deuda','transporte','personal','inversion','ahorro'].map(c=>`<option value="${c}" ${o&&o.category===c?'selected':''}>${c}</option>`).join('')}
+        ${paymentCategoryOptions(o&&o.category?o.category:'personal')}
       </select></div>
       <div class="bg-indigo-50 rounded-xl p-3">
         <label class="text-xs font-bold text-indigo-700 uppercase">Frecuencia y duración</label>
@@ -4145,7 +4276,7 @@ function openModal(type, id, extra) {
       </div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
       <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
-        ${['comida','servicios publicos','telefono','internet','gasolina','seguro','alquiler','entretenimiento','salud','supermercado','deuda','transporte','personal','inversion','ahorro'].map(c=>`<option value="${c}" ${q.category===c?'selected':''}>${c}</option>`).join('')}
+        ${paymentCategoryOptions(q.category||'personal')}
       </select></div>
       <button onclick="saveExpense(${type==='editExpense'?`'${id}'`:'null'})" class="w-full btn-primary py-3">Guardar gasto</button>
     </div>`;
@@ -4213,7 +4344,7 @@ function openModal(type, id, extra) {
       <input type="number" id="mAmount" value="${l?l.totalAmount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold text-lg"></div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría para análisis</label>
       <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
-        ${['comida','servicios publicos','telefono','internet','gasolina','seguro','alquiler','entretenimiento','salud','supermercado','deuda','transporte','personal','inversion','ahorro'].map(c=>`<option value="${c}" ${l&&l.category===c?'selected':''}>${c}</option>`).join('')}
+        ${paymentCategoryOptions(l&&l.category?l.category:'personal')}
       </select></div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">De donde salio el dinero</label>
       <select id="mSource" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1" ${l?'disabled':''}>
@@ -4265,7 +4396,7 @@ function openModal(type, id, extra) {
       <div><label class="text-xs font-bold text-slate-500 uppercase">Monto total ($)</label><input type="number" id="mAmount" value="${l?l.totalAmount||l.amount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1" oninput="calcBorrowedPmt()"></div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría para análisis</label>
         <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
-          ${['comida','servicios publicos','telefono','internet','gasolina','seguro','alquiler','entretenimiento','salud','supermercado','deuda','transporte','personal','inversion','ahorro'].map(c=>`<option value="${c}" ${(!l&&c==='deuda')||l&&l.category===c?'selected':''}>${c}</option>`).join('')}
+          ${paymentCategoryOptions(l&&l.category?l.category:'deuda')}
         </select>
       </div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Fecha de primer pago</label><input type="date" id="mDate" value="${l?l.startDate||l.dueDate:(extra&&extra.date)||isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
@@ -4677,6 +4808,10 @@ function openModal(type, id, extra) {
       </div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Monto total ($)</label>
       <input type="number" id="mAmount" value="${item?item.amount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold text-lg"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
+      <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+        ${paymentCategoryOptions(item&&item.category?item.category:'personal')}
+      </select></div>
       <div class="flex gap-3">
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Fecha</label>
         <input type="date" id="mDate" value="${item&&item.dueDate?item.dueDate:(extra&&extra.date)||isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
@@ -4696,7 +4831,7 @@ function openModal(type, id, extra) {
       </div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Responsable</label>
       <select id="mAssigned" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
-        ${[['felipe','Felipe'],['laura','Laura'],['both','Los dos']].map(([v,l])=>`<option value="${v}" ${(!item&&v==='both')||item&&item.assignedTo===v?'selected':''}>${l}</option>`).join('')}
+        ${houseAssigneeOptions(item)}
       </select></div>
       ${!item?`<div class="bg-indigo-50 rounded-xl p-3 flex items-center justify-between">
         <div><label class="text-xs font-bold text-indigo-700 uppercase">Ya se realizó</label><div class="text-xs text-indigo-400">Si está activo, se registra como abonado completo.</div></div>
@@ -4739,6 +4874,7 @@ function openModal(type, id, extra) {
     </div>
     <div class="space-y-2 text-sm">
       <div class="flex justify-between"><span class="text-slate-400">Fecha</span><span class="font-semibold text-slate-700">${item.dueDate?fmtDate(item.dueDate):'-'}</span></div>
+      <div class="flex justify-between"><span class="text-slate-400">Categoría</span><span class="font-semibold text-slate-700">${catLabel(item.category||'personal')}</span></div>
       <div class="flex justify-between"><span class="text-slate-400">Frecuencia</span><span class="font-semibold text-slate-700">${freqLabel(item.frequency)}</span></div>
       <div class="flex justify-between"><span class="text-slate-400">Duración</span><span class="font-semibold text-slate-700">${planDurationLabel(item,null)}</span></div>
       <div class="flex justify-between"><span class="text-slate-400">Responsable</span><span class="font-semibold text-slate-700">${houseAssigneeLabel(item.assignedTo||'both')}</span></div>
@@ -5364,10 +5500,12 @@ document.addEventListener('touchend', () => { pullStartY=null; }, {passive:true}
 document.addEventListener('DOMContentLoaded', async () => {
   load();
   loadDarkMode();
-  updateHeaderBalance();
-  renderHome();
 
-  if (!supabase) return;
+  if (!supabase) {
+    updateHeaderBalance();
+    renderHome();
+    return;
+  }
 
   // mostrar pantalla de carga mientras verifica sesión
   const authScreen=document.getElementById('authScreen');
