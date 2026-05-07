@@ -60,6 +60,15 @@
     #sideMenuPanel { transform: translateX(-112%) scale(.985); opacity: .88; transition: transform .32s cubic-bezier(.2,.85,.18,1), opacity .24s ease; box-shadow: 10px 0 28px rgba(79,70,229,.14); }
     #sideMenuOverlay.open #sideMenuPanel { transform: translateX(0) scale(1); opacity: 1; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes reactionFall {
+      0%   { transform: translateY(-70px) rotate(0deg) scale(0.6); opacity:0; }
+      8%   { opacity:1; transform: translateY(0px) rotate(-8deg) scale(1.1); }
+      25%  { transform: translateY(22vh) rotate(10deg) scale(1); }
+      45%  { transform: translateY(44vh) rotate(-9deg) scale(1.05); }
+      65%  { transform: translateY(66vh) rotate(7deg) scale(1); }
+      85%  { transform: translateY(88vh) rotate(-5deg) scale(0.95); opacity:1; }
+      100% { transform: translateY(110vh) rotate(8deg) scale(0.8); opacity:0; }
+    }
     .month-carousel { display:flex; gap:8px; overflow-x:auto; padding:4px 0 8px; scroll-snap-type:x mandatory; }
     .month-carousel::-webkit-scrollbar { display:none; }
     .m-active { background:#4f46e5; color:white; font-size:14px; font-weight:800; padding:8px 20px; border-radius:12px; white-space:nowrap; scroll-snap-align:center; flex-shrink:0; border:none; }
@@ -5319,6 +5328,16 @@ function openModal(type, id, extra) {
     }
     const contact=(S.personContacts||[]).find(c=>c.displayName===name)||null;
     const connStatus=contact?contact.connectionStatus:'manual_only';
+    const todayReactions = (S._reactionsSent||{})[isoToday()]||0;
+    const reactionsLeft = Math.max(0, 3 - todayReactions);
+    const reactionEmojis = ['🎉','❤️','🔥','👏','😂','🙏','💪','🤝','✨','😎'];
+    const reactionPanelHtml = connStatus==='connected' && contact?.linkedUserId ? `
+      <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-3 mb-3">
+        <div class="text-[10px] font-bold text-indigo-400 uppercase tracking-wide mb-2">Enviar saludo · ${reactionsLeft} restante${reactionsLeft!==1?'s':''} hoy</div>
+        <div class="flex flex-wrap gap-2 justify-center">
+          ${reactionEmojis.map(e=>`<button onclick="sendReaction('${contact.linkedUserId}','${name.replace(/'/g,"\\'")}','${e}')" ${reactionsLeft===0?'disabled':''} class="text-2xl w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-indigo-100 active:scale-75 transition ${reactionsLeft===0?'opacity-40':''}">${e}</button>`).join('')}
+        </div>
+      </div>` : '';
     const connBannerHtml={
       connected:`<div class="flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl px-3 py-2 mb-3 text-xs font-semibold text-green-700">🔗 Conectado con ${contact?.linkedDisplayName||'usuario real'}</div>`,
       connection_pending:`<div class="flex items-center justify-between bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 mb-3 text-xs font-semibold text-amber-700"><span>⏳ Solicitud de conexión enviada, esperando respuesta...</span></div>`,
@@ -5333,6 +5352,7 @@ function openModal(type, id, extra) {
       <button onclick="closeModal();setTimeout(()=>openModal('editPersona','${encodeURIComponent(name)}'),180)" class="bg-slate-100 text-slate-500 rounded-xl px-3 py-2 text-xs font-semibold flex-shrink-0">✏️ Editar</button>
     </div>
     ${connBannerHtml}
+    ${reactionPanelHtml}
     ${stats.length?`<div class="grid grid-cols-${stats.length} gap-2 mb-4">${stats.map(([v,l,cls])=>`<div class="${cls.split(' ')[0]} rounded-xl p-2.5 text-center"><div class="text-[9px] font-bold uppercase ${cls.split(' ')[1]} mb-0.5">${l}</div><div class="font-bold text-sm ${cls.split(' ')[1]}">${fmt(v)}</div></div>`).join('')}</div>`:'<div class="bg-slate-50 rounded-xl p-3 text-center text-sm text-slate-400 mb-4">Sin balance pendiente</div>'}
     ${lentTxs.length?`<div class="text-[10px] font-bold text-green-700 uppercase tracking-wide mb-1">💸 Prestaste (${lentTxs.length} activo${lentTxs.length!==1?'s':''})</div><div class="mb-3">${lentTxs.map(txRow).join('')}</div>`:''}
     ${borrowedTxs.length?`<div class="text-[10px] font-bold text-red-600 uppercase tracking-wide mb-1">🏦 Te prestaron (${borrowedTxs.length} activo${borrowedTxs.length!==1?'s':''})</div><div class="mb-3">${borrowedTxs.map(txRow).join('')}</div>`:''}
@@ -6876,6 +6896,102 @@ function updateBadges() {
   updateNotificationBadge();
 }
 
+function triggerReactionAnimation(emoji, senderName) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:9998;overflow:hidden';
+  document.body.appendChild(overlay);
+  const count = 14;
+  for(let i = 0; i < count; i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      const x = 5 + Math.random() * 90;
+      const dur = 2200 + Math.random() * 1800;
+      const size = 22 + Math.random() * 22;
+      el.textContent = emoji;
+      el.style.cssText = `position:absolute;left:${x}%;top:0;font-size:${size}px;animation:reactionFall ${dur}ms cubic-bezier(.4,0,.6,1) forwards;will-change:transform`;
+      overlay.appendChild(el);
+    }, i * 180);
+  }
+  const banner = document.createElement('div');
+  banner.style.cssText = 'position:fixed;top:76px;left:50%;transform:translateX(-50%) translateY(-20px);background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;padding:11px 22px;border-radius:24px;font-weight:700;font-size:14px;z-index:9999;pointer-events:none;box-shadow:0 8px 24px rgba(79,70,229,0.35);opacity:0;transition:all 0.35s cubic-bezier(.2,.85,.18,1)';
+  banner.textContent = `${emoji}  ${senderName} te mandó un saludo`;
+  document.body.appendChild(banner);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    banner.style.opacity = '1';
+    banner.style.transform = 'translateX(-50%) translateY(0)';
+  }));
+  setTimeout(() => {
+    banner.style.opacity = '0';
+    banner.style.transform = 'translateX(-50%) translateY(-16px)';
+    setTimeout(() => { overlay.remove(); banner.remove(); }, 400);
+  }, 3800);
+}
+
+async function sendReaction(receiverUserId, receiverName, emoji) {
+  if(!supabase || !CURRENT_USER) { showToast('Sin conexión'); return; }
+  const today = isoToday();
+  if(!S._reactionsSent) S._reactionsSent = {};
+  const sent = S._reactionsSent[today] || 0;
+  if(sent >= 3) { showToast('Ya enviaste 3 reacciones hoy 😊 Vuelve mañana'); return; }
+  try {
+    const senderName = S.profileName || CURRENT_USER.email || 'Alguien';
+    const contact = (S.personContacts||[]).find(c=>c.linkedUserId===receiverUserId);
+    const {error} = await supabase.from('persona_transaction_requests').insert({
+      sender_user_id: CURRENT_USER.id,
+      receiver_user_id: receiverUserId,
+      sender_person_id: contact?.id || null,
+      type: 'reaction',
+      amount: 0,
+      description: emoji,
+      date: today,
+      payload_json: {emoji, senderName},
+      status: 'pending'
+    });
+    if(error) throw error;
+    S._reactionsSent[today] = sent + 1;
+    save();
+    showToast(`${emoji} ¡Saludo enviado a ${receiverName}!`);
+    closeModal();
+  } catch(e) { console.error('sendReaction:', e); showToast('Error al enviar reacción'); }
+}
+
+async function pollReactions() {
+  if(!supabase || !CURRENT_USER) return;
+  try {
+    const since = S._lastReactionCheck || new Date(Date.now() - 5*60*1000).toISOString();
+    const {data} = await supabase.from('persona_transaction_requests')
+      .select('*')
+      .eq('receiver_user_id', CURRENT_USER.id)
+      .eq('type', 'reaction')
+      .eq('status', 'pending')
+      .gt('created_at', since);
+    if(!data || !data.length) { S._lastReactionCheck = new Date().toISOString(); return; }
+    await supabase.from('persona_transaction_requests')
+      .update({status: 'accepted'})
+      .eq('receiver_user_id', CURRENT_USER.id)
+      .eq('type', 'reaction')
+      .eq('status', 'pending');
+    S._lastReactionCheck = new Date().toISOString();
+    if(!S.notificationEvents) S.notificationEvents = [];
+    data.forEach((row, idx) => {
+      const emoji = row.payload_json?.emoji || '🎉';
+      const senderName = row.payload_json?.senderName || 'Alguien';
+      const evId = 'nev_reaction_' + row.id;
+      if(!S.notificationEvents.find(e=>e.id===evId)) {
+        S.notificationEvents.unshift({
+          id: evId, type: 'reaction', priority: 4,
+          createdAt: row.created_at || new Date().toISOString(),
+          title: '¡Te mandaron un saludo!',
+          description: `${senderName} te mandó ${emoji}`,
+          status: 'no_leida', items: [], actionLabel: ''
+        });
+      }
+      setTimeout(() => triggerReactionAnimation(emoji, senderName), idx * 600);
+    });
+    save(); updateNotificationBadge();
+  } catch(e) { console.warn('pollReactions:', e); }
+}
+
 async function checkSentTransactionUpdates() {
   if(!supabase||!CURRENT_USER) return;
   try {
@@ -6915,7 +7031,7 @@ async function pollInbox() {
   try {
     const [connRes,txRes]=await Promise.all([
       supabase.from('persona_connections').select('id').eq('receiver_user_id',CURRENT_USER.id).eq('status','pending'),
-      supabase.from('persona_transaction_requests').select('id').eq('receiver_user_id',CURRENT_USER.id).eq('status','pending')
+      supabase.from('persona_transaction_requests').select('id').eq('receiver_user_id',CURRENT_USER.id).eq('status','pending').neq('type','reaction')
     ]);
     const connCount=(connRes.data||[]).length;
     const txCount=(txRes.data||[]).length;
@@ -6924,6 +7040,7 @@ async function pollInbox() {
     if(changed) updateBadges();
     checkSentConnectionUpdates();
     checkSentTransactionUpdates();
+    pollReactions();
   } catch(e){ console.warn('pollInbox:',e); }
 }
 
@@ -6984,7 +7101,7 @@ async function loadInboxContent() {
   try {
     const [connRes,txRes]=await Promise.all([
       supabase.from('persona_connections').select('*').eq('receiver_user_id',CURRENT_USER.id).eq('status','pending').order('created_at',{ascending:false}),
-      supabase.from('persona_transaction_requests').select('*').eq('receiver_user_id',CURRENT_USER.id).eq('status','pending').order('created_at',{ascending:false})
+      supabase.from('persona_transaction_requests').select('*').eq('receiver_user_id',CURRENT_USER.id).eq('status','pending').neq('type','reaction').order('created_at',{ascending:false})
     ]);
     const conns=connRes.data||[];
     const txs=txRes.data||[];
@@ -7060,7 +7177,7 @@ async function loadNotificationsContent() {
     try {
       const [connRes,txRes]=await Promise.all([
         supabase.from('persona_connections').select('*').eq('receiver_user_id',CURRENT_USER.id).eq('status','pending').order('created_at',{ascending:false}),
-        supabase.from('persona_transaction_requests').select('*').eq('receiver_user_id',CURRENT_USER.id).eq('status','pending').order('created_at',{ascending:false})
+        supabase.from('persona_transaction_requests').select('*').eq('receiver_user_id',CURRENT_USER.id).eq('status','pending').neq('type','reaction').order('created_at',{ascending:false})
       ]);
       conns=connRes.data||[];
       txs=txRes.data||[];
