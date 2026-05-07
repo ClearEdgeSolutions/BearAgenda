@@ -195,6 +195,10 @@
         <div id="headerBalanceLabel" class="hidden"></div>
         <div id="headerBalance" class="text-lg font-bold leading-none text-indigo-600">$0</div>
       </div>
+      <button id="notificationBellBtn" onclick="openModal('notificationsPanel')" class="relative w-9 h-9 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0" aria-label="Notificaciones">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+        <span id="notificationBadge" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-extrabold leading-[18px] text-center"></span>
+      </button>
       <div id="headerLogoWrap" class="rounded-2xl overflow-hidden shrink-0 flex items-center justify-center" style="width:54px;height:54px;">
         <img src="logo sin texto.png" alt="BearAgenda" class="block" style="width:54px;height:54px;object-fit:contain;">
       </div>
@@ -308,14 +312,44 @@
   <div id="view-personas" class="view">
     <div class="px-4 py-5">
       <div class="module-top-row flex items-center justify-between mb-4">
-        <h2 class="module-title-inline text-lg font-bold text-slate-800">Personas</h2>
+        <h2 class="module-title-inline text-lg font-bold text-slate-800">Directorio</h2>
+        <button id="personasInboxBtn" onclick="openModal('inboxRequests')" class="hidden relative bg-amber-50 text-amber-700 font-bold rounded-xl px-3 py-2 text-xs flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          <span id="personasInboxCount">0</span>
+        </button>
       </div>
+      <div class="relative mb-4">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" id="directorioSearch" placeholder="Buscar en el directorio..." oninput="renderPersonas()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl pl-9 pr-4 py-2.5 text-sm text-slate-800 placeholder-slate-400">
+      </div>
+      <div id="directorioTabs" class="flex gap-2 mb-4"></div>
       <div id="personasContent" class="space-y-3"></div>
+    </div>
+    <button onclick="openModal('addPersonContact')" class="mobile-fab-add btn-primary" style="position:fixed;bottom:80px;right:18px;z-index:40;width:52px;height:52px;border-radius:50%;font-size:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(99,102,241,0.35);padding:0">+</button>
+  </div>
+  <div id="view-cuentas" class="view">
+    <div class="px-4 py-5">
+      <div id="cuentasContent"></div>
     </div>
   </div>
   <div id="view-config" class="view">
     <div class="px-4 py-5 space-y-4">
       <h2 class="module-title-inline text-lg font-bold text-slate-800">Configuración</h2>
+      <div class="card p-4 border border-indigo-100">
+        <div class="flex items-center gap-2 mb-2">
+          <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+          <h3 class="font-semibold text-indigo-700">Tu PIN de conexión</h3>
+        </div>
+        <p class="text-xs text-slate-400 mb-3">Comparte este código con tus contactos para que puedan conectarse contigo en la app.</p>
+        <div id="pinDisplayWrap" class="flex items-center gap-3 mb-3">
+          <div id="pinDisplay" class="text-3xl font-extrabold text-indigo-600 tracking-widest font-mono flex-1 text-center py-2 bg-indigo-50 rounded-xl">——</div>
+          <button onclick="copyUserPin()" class="bg-indigo-100 text-indigo-700 font-bold py-2 px-3 rounded-xl text-sm flex items-center gap-1" title="Copiar PIN">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            Copiar
+          </button>
+        </div>
+        <p class="text-[10px] text-slate-300 text-center">Tu PIN es único y permanente. No lo cambies si ya lo compartiste.</p>
+      </div>
       <div class="card p-4">
         <h3 class="font-semibold text-indigo-700 mb-3">Perfil</h3>
         <label class="text-xs font-bold text-slate-500 uppercase">Tu nombre</label>
@@ -346,6 +380,16 @@
             <span class="slider"></span>
           </label>
         </div>
+      </div>
+      <div class="card p-4 space-y-3">
+        <h3 class="font-semibold text-indigo-700">Recordatorios</h3>
+        <p class="text-xs text-slate-400">Las notificaciones en iPhone requieren tener la app instalada como PWA (Añadir a pantalla de inicio) y permisos del sistema activados.</p>
+        <div class="space-y-2">
+          <label class="flex items-center justify-between"><span class="text-sm text-slate-700">Pagos próximos</span><label class="toggle"><input type="checkbox" id="notifPayments" onchange="saveNotificationSettings()"><span class="slider"></span></label></label>
+          <label class="flex items-center justify-between"><span class="text-sm text-slate-700">Ingresos por recibir</span><label class="toggle"><input type="checkbox" id="notifIncome" onchange="saveNotificationSettings()"><span class="slider"></span></label></label>
+          <label class="flex items-center justify-between"><span class="text-sm text-slate-700">Balance bajo</span><label class="toggle"><input type="checkbox" id="notifLowBalance" onchange="saveNotificationSettings()"><span class="slider"></span></label></label>
+        </div>
+        <button onclick="requestNotificationPermission()" class="w-full bg-indigo-50 text-indigo-700 font-bold py-2.5 rounded-xl text-sm">Activar recordatorios</button>
       </div>
       <div class="card p-4 space-y-3">
         <h3 class="font-semibold text-indigo-700">Acciones</h3>
@@ -510,6 +554,14 @@ const INIT = {
   shoppingLists: [], // {id,title,date,items:[{id,name,done,createdAt,updatedAt}],createdAt,updatedAt}
   nextId: 100,
   // spaces se inicializa vía migrateToSpaces(), no en INIT
+  accounts: [],       // [{id,name,type:'bank'|'cash'|'savings',balance,emoji,active,createdAt}]
+  accountTransactions: [], // [{id,accountId,amount,type:'deposit'|'withdrawal',label,date,createdAt}]
+  personaProfiles: [], // [{personName,emoji,createdAt,updatedAt}]
+  personContacts: [], // [{id,displayName,matchName,phone,email,notes,linkedUserId,linkedDisplayName,connectionStatus,connectionId,createdAt,updatedAt}]
+  userPin: null,      // string|null — PIN único de 6 chars para que otros te encuentren
+  notificationSettings: {enabled:false,upcomingPayments:false,incomeDue:false,lowBalance:false},
+  notificationRead: {},
+  notificationArchived: {},
 };
 
 const EMPTY_PROFILE = {
@@ -533,6 +585,14 @@ const EMPTY_PROFILE = {
   shoppingList: [],
   shoppingLists: [],
   nextId: 100,
+  accounts: [],
+  accountTransactions: [],
+  personaProfiles: [],
+  personContacts: [],
+  userPin: null,
+  notificationSettings: {enabled:false,upcomingPayments:false,incomeDue:false,lowBalance:false},
+  notificationRead: {},
+  notificationArchived: {},
 };
 
 const HOUSE_INIT = {
@@ -605,6 +665,7 @@ let houseFollowupSyncTimer1 = null;
 let houseFollowupSyncTimer2 = null;
 let selectedIncomeCategory = '';
 let incomeTab = 'active';
+let directoryTab = 'personas';
 let incomeMonth = '';
 let calDate = null;
 let homeUpcomingFilter = 'all';
@@ -766,6 +827,43 @@ function normalizeState() {
       if(!n.items) n.items=[];
     });
   });
+  // Cuentas (Fase 1)
+  if (!S.accounts) S.accounts = [];
+  if (!S.accountTransactions) S.accountTransactions = [];
+  if (!S.personaProfiles) S.personaProfiles = [];
+  if (!S.personContacts) S.personContacts = [];
+  if (S.userPin === undefined) S.userPin = null;
+  if (!S.notificationSettings) S.notificationSettings = {enabled:false,upcomingPayments:false,incomeDue:false,lowBalance:false};
+  if (!S.notificationRead) S.notificationRead = {};
+  if (!S.notificationArchived) S.notificationArchived = {};
+  // Migration: ensure Cash account always exists (fixed, cannot be deleted)
+  if (!S.accounts.some(a=>a.id==='cash_account')) {
+    const cashBal = S.accounts.length ? 0 : (S.bankBalance||0);
+    S.accounts.unshift({id:'cash_account', name:'Cash', type:'cash', balance: cashBal, emoji:'💵', active:true, permanent:true, createdAt:new Date().toISOString()});
+  }
+  // Ensure Cash is always at index 0 and permanent
+  const cashIdx=S.accounts.findIndex(a=>a.id==='cash_account');
+  if(cashIdx>0) { const [ca]=S.accounts.splice(cashIdx,1); S.accounts.unshift(ca); }
+  S.accounts[0].permanent=true; S.accounts[0].active=true;
+  // Fase 2: Assign old pockets without sourceType to Cash
+  S.pockets.forEach(p => {
+    if (!p.sourceType) { p.sourceType = 'account'; p.sourceAccountId = 'cash_account'; }
+  });
+  // Fase 3: Normalize borrowedLoans new fields
+  S.borrowedLoans.forEach(l => {
+    if (l.addsToLiquidity === undefined) l.addsToLiquidity = false;
+    if (l.alreadySpent === undefined) l.alreadySpent = true;
+    if (!l.receivedAccountId) l.receivedAccountId = null;
+    if (!l.receivedDate) l.receivedDate = null;
+  });
+  // Fase 4: Normalize paychecks new fields
+  S.paychecks.forEach(p => {
+    if (!p.receivedAccountId) p.receivedAccountId = null;
+    if (!p.targetAccountId) p.targetAccountId = null;
+    if (!p.method) p.method = 'deposito';
+    if (p.inactive === undefined) p.inactive = false;
+    if (!p.closedAt) p.closedAt = null;
+  });
 }
 
 function normalizeHouse() {
@@ -792,6 +890,19 @@ function normalizeHouse() {
     if(!item.termType) item.termType=item.frequency==='once'?'term':'indefinite';
     if(item.frequency==='once' && !item.totalPayments) item.totalPayments=1;
     if(!item.category) item.category='personal';
+  });
+  // Fase 6: Compute shares for items that don't have them (migration)
+  H.items.forEach(item=>{
+    if(!Array.isArray(item.shares) && (H.members||[]).length>1) {
+      const members=H.members||[];
+      const n=Math.max(1,members.length);
+      const perPerson=Math.round((item.amount||0)/n*100)/100;
+      const totalPaidForItem=(item.payments||[]).reduce((s,p)=>s+(p.amount||0),0);
+      item.shares=members.map((m)=>{
+        const memberPaid=Math.round(totalPaidForItem/n*100)/100;
+        return {memberId:m.id,name:m.name,amount:perPerson,paid:memberPaid,pending:Math.max(0,perPerson-memberPaid)};
+      });
+    }
   });
   Object.values(H.calendarNotes||{}).forEach(notes=>{
     (notes||[]).forEach(n=>{ if(!n.type) n.type='pendiente'; if(n.done===undefined) n.done=false; });
@@ -1690,10 +1801,58 @@ function catLabel(c) { return {trabajo:'Trabajo',deuda:'Deuda',persona:'Persona'
 function paymentCategoryOptions(selected='personal') {
   return PAYMENT_CATEGORIES.map(c=>`<option value="${c}" ${selected===c?'selected':''}>${catLabel(c)}</option>`).join('');
 }
-function methodLabel(m) { return {deposito:'depósito',efectivo:'efectivo',transferencia:'transferencia'}[m]||m; }
+function methodLabel(m) { return {deposito:'Depósito',efectivo:'Efectivo',transferencia:'Transferencia'}[m]||m; }
 function freqLabel(f) { return {monthly:'Mensual',biweekly:'Cada 2 semanas',every_two_weeks:'Cada 2 semanas',semimonthly:'Quincenal',quincenal:'Quincenal',weekly:'Semanal',once:'Único'}[f]||f; }
 function paycheckFreqLabel(p) { return {weekly:'Semanal',biweekly:'Cada 2 semanas',every_two_weeks:'Cada 2 semanas',semimonthly:'Quincenal',quincenal:'Quincenal',monthly:'Mensual'}[p.recurrenceFreq] || (p.paymentType==='unico'?'Único':'Recurrente'); }
-function peopleNames() { return [...new Set([...S.loans.map(l=>l.personName), ...S.borrowedLoans.map(l=>l.personName)].filter(Boolean))]; }
+function bankAccountsForIncome() {
+  const active=(S.accounts||[]).filter(a=>a.active!==false);
+  const bank=active.filter(a=>a.id!=='cash_account'&&a.type!=='cash');
+  return bank.length?bank:active.filter(a=>a.id!=='cash_account');
+}
+function defaultIncomeAccountId() {
+  return bankAccountsForIncome()[0]?.id || null;
+}
+function incomeTargetAccountId(p, overrideId=null) {
+  if(overrideId&&overrideId!=='balance') return overrideId;
+  if((p.method||'deposito')==='efectivo') return 'cash_account';
+  return p.targetAccountId || defaultIncomeAccountId();
+}
+function incomeAccountOptions(selectedId='') {
+  const accounts=bankAccountsForIncome();
+  if(!accounts.length) return `<option value="balance">Balance libre (sin cuenta bancaria)</option>`;
+  return accounts.map(a=>`<option value="${a.id}" ${selectedId===a.id?'selected':''}>${a.emoji||'🏦'} ${a.name}</option>`).join('');
+}
+function normalizePersonKey(name='') {
+  return String(name).normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase().replace(/\s+/g,' ');
+}
+function ensureDirectoryPerson(name, emoji='brief') {
+  const clean=String(name||'').trim();
+  if(!clean) return null;
+  if(!S.personaProfiles) S.personaProfiles=[];
+  if(!S.personContacts) S.personContacts=[];
+  const key=normalizePersonKey(clean);
+  let prof=S.personaProfiles.find(p=>normalizePersonKey(p.personName)===key);
+  if(prof){ prof.isArchived=false; prof.updatedAt=new Date().toISOString(); return prof.personName; }
+  const contact=S.personContacts.find(c=>!c.isArchived&&normalizePersonKey(c.displayName)===key);
+  if(contact) return contact.displayName;
+  S.personaProfiles.push({personName:clean,emoji,isArchived:false,createdAt:new Date().toISOString()});
+  return clean;
+}
+function peopleNames() {
+  const names=[
+    ...S.loans.map(l=>l.personName),
+    ...S.borrowedLoans.map(l=>l.personName),
+    ...(S.paychecks||[]).filter(p=>p.category==='persona'&&p.personName).map(p=>p.personName),
+    ...(S.personContacts||[]).filter(c=>!c.isArchived).map(c=>c.displayName),
+    ...(S.personaProfiles||[]).filter(p=>!p.isArchived).map(p=>p.personName)
+  ];
+  const seen=new Set();
+  return names.filter(Boolean).map(n=>String(n).trim()).filter(n=>{
+    const key=normalizePersonKey(n);
+    if(!key||seen.has(key)) return false;
+    seen.add(key); return true;
+  }).sort((a,b)=>a.localeCompare(b));
+}
 
 function personNameInput(currentValue='', inputId='mName') {
   const names=peopleNames();
@@ -1846,7 +2005,7 @@ function getMonthPayments(month=finMonth) {
         const left=sp.id===currentSpaceId
           ?myShareLeft(item)
           :(item.paid?0:myShare);
-        items.push({kind:'house',id:item.id,date:row.date,name:`${spaceName}: ${item.name}`,amount:left||myShare,emoji:item.emoji||'home',paid:left<=0,category:item.category||'personal',originLabel:`Origen: ${spaceName}`,houseRef:true,spaceId:sp.id,splitBoth:isBoth,shareLabel,fullAmount});
+        items.push({kind:'house',id:item.id,date:row.date,name:`${spaceName}: ${item.name}`,amount:left||myShare,emoji:item.emoji||'home',paid:left<=0,category:item.category||'personal',frequency:freq,termType:item.termType,totalPayments:item.totalPayments,originLabel:`Espacio compartido / ${spaceName}`,spaceName,houseRef:true,spaceId:sp.id,splitBoth:isBoth,shareLabel,fullAmount});
       });
     });
   });
@@ -1896,7 +2055,41 @@ function getTransactions(limit=8) {
 // ═══════════════════════════════════════
 // COMPUTED
 // ═══════════════════════════════════════
-function freeBalance() { return (S.bankBalance||0) - totalPockets(); }
+function freeBalance() { return totalAccountsBalance() - totalPockets(); }
+
+// ═══ CUENTAS helpers ═══
+function activeAccounts() { return (S.accounts||[]).filter(a=>a.active!==false); }
+function totalAccountsBalance() {
+  const acc=activeAccounts();
+  return acc.length ? acc.reduce((s,a)=>s+(a.balance||0),0) : (S.bankBalance||0);
+}
+function totalBankBalance() { return (S.accounts||[]).filter(a=>a.active!==false&&a.type==='bank').reduce((s,a)=>s+(a.balance||0),0); }
+function totalCashBalance() { return (S.accounts||[]).filter(a=>a.active!==false&&a.type==='cash').reduce((s,a)=>s+(a.balance||0),0); }
+function totalCashSavings() { return (S.accounts||[]).filter(a=>a.active!==false&&a.type==='savings').reduce((s,a)=>s+(a.balance||0),0); }
+function accountReservedAmount(accountId) { return (S.pockets||[]).filter(p=>p.sourceAccountId===accountId).reduce((s,p)=>s+(p.saved||0),0); }
+function accountAvailable(accountId) { const a=(S.accounts||[]).find(x=>x.id===accountId); return (a?a.balance:0)-accountReservedAmount(accountId); }
+function accountById(id) { return (S.accounts||[]).find(a=>a.id===id)||null; }
+function syncBankBalanceFromAccounts() {
+  S.bankBalance = totalAccountsBalance();
+}
+function adjustAccountBalance(accountId, amount) {
+  const a=(S.accounts||[]).find(x=>x.id===accountId);
+  if(a) { a.balance=(a.balance||0)+(parseFloat(amount)||0); syncBankBalanceFromAccounts(); }
+  else adjustBalance(amount);
+}
+
+// Widget summary data (Fase 7)
+function getWidgetSummaryData() {
+  const disponible=freeBalance();
+  const totalBanco=totalBankBalance();
+  const totalEfectivo=totalCashBalance();
+  const totalBolsillos=totalPockets();
+  const upcoming=getUpcomingItems(7);
+  const proximoPago=upcoming.filter(x=>['bill','onetime','expense','borrowed'].includes(x.type)).sort((a,b)=>parseDate(a.date)-parseDate(b.date))[0]||null;
+  const proximoIngreso=(S.paychecks||[]).filter(p=>!p.received&&!p.inactive).sort((a,b)=>parseDate(a.date)-parseDate(b.date))[0]||null;
+  const porRecibir=(S.paychecks||[]).filter(p=>!p.received&&!p.inactive).reduce((s,p)=>s+(p.amount||0),0);
+  return {disponible, totalBanco, totalEfectivo, totalBolsillos, proximoPago, proximoIngreso, porRecibir};
+}
 
 function getUpcomingItems(days=14) {
   const t=today(), limit=new Date(t); limit.setDate(t.getDate()+days);
@@ -2046,6 +2239,7 @@ function updateHeaderBalance() {
   if(wrap) wrap.classList.toggle('hidden', currentView==='home');
   if(el) { el.textContent=(bal<0?'-':'')+fmt(Math.abs(bal)); el.className=`text-lg font-bold leading-none ${bal>=0?'text-indigo-600':'text-red-500'}`; }
   if(lbl) lbl.textContent = 'Balance libre';
+  updateNotificationBadge();
 }
 
 // ═══════════════════════════════════════
@@ -2075,17 +2269,17 @@ function renderHome() {
   </div>
 
   <div class="grid grid-cols-3 gap-2">
-    <div class="bg-gradient-to-br from-indigo-50 via-violet-50 to-blue-50 border border-indigo-100 rounded-2xl p-4" style="box-shadow:0 4px 20px rgba(99,102,241,0.10)">
+    <div onclick="showView('cuentas')" class="bg-gradient-to-br from-indigo-50 via-violet-50 to-blue-50 border border-indigo-100 rounded-2xl p-4 cursor-pointer active:scale-[.98] transition" style="box-shadow:0 4px 20px rgba(99,102,241,0.10)">
       <div class="text-indigo-400 text-[10px] font-bold uppercase tracking-wide">Balance</div>
       <div class="text-xl font-extrabold leading-tight ${bal>=0?'text-indigo-700':'text-red-500'}">${bal<0?'-':''}${fmt(Math.abs(bal))}</div>
       <div class="text-[11px] text-slate-400 truncate">${fmt(pkt)} bolsillos</div>
     </div>
-    <div class="card p-4">
-      <div class="text-indigo-400 text-[10px] font-bold uppercase tracking-wide">Pagar 14d</div>
+    <div onclick="currentTab='monthly';showView('facturas')" class="card p-4 cursor-pointer active:scale-[.98] transition">
+      <div class="text-indigo-400 text-[10px] font-bold uppercase tracking-wide">Pagar 14 días</div>
       <div class="text-xl font-extrabold leading-tight text-red-500">${fmt(pay14)}</div>
       <div class="text-[11px] text-slate-400 truncate">${upcoming.filter(x=>['bill','onetime','expense','borrowed','house'].includes(x.type)).length} pagos</div>
     </div>
-    <div class="card p-4">
+    <div onclick="currentTab='prestamos';showView('facturas')" class="card p-4 cursor-pointer active:scale-[.98] transition">
       <div class="text-indigo-400 text-[10px] font-bold uppercase tracking-wide">Me deben</div>
       <div class="text-xl font-extrabold leading-tight text-green-600">${fmt(owedToMe)}</div>
       <div class="text-[11px] text-slate-400 truncate">${S.loans.length} personas</div>
@@ -2193,7 +2387,7 @@ function completeShoppingList(listId, stay=false) {
 }
 
 function updateHeaderTitle() {
-  const titles={home:'Inicio',cheques:'Ingresos',facturas:'Finanzas',cal:'Calendario',casa:'Espacios',bolsillos:'Bolsillos',plan:'Planes',analysis:'Análisis',config:'Configuración'};
+  const titles={home:'Inicio',cheques:'Ingresos',facturas:'Finanzas',cal:'Calendario',casa:'Espacios',bolsillos:'Bolsillos',cuentas:'Cuentas',plan:'Planes',analysis:'Análisis',config:'Configuración',personas:'Directorio'};
   const el=document.getElementById('headerTitle');
   if(el) el.textContent=(currentView==='casa'&&currentSpaceId&&currentSpaceName)?currentSpaceName:(titles[currentView]||'BearAgenda');
 }
@@ -2247,9 +2441,11 @@ function renderChecks() {
   const groupCards=Object.entries(groups).sort(([a],[b])=>a.localeCompare(b));
   if(!incomeTab) incomeTab='active';
   const incomeAddBtn=document.getElementById('incomeAddBtn');
-  if(incomeAddBtn) incomeAddBtn.classList.toggle('hidden', incomeTab==='history');
-  let html=`<div class="grid grid-cols-2 gap-1 mb-3">
+  if(incomeAddBtn) incomeAddBtn.classList.toggle('hidden', incomeTab!=='active');
+  let html=`<div class="grid grid-cols-4 gap-1 mb-3">
     <button class="pill-tab ${incomeTab==='active'?'active':''} text-[11px] font-bold px-2 py-1.5 rounded-full whitespace-nowrap" onclick="setIncomeTab('active')">Activos</button>
+    <button class="pill-tab ${incomeTab==='pending'?'active':''} text-[11px] font-bold px-2 py-1.5 rounded-full whitespace-nowrap" onclick="setIncomeTab('pending')">Por recibir</button>
+    <button class="pill-tab ${incomeTab==='received'?'active':''} text-[11px] font-bold px-2 py-1.5 rounded-full whitespace-nowrap" onclick="setIncomeTab('received')">Recibidos</button>
     <button class="pill-tab ${incomeTab==='history'?'active':''} text-[11px] font-bold px-2 py-1.5 rounded-full whitespace-nowrap" onclick="setIncomeTab('history')">Historial</button>
   </div>
   <div class="finance-month-nav mb-3">
@@ -2264,30 +2460,57 @@ function renderChecks() {
   </div>`;
 
   if(incomeTab==='active') {
-    html+=`<div class="font-bold text-indigo-700 text-xs uppercase tracking-wide mb-2">Fuentes de ingreso</div>`;
-    if(!groupCards.length) html+=`<div class="card p-4 text-center text-indigo-300 text-sm">Sin fuentes de ingreso todavía.</div>`;
-    groupCards.forEach(([cat,items])=>{
+    // Activos: fuentes de ingreso con pagos FUTUROS pendientes
+    const activeGroups=Object.entries(groups).filter(([cat,items])=>items.some(p=>!p.received&&!p.inactive)).sort(([a],[b])=>a.localeCompare(b));
+    html+=`<div class="font-bold text-indigo-700 text-xs uppercase tracking-wide mb-2">Fuentes de ingreso activas</div>`;
+    if(!activeGroups.length) html+=`<div class="card p-4 text-center text-indigo-300 text-sm">Sin fuentes de ingreso activas. Agrega un ingreso para empezar.</div>`;
+    activeGroups.forEach(([cat,items])=>{
+      const futureItems=items.filter(p=>!p.received&&!p.inactive).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
       const receivedItems=items.filter(p=>p.received).sort((a,b)=>parseDate(b.receivedDate||b.date)-parseDate(a.receivedDate||a.date));
-      const futureItems=items.filter(p=>!p.received).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
       const received=receivedItems.reduce((s,p)=>s+(p.amount||0),0);
       const sample=items[0]||{};
       const next=futureItems[0];
       html+=`<button onclick="openModal('incomeSourceDetail','${encodeURIComponent(cat)}')" class="w-full text-left card p-4 mb-3">
         <div class="flex items-center gap-3">
           <div class="w-12 h-12 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center">${renderStoredIcon(sample.emoji||'brief','income',sample.category||'')}</div>
-          <div class="flex-1 min-w-0"><div class="font-bold text-slate-800">${cat}</div><div class="text-xs text-slate-400">${paycheckFreqLabel(sample)} · ${items.length} movimientos</div>${next?`<div class="text-xs text-green-600 mt-0.5">Siguiente ${fmtDate(next.date)} · ${fmt(next.amount)}</div>`:'<div class="text-xs text-slate-400 mt-0.5">Sin pagos futuros</div>'}</div>
+          <div class="flex-1 min-w-0"><div class="font-bold text-slate-800">${cat}</div><div class="text-xs text-slate-400">${paycheckFreqLabel(sample)} · ${futureItems.length} pendiente${futureItems.length!==1?'s':''}</div>${next?`<div class="text-xs text-green-600 mt-0.5">Próximo ${fmtDate(next.date)} · ${fmt(next.amount)}</div>`:'<div class="text-xs text-amber-500 mt-0.5">Sin pagos futuros programados</div>'}</div>
           <div class="text-right"><div class="font-bold text-green-600">${fmt(sample.amount||0)}</div><div class="text-xs text-slate-400">por pago</div></div>
         </div>
         <div class="grid grid-cols-2 gap-2 mt-3">
-          <div class="bg-green-50 rounded-xl p-2"><div class="text-[10px] text-green-600 font-bold uppercase">Recibido</div><div class="font-bold text-green-700">${fmt(received)}</div></div>
-          <div class="bg-indigo-50 rounded-xl p-2"><div class="text-[10px] text-indigo-500 font-bold uppercase">Futuros</div><div class="font-bold text-indigo-700">${futureItems.length}</div></div>
+          <div class="bg-green-50 rounded-xl p-2"><div class="text-[10px] text-green-600 font-bold uppercase">Ya recibido</div><div class="font-bold text-green-700">${fmt(received)}</div></div>
+          <div class="bg-indigo-50 rounded-xl p-2"><div class="text-[10px] text-indigo-500 font-bold uppercase">Por recibir</div><div class="font-bold text-indigo-700">${futureItems.length}</div></div>
         </div>
       </button>`;
     });
+  } else if(incomeTab==='pending') {
+    html+=`<div class="font-bold text-indigo-700 text-xs uppercase tracking-wide mb-2">Por recibir</div>`;
+    const pending=(S.paychecks||[]).filter(p=>!p.received&&!p.inactive).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
+    html+=pending.length?pending.map(p=>incomeRow(p,false,true)).join(''):
+      `<div class="card p-4 text-center text-indigo-300 text-sm">Sin ingresos programados pendientes.</div>`;
+  } else if(incomeTab==='received') {
+    html+=`<div class="font-bold text-indigo-700 text-xs uppercase tracking-wide mb-2">Recibidos en ${['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][im-1]} ${iy}</div>`;
+    const received=(S.paychecks||[]).filter(p=>p.received&&monthKey(parseDate(p.receivedDate||p.date))===incomeMonth).sort((a,b)=>parseDate(b.receivedDate||b.date)-parseDate(a.receivedDate||a.date));
+    html+=received.length?received.map(p=>incomeRow(p,true,true)).join(''):
+      `<div class="card p-4 text-center text-indigo-300 text-sm">Sin ingresos recibidos en este mes.</div>`;
   } else {
-    html+=`<div class="font-bold text-indigo-700 text-xs uppercase tracking-wide mb-2">Historial de pagos recibidos</div>`;
-    const monthTx=tx.filter(t=>txMonthMatches(t.date,incomeMonth));
-    html+=monthTx.length?monthTx.map(t=>`<button onclick="showToast('${t.name}: ${fmt(t.amount)}')" class="w-full text-left card p-3 mb-2 flex justify-between"><div><div class="text-sm font-semibold text-slate-700">${t.name}</div><div class="text-xs text-slate-400">${t.type} · ${fmtDate(t.date)}</div></div><div class="font-bold text-green-600">+${fmt(t.amount)}</div></button>`).join(''):`<div class="card p-4 text-center text-indigo-300 text-sm">Sin ingresos registrados en este mes.</div>`;
+    // Historial: todos los recibidos, agrupados por mes
+    html+=`<div class="font-bold text-indigo-700 text-xs uppercase tracking-wide mb-2">Historial completo de ingresos</div>`;
+    const allReceived=(S.paychecks||[]).filter(p=>p.received).sort((a,b)=>parseDate(b.receivedDate||b.date)-parseDate(a.receivedDate||a.date));
+    if(!allReceived.length) {
+      html+=`<div class="card p-4 text-center text-indigo-300 text-sm">Sin ingresos recibidos todavía.</div>`;
+    } else {
+      allReceived.forEach(p=>{
+        const accName=p.receivedAccountId?((S.accounts||[]).find(a=>a.id===p.receivedAccountId)?.name||'Cuenta'):'Balance libre';
+        const src=paycheckSourceLabel(p);
+        html+=`<div class="card p-3 mb-2">
+          <div class="flex justify-between items-start">
+            <div><div class="font-semibold text-slate-700 text-sm">${src}</div>
+            <div class="text-xs text-slate-400 mt-0.5">${fmtDate(p.receivedDate||p.date)} · ${accName}${p.note?' · '+p.note:''}</div></div>
+            <div class="font-bold text-green-600 text-sm">+${fmt(p.amount)}</div>
+          </div>
+        </div>`;
+      });
+    }
   }
   document.getElementById('checksList').innerHTML=html;
 }
@@ -2310,7 +2533,7 @@ function incomeRow(p, received=false, canAct=true) {
         <div class="font-bold text-green-600">+${fmt(p.amount)}</div>
       </div>
       <div class="flex gap-2 mt-2">
-        ${canAct?(received?`<button onclick="unmarkReceived('${p.id}');closeModal()" class="flex-1 bg-slate-100 text-slate-600 text-sm font-bold py-2 rounded-xl">Deshacer recibido</button>`:`<button onclick="receiveIncomeAndRefresh('${p.id}')" class="flex-1 bg-green-600 text-white text-sm font-bold py-2 rounded-xl">✓ Marcar recibido</button><button onclick="openModal('skipIncomePayment','${p.id}')" class="bg-amber-50 text-amber-700 text-sm font-bold px-3 py-2 rounded-xl">No recibido</button>`):`<div class="flex-1 text-xs text-slate-400 py-2">Informativo</div>`}
+        ${canAct?(received?`<button onclick="unmarkReceived('${p.id}');closeModal()" class="flex-1 bg-slate-100 text-slate-600 text-sm font-bold py-2 rounded-xl">Deshacer recibido</button>`:`<button onclick="openModal('confirmIncomeReceived','${p.id}')" class="flex-1 bg-green-600 text-white text-sm font-bold py-2 rounded-xl">✓ Marcar recibido</button><button onclick="openModal('skipIncomePayment','${p.id}')" class="bg-amber-50 text-amber-700 text-sm font-bold px-3 py-2 rounded-xl">No recibido</button>`):`<div class="flex-1 text-xs text-slate-400 py-2">Informativo</div>`}
         ${canAct?`<button onclick="openModal('editPaycheck','${p.id}')" class="bg-slate-100 text-slate-600 text-sm px-4 py-2 rounded-xl">Editar</button>`:''}
       </div>
     </div>`;
@@ -3246,7 +3469,14 @@ function deletePaycheck(id) { if(!confirm('¿Eliminar?')) return; S.paychecks=S.
 
 function deleteOneTime(id) { if(!confirm('¿Eliminar?')) return; S.oneTimePayments=S.oneTimePayments.filter(x=>x.id!==id); save(); renderCurrentView(); }
 
-function updateBankBalance(v) { S.bankBalance=parseFloat(v)||0; setLastAction(); updateHeaderBalance(); }
+function updateBankBalance(v) {
+  const val=parseFloat(v)||0;
+  // Update cash account balance when user edits from config
+  const cash=S.accounts&&S.accounts.find(a=>a.id==='cash_account');
+  if(cash) { cash.balance=val; syncBankBalanceFromAccounts(); }
+  else S.bankBalance=val;
+  setLastAction(); updateHeaderBalance();
+}
 function updateProfileName(v) { S.profileName=(v||'').trim(); save(); renderCurrentView(); showToast('Nombre actualizado'); }
 
 function deletePocket(id) { if(!confirm('¿Eliminar bolsillo?')) return; S.pockets=S.pockets.filter(x=>x.id!==id); save(); renderCurrentView(); updateHeaderBalance(); }
@@ -3325,9 +3555,14 @@ function renderCalendar() {
 // ═══════════════════════════════════════
 function getPersonasData() {
   const people={};
+  const archivedNames=new Set([
+    ...(S.personContacts||[]).filter(c=>c.isArchived).map(c=>c.displayName),
+    ...(S.personaProfiles||[]).filter(p=>p.isArchived).map(p=>p.personName)
+  ].filter(Boolean).map(n=>normalizePersonKey(n)));
   (S.loans||[]).forEach(l=>{
     const name=l.personName||'Sin nombre';
-    if(!people[name]) people[name]={name,lent:0,borrowed:0,txs:[]};
+    if(archivedNames.has(normalizePersonKey(name))) return;
+    if(!people[name]) people[name]={name,lent:0,borrowed:0,received:0,txs:[]};
     const paid=loanPaid(l);
     const total=l.totalAmount||0;
     const pending=Math.max(0,total-paid);
@@ -3337,7 +3572,8 @@ function getPersonasData() {
   });
   (S.borrowedLoans||[]).forEach(l=>{
     const name=l.personName||'Sin nombre';
-    if(!people[name]) people[name]={name,lent:0,borrowed:0,txs:[]};
+    if(archivedNames.has(normalizePersonKey(name))) return;
+    if(!people[name]) people[name]={name,lent:0,borrowed:0,received:0,txs:[]};
     const installments=borrowedInstallments(l);
     const paid=installments.filter(p=>p.paid).reduce((s,p)=>s+(p.amount||0),0);
     const pending=installments.filter(p=>!p.paid).reduce((s,p)=>s+(p.amount||0),0);
@@ -3346,35 +3582,110 @@ function getPersonasData() {
     people[name].borrowed+=total;
     people[name].txs.push({type:'borrowed',id:l.id,loanName:l.loanName||'',note:l.description||'',amount:total,paid,pending,done,date:l.createdAt?l.createdAt.slice(0,10):isoToday(),emoji:l.emoji||'bank',category:l.category||'deuda',installments,frequency:l.frequency,paymentsCount:l.paymentsCount});
   });
+  (S.paychecks||[]).filter(p=>p.category==='persona'&&p.personName&&p.received).forEach(p=>{
+    const name=p.personName||'Sin nombre';
+    if(archivedNames.has(normalizePersonKey(name))) return;
+    if(!people[name]) people[name]={name,lent:0,borrowed:0,received:0,txs:[]};
+    people[name].received=(people[name].received||0)+(p.amount||0);
+    people[name].txs.push({type:'income',id:p.id,loanName:p.note||'Ingreso',note:p.note||'',amount:p.amount||0,paid:p.amount||0,pending:0,done:true,date:p.receivedDate||p.date,emoji:p.emoji||'heart'});
+  });
+  // Merge explicit personContacts (manual contacts without transactions appear too)
+  (S.personContacts||[]).filter(c=>!c.isArchived).forEach(c=>{
+    const name=c.displayName||'Sin nombre';
+    if(!people[name]) people[name]={name,lent:0,borrowed:0,received:0,txs:[],isManualOnly:true};
+    people[name].contact=c; // attach contact metadata regardless
+  });
+  (S.personaProfiles||[]).filter(p=>!p.isArchived).forEach(prof=>{
+    const name=prof.personName||'Sin nombre';
+    if(!people[name]) people[name]={name,lent:0,borrowed:0,received:0,txs:[],isManualOnly:true};
+  });
   return Object.values(people).sort((a,b)=>a.name.localeCompare(b.name));
 }
 
 function personaInitials(name){ return (name.trim().split(/\s+/).map(w=>w[0]||'').join('').slice(0,2)||'?').toUpperCase(); }
 function personaColor(name){ return MEMBER_COLORS[Math.abs(name.split('').reduce((s,c)=>s+c.charCodeAt(0),0))%MEMBER_COLORS.length]; }
+function directoryWorkNames() {
+  const jobs=new Map();
+  (S.paychecks||[]).filter(p=>p.category==='trabajo'&&p.received).forEach(p=>{
+    const name=(p.sourceName||'Trabajo').trim();
+    const key=name.toLowerCase();
+    if(!key) return;
+    if(!jobs.has(key)) jobs.set(key,{name,received:0,count:0,lastDate:null});
+    const row=jobs.get(key);
+    row.received+=(p.amount||0); row.count++;
+    const d=p.receivedDate||p.date;
+    if(d&&(!row.lastDate||parseDate(d)>parseDate(row.lastDate))) row.lastDate=d;
+  });
+  return [...jobs.values()].sort((a,b)=>a.name.localeCompare(b.name));
+}
+function setDirectoryTab(tab) {
+  directoryTab=tab||'personas';
+  renderPersonas();
+}
 
 function renderPersonas() {
-  const people=getPersonasData();
+  const q=(document.getElementById('directorioSearch')?.value||'').trim().toLowerCase();
+  const tabs=document.getElementById('directorioTabs');
+  if(tabs) tabs.innerHTML=['personas','trabajos'].map(tab=>`<button onclick="setDirectoryTab('${tab}')" class="pill-tab ${directoryTab===tab?'active':''}">${tab==='personas'?'Personas':'Trabajos'}</button>`).join('');
+  const people=getPersonasData().filter(p=>{
+    if(!q) return true;
+    const prof=(S.personaProfiles||[]).find(x=>x.personName===p.name)||{};
+    const contact=p.contact||(S.personContacts||[]).find(c=>c.displayName===p.name)||{};
+    const hay=[p.name,contact.displayName,contact.matchName,contact.alias,contact.notes,contact.email,contact.phone,prof.alias,prof.company,prof.work].filter(Boolean).join(' ').toLowerCase();
+    return hay.includes(q);
+  });
+  const jobs=directoryWorkNames().filter(j=>!q||j.name.toLowerCase().includes(q));
   let html='';
+  if(directoryTab==='trabajos') {
+    html+=`<div class="mb-4">
+      <div class="text-[10px] font-bold text-indigo-500 uppercase tracking-wide mb-2">Trabajos</div>
+      ${jobs.length?`<div class="space-y-2">${jobs.map(j=>`<div class="card p-3 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center">${renderStoredIcon('brief','loan','')}</div>
+        <div class="flex-1 min-w-0"><div class="font-bold text-slate-800 text-sm truncate">${j.name}</div><div class="text-xs text-slate-400">${j.count} ingreso${j.count!==1?'s':''} recibido${j.count!==1?'s':''}${j.lastDate?' · Último '+fmtDate(j.lastDate):''}</div></div>
+        <div class="text-right"><div class="text-[10px] text-slate-400 font-bold uppercase">Recibido</div><div class="font-bold text-green-600 text-sm">${fmt(j.received)}</div></div>
+      </div>`).join('')}</div>`:`<div class="card p-6 text-center"><div class="text-3xl mb-2">💼</div><div class="font-bold text-slate-700 mb-1">${q?'Sin resultados':'Sin trabajos recibidos'}</div><div class="text-sm text-slate-400">${q?'Prueba con otro nombre.':'Aquí aparecerán empresas cuando marques ingresos de trabajo como recibidos.'}</div></div>`}
+    </div>`;
+    document.getElementById('personasContent').innerHTML=html;
+    return;
+  }
   if(!people.length){
-    html=`<div class="card p-6 text-center"><div class="text-3xl mb-2">🤝</div><div class="font-bold text-slate-700 mb-1">Sin personas todavía</div><div class="text-sm text-slate-400">Registra un préstamo en Finanzas → aparecerá aquí automáticamente.</div></div>`;
+    html+=`<div class="card p-6 text-center"><div class="text-3xl mb-2">🤝</div><div class="font-bold text-slate-700 mb-1">${q?'Sin resultados':'Sin contactos todavía'}</div><div class="text-sm text-slate-400">${q?'Prueba con otro nombre, alias o trabajo.':'Registra un préstamo en Finanzas o agrega un contacto con el botón +'}</div></div>`;
   } else {
+    html+=`<div class="text-[10px] font-bold text-indigo-500 uppercase tracking-wide mb-2">Contactos</div>`;
     people.forEach(p=>{
-      const balance=p.lent-p.borrowed;
-      const balanceCls=balance>0?'text-green-600':balance<0?'text-red-500':'text-slate-500';
-      const balanceLabel=balance>0?`Te deben ${fmt(balance)}`:balance<0?`Debes ${fmt(Math.abs(balance))}`:'Saldado ✓';
-      const active=p.txs.filter(t=>!t.done).length;
-      html+=`<div class="card p-4 cursor-pointer active:scale-[.99] transition" onclick="openModal('personaDetail','${encodeURIComponent(p.name)}')">
+      const prof=(S.personaProfiles||[]).find(x=>x.personName===p.name)||{};
+      const contact=p.contact||(S.personContacts||[]).find(c=>c.displayName===p.name)||null;
+      const connStatus=contact?contact.connectionStatus:'manual_only';
+      const connBadge={
+        connected:'<span class="text-[9px] bg-green-100 text-green-700 font-bold px-1.5 py-0.5 rounded-full">🔗 Conectado</span>',
+        connection_pending:'<span class="text-[9px] bg-amber-100 text-amber-700 font-bold px-1.5 py-0.5 rounded-full">⏳ Pendiente</span>',
+        rejected:'<span class="text-[9px] bg-red-100 text-red-500 font-bold px-1.5 py-0.5 rounded-full">✗ Rechazado</span>',
+      }[connStatus]||'';
+      const meDebe=p.txs.filter(t=>t.type==='lent').reduce((s,t)=>s+(t.pending||0),0);
+      const leDebo=p.txs.filter(t=>t.type==='borrowed').reduce((s,t)=>s+(t.pending||0),0);
+      const meHaPagado=p.txs.filter(t=>t.type==='income').reduce((s,t)=>s+(t.amount||0),0);
+      const allDates=p.txs.map(t=>t.date).filter(Boolean).sort();
+      const ultimoMov=allDates[allDates.length-1]||null;
+      const netBalance=meDebe-leDebo;
+      const netCls=netBalance>0?'text-green-600':netBalance<0?'text-red-500':'text-slate-400';
+      const netLabel=netBalance>0?`Te debe ${fmt(netBalance)}`:netBalance<0?`Le debes ${fmt(Math.abs(netBalance))}`:fmt(0);
+      const balanceStats=(meDebe>0&&leDebo>0)?[[meDebe,'Me debe','bg-green-50 text-green-700'],[leDebo,'Le debo','bg-red-50 text-red-600']]:[];
+      const stats=[...balanceStats,[meHaPagado,'Me pagó','bg-indigo-50 text-indigo-700']].filter(([v])=>v>0);
+      const avatarInner=prof.emoji&&ICON_DEFS[prof.emoji]?`<span class="text-white">${renderIcon(prof.emoji,'w-6 h-6')}</span>`:personaInitials(p.name);
+      const subtitle=p.isManualOnly&&!p.txs.length?'Sin movimientos aún':(`${p.txs.length} movimiento${p.txs.length!==1?'s':''}${ultimoMov?' · Último '+fmtDate(ultimoMov):''}`);
+      html+=`<div class="card p-4 mb-3 cursor-pointer active:scale-[.99] transition" onclick="openModal('personaDetail','${encodeURIComponent(p.name)}')">
         <div class="flex items-center gap-3">
-          <div style="width:46px;height:46px;border-radius:50%;background:${personaColor(p.name)};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:white;flex-shrink:0">${personaInitials(p.name)}</div>
+          <div style="width:46px;height:46px;border-radius:50%;background:${personaColor(p.name)};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:white;flex-shrink:0">${avatarInner}</div>
           <div class="flex-1 min-w-0">
-            <div class="font-bold text-slate-800">${p.name}</div>
-            <div class="text-xs text-slate-400 mt-0.5">${active?`${active} activo${active!==1?'s':''}`:'Todo saldado'} · ${p.txs.length} total</div>
+            <div class="font-bold text-slate-800 flex items-center gap-1.5">${p.name} ${connBadge}</div>
+            <div class="text-xs text-slate-400 mt-0.5">${subtitle}</div>
           </div>
           <div class="text-right flex-shrink-0">
-            <div class="font-bold ${balanceCls} text-sm">${balanceLabel}</div>
-            <div class="flex justify-end mt-1"><svg class="w-4 h-4 text-slate-300" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg></div>
+            ${!p.isManualOnly||p.txs.length?`<div class="font-bold ${netCls} text-sm">${netLabel}</div>`:''}
+            <svg class="w-4 h-4 text-slate-300 ml-auto mt-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
           </div>
         </div>
+        ${stats.length?`<div class="grid grid-cols-${stats.length} gap-2 mt-3">${stats.map(([v,l,cls])=>`<div class="${cls.split(' ')[0]} rounded-xl p-2.5"><div class="text-[9px] font-bold uppercase ${cls.split(' ')[1]}">${l}</div><div class="font-bold text-sm ${cls.split(' ')[1]}">${fmt(v)}</div></div>`).join('')}</div>`:''}
       </div>`;
     });
   }
@@ -3467,7 +3778,16 @@ function confirmedReceived(id, amount, date, category, keepOpen=false) {
   const p=S.paychecks.find(x=>x.id===id);
   if(p) {
     const newAmount=parseFloat(amount)||p.amount;
-    if(!p.received) adjustBalance(newAmount);
+    const accountId=incomeTargetAccountId(p);
+    if(!p.received) {
+      if(accountId) {
+        adjustAccountBalance(accountId,newAmount);
+        p.receivedAccountId=accountId;
+      } else {
+        adjustBalance(newAmount);
+        p.receivedAccountId=null;
+      }
+    }
     p.received=true; p.amount=newAmount; p.receivedDate=date; p.receivedAt=new Date().toISOString(); p.category=category;
     ensureIncomeSchedule(p);
     setUndoAction('Ingreso marcado como recibido','income',[id]);
@@ -3476,8 +3796,36 @@ function confirmedReceived(id, amount, date, category, keepOpen=false) {
 }
 function unmarkReceived(id) {
   const p=S.paychecks.find(x=>x.id===id);
-  if(p&&p.received){adjustBalance(-(p.amount||0));p.received=false;}
+  if(p&&p.received){
+    if(p.receivedAccountId) adjustAccountBalance(p.receivedAccountId,-(p.amount||0));
+    else adjustBalance(-(p.amount||0));
+    p.received=false; p.receivedAccountId=null;
+  }
   save(); renderCurrentView(); updateHeaderBalance();
+}
+
+function confirmIncomeWithAccount(id) {
+  const p=S.paychecks.find(x=>x.id===id); if(!p) return;
+  const selected=document.getElementById('mReceivedAccount')?.value||null;
+  const accountId=incomeTargetAccountId(p,selected);
+  const date=document.getElementById('mDate')?.value||isoToday();
+  if(accountId) {
+    adjustAccountBalance(accountId, p.amount);
+    p.receivedAccountId=accountId;
+  } else {
+    adjustBalance(p.amount);
+    p.receivedAccountId=null;
+  }
+  p.received=true; p.receivedDate=date; p.receivedAt=new Date().toISOString();
+  if(p.paymentType==='unico') { p.inactive=true; p.closedAt=isoToday(); }
+  else ensureIncomeSchedule(p);
+  save(); closeModal(); renderCurrentView(); updateHeaderBalance(); showToast('Ingreso marcado como recibido');
+}
+
+function reactivateIncome(id) {
+  const p=S.paychecks.find(x=>x.id===id); if(!p) return;
+  p.inactive=false; p.closedAt=null;
+  save(); renderCurrentView(); showToast('Ingreso reactivado');
 }
 function confirmedPayOnce(id, amount, date, dateKey=null, source=null) {
   const o=S.oneTimePayments.find(x=>x.id===id);
@@ -3564,6 +3912,12 @@ function deleteExpense(id) {
   save(); renderCurrentView(); updateHeaderBalance();
 }
 
+function initItemShares(amount, members) {
+  const n=Math.max(1,(members||[]).length||1);
+  const perPerson=Math.round(amount/n*100)/100;
+  return (members||[]).map(m=>({memberId:m.id,name:m.name,amount:perPerson,paid:0,pending:perPerson}));
+}
+
 async function saveHouseItem(id=null) {
   const name=document.getElementById('mName').value.trim();
   const amount=parseFloat(document.getElementById('mAmount').value)||0;
@@ -3582,7 +3936,8 @@ async function saveHouseItem(id=null) {
     const item=H.items.find(x=>x.id===id);
     if(item) Object.assign(item,{name,amount,emoji,category,note,dueDate,frequency,termType,totalPayments,assignedTo,updatedAt:new Date().toISOString(),updatedBy:currentActorName()});
   } else {
-    const item={id:houseUid('house_item'),name,amount,emoji,category,note,dueDate,frequency,termType,totalPayments,assignedTo,createdAt:new Date().toISOString(),createdBy:currentActorName(),payments:[]};
+    const shares=assignedTo==='both'?initItemShares(amount,H.members||[]):[];
+    const item={id:houseUid('house_item'),name,amount,emoji,category,note,dueDate,frequency,termType,totalPayments,assignedTo,shares,createdAt:new Date().toISOString(),createdBy:currentActorName(),payments:[]};
     if(alreadyPaid) item.payments.unshift({id:houseUid('house_pay'),amount,date:dueDate||isoToday(),note:'Registrado como realizado',by:currentActorName(),createdAt:new Date().toISOString()});
     H.items.unshift(item);
     H.transactions.unshift({id:houseUid('house_tx'),label:`Agrego ${name}`,amount:alreadyPaid?amount:0,date:dueDate||isoToday(),by:currentActorName(),createdAt:new Date().toISOString(),refType:'houseItem',refId:item.id});
@@ -3602,6 +3957,12 @@ async function saveHousePayment(id) {
   const payment={id:houseUid('house_pay'),amount,date,note,by:currentActorName(),source,createdAt:new Date().toISOString()};
   item.payments.unshift(payment);
   if(housePaid(item)>=(item.amount||0)) item.done=true;
+  // Fase 6: Update payer's share
+  if(Array.isArray(item.shares)) {
+    const payerName=currentActorName();
+    const share=item.shares.find(s=>s.name===payerName);
+    if(share) { share.paid=(share.paid||0)+amount; share.pending=Math.max(0,(share.amount||0)-share.paid); }
+  }
   H.transactions.unshift({id:houseUid('house_tx'),label:`Abono a ${item.name}`,amount,date,by:currentActorName(),createdAt:new Date().toISOString(),refType:'houseItem',refId:item.id,paymentId:payment.id});
   await save(); await saveHouse(); closeModal(); renderCurrentView(); updateHeaderBalance(); showToast('Abono registrado en Casa');
 }
@@ -4043,44 +4404,128 @@ function openModal(type, id, extra) {
 
   else if(type==='homeUpcomingDetail') {
     const [kind,pid,paymentId,dateKey]=String(id||'').split(':');
-    let title='Detalle', subtitle='', icon='pin', amount=null, rows=[];
-    if(['bill','onetime','expense','borrowed','house'].includes(kind)) {
-      const item=getMonthPayments(monthKey(parseDate(dateKey||isoToday()))).find(p=>p.kind===kind&&p.id===pid&&(!paymentId||p.paymentId===paymentId)&&(!dateKey||p.date===dateKey));
-      if(item) {
-        title=item.name;
-        subtitle=`${kind==='house'&&item.originLabel?item.originLabel:item.category||'Pago'} · ${fmtDate(item.date)} · ${item.paid?'Pagado':'Pendiente'}`;
-        icon=item.emoji||'pin';
-        amount=item.amount||item.originalAmount||0;
+    let title='Detalle', subtitle='', icon='pin', amount=null, rows=[], accentCls='bg-indigo-50 text-indigo-500';
+    if(kind==='income') {
+      const p=(S.paychecks||[]).find(x=>x.id===pid);
+      if(p) {
+        const selectedDate=dateKey||p.date;
+        title=paycheckSourceLabel(p);
+        subtitle=`Ingreso · ${fmtDate(selectedDate)}`;
+        icon=p.emoji||'brief';
+        amount=p.amount||0;
+        accentCls='bg-green-50 text-green-600';
+        const acct=(S.accounts||[]).find(a=>a.id===(p.receivedAccountId||p.targetAccountId||(p.method==='efectivo'?'cash_account':null)));
         rows=[
-          ['Tipo', kind==='house'?'Casa':kind==='borrowed'?'Préstamo recibido':kind==='onetime'?'Pago único':kind==='expense'?'Gasto':'Factura'],
+          ['Quién paga', paycheckSourceLabel(p)],
+          ['Frecuencia', paycheckFreqLabel(p)],
+          ['Fecha de pago', fmtDate(selectedDate)],
+          ['Método / cuenta', `${methodLabel(p.method||'deposito')}${acct?' · '+acct.name:' · Balance libre'}`],
+          ['Estado', p.received?'Recibido ✓':'Pendiente'],
+          ...(p.note?[['Nota', p.note]]:[])
+        ];
+      }
+    } else if(kind==='borrowed') {
+      const l=S.borrowedLoans.find(x=>x.id===pid);
+      if(l) {
+        const inst=borrowedInstallments(l);
+        const pmt=inst.find(p=>p.id===paymentId)||inst.find(p=>!p.paid)||inst[0];
+        const paidCount=inst.filter(p=>p.paid).length;
+        const remainCount=inst.filter(p=>!p.paid).length;
+        const totalCount=inst.length||l.paymentsCount||1;
+        const isSingle=(l.frequency==='once'||totalCount<=1);
+        title=l.loanName||`Pagar a ${l.personName}`;
+        subtitle=`${l.personName} · Préstamo recibido`;
+        icon=l.emoji||'bank';
+        amount=pmt?pmt.amount:(l.amount||0);
+        rows=[
+          ['Quién prestó', l.personName||'—'],
+          ...(l.loanName?[['Nombre', l.loanName]]:[]),
+          ['Cuánto es el pago', fmt(pmt?pmt.amount:(l.amount||0))],
+          ['Frecuencia', isSingle?'Único':freqLabel(l.frequency||'monthly')],
+          ...(!isSingle?[['Pagos restantes', `${remainCount} de ${totalCount}`]]:[]),
+          ['Categoría', catLabel(l.category||'deuda')],
+          ['Estado', pmt&&pmt.paid?'Pagado':'Pendiente'],
+          ...(l.description?[['Nota', l.description]]:[])
+        ];
+      }
+    } else if(kind==='bill') {
+      const item=getMonthPayments(monthKey(parseDate(dateKey||isoToday()))).find(p=>p.kind==='bill'&&p.id===pid&&(!dateKey||p.date===dateKey));
+      const bill=(S.bills||[]).find(b=>b.id===pid);
+      if(item) {
+        title=item.name; subtitle=`Factura · ${fmtDate(item.date)} · ${item.paid?'Pagada':'Pendiente'}`; icon=item.emoji||'pin'; amount=item.amount||0;
+        rows=[
+          ['Nombre', item.name],
+          ['Monto', fmt(item.amount||0)],
           ['Fecha', fmtDate(item.date)],
-          ['Estado', item.paid?'Pagado':'Pendiente'],
+          ['Frecuencia', bill?freqLabel(bill.frequency||bill.recurrenceFreq||'monthly'):'Recurrente'],
           ['Categoría', catLabel(item.category||'pago')],
-          ...(kind==='house'&&item.originLabel?[['Origen', item.originLabel.replace('Origen: ','')]]:[])
+          ['Estado', item.paid?'Pagada ✓':'Pendiente']
+        ];
+      }
+    } else if(kind==='onetime') {
+      const item=getMonthPayments(monthKey(parseDate(dateKey||isoToday()))).find(p=>p.kind==='onetime'&&p.id===pid&&(!dateKey||p.date===dateKey));
+      if(item) {
+        const oneTimeLabel=item.frequency&&item.frequency!=='once'?'Pago agendado':'Pago único';
+        title=item.name; subtitle=`${oneTimeLabel} · ${fmtDate(item.date)} · ${item.paid?'Pagado':'Pendiente'}`; icon=item.emoji||'pin'; amount=item.amount||0;
+        rows=[
+          ['Nombre', item.name],
+          ['Monto', fmt(item.amount||0)],
+          ['Fecha', fmtDate(item.date)],
+          ['Frecuencia', item.frequency&&item.frequency!=='once'?freqLabel(item.frequency):'Único'],
+          ['Categoría', catLabel(item.category||'pago')],
+          ['Estado', item.paid?'Pagado ✓':'Pendiente']
+        ];
+      }
+    } else if(kind==='expense') {
+      const item=getMonthPayments(monthKey(parseDate(dateKey||isoToday()))).find(p=>p.kind==='expense'&&p.id===pid&&(!dateKey||p.date===dateKey));
+      if(item) {
+        title=item.name; subtitle=`Gasto · ${fmtDate(item.date)} · ${item.paid?'Pagado':'Pendiente'}`; icon=item.emoji||'pin'; amount=item.amount||0;
+        rows=[
+          ['Nombre', item.name],
+          ['Monto', fmt(item.amount||0)],
+          ['Fecha', fmtDate(item.date)],
+          ['Frecuencia', 'Único'],
+          ['Categoría', catLabel(item.category||'pago')],
+          ['Estado', item.paid?'Pagado ✓':'Pendiente']
+        ];
+      }
+    } else if(kind==='house') {
+      const item=getMonthPayments(monthKey(parseDate(dateKey||isoToday()))).find(p=>p.kind==='house'&&p.id===pid&&(!paymentId||p.paymentId===paymentId)&&(!dateKey||p.date===dateKey));
+      if(item) {
+        title=item.name; subtitle=`Espacio · ${fmtDate(item.date)} · ${item.paid?'Pagado':'Pendiente'}`; icon=item.emoji||'home'; amount=item.amount||0;
+        rows=[
+          ['Fecha de pago', fmtDate(item.date)],
+          ['Tipo', item.frequency&&item.frequency!=='once'?`Recurrente · ${freqLabel(item.frequency)}`:'Único'],
+          ['Categoría', catLabel(item.category||'pago')],
+          ['Origen', item.originLabel||`Espacio compartido / ${item.spaceName||'Espacio'}`],
+          ['Estado', item.paid?'Pagado ✓':'Pendiente']
         ];
       }
     } else if(kind==='loan') {
       const l=S.loans.find(x=>x.id===pid);
       if(l) {
         const paid=loanPaid(l), pend=Math.max(0,(l.totalAmount||0)-paid);
+        const selectedDate=dateKey||(l.recurring&&l.recurring.nextDate)||isoToday();
+        const totalCount=l.recurring&&l.recurring.totalPayments?l.recurring.totalPayments:null;
+        const paidCount=(l.payments||[]).length;
         title=l.loanName||`Cobrar a ${l.personName}`;
         subtitle=l.loanName?`${l.personName} · Préstamo por cobrar`:`Préstamo por cobrar`;
-        icon=l.emoji||'brief';
-        amount=l.recurring&&l.recurring.amount?l.recurring.amount:pend;
+        icon=l.emoji||'brief'; amount=l.recurring&&l.recurring.amount?l.recurring.amount:pend;
         rows=[
           ['Persona', l.personName||'—'],
           ...(l.loanName?[['Nombre', l.loanName]]:[]),
           ['Próximo cobro', fmt(l.recurring&&l.recurring.amount?l.recurring.amount:pend)],
+          ['Fecha de cobro', fmtDate(selectedDate)],
           ['Total prestado', fmt(l.totalAmount||0)],
           ['Cobrado', fmt(paid)],
           ['Pendiente', fmt(pend)],
-          ['Frecuencia', l.recurring?freqLabel(l.recurring.freq):'Sin plan'],
+          ['Frecuencia', l.recurring?freqLabel(l.recurring.freq):'Único'],
+          ...(totalCount&&totalCount>1?[['Pagos restantes', `${Math.max(0,totalCount-paidCount)} de ${totalCount}`]]:[]),
+          ['Categoría', catLabel(l.category||'prestamos')],
+          ['Estado', pend<=0?'Saldado':'Pendiente'],
           ...(l.note?[['Nota', l.note]]:[])
         ];
       }
-    } else if(kind==='income') {
-      const p=(S.paychecks||[]).find(x=>x.id===pid);
-      if(p) { title=paycheckSourceLabel(p); subtitle=`Ingreso · ${fmtDate(p.date)}`; icon=p.emoji||'brief'; amount=p.amount||0; rows=[['Tipo',paycheckFreqLabel(p)],['Fecha',fmtDate(p.date)],['Método',methodLabel(p.method||'deposito')],['Nota',p.note||'Sin nota']]; }
     } else if(kind==='task') {
       const n=((S.calendarNotes||{})[dateKey]||[]).find(x=>x.id===pid);
       if(n) { title=n.text; subtitle=`${noteTypeLabel(n.type)} · ${fmtDate(dateKey)}`; icon='pin'; rows=[['Tipo',noteTypeLabel(n.type)],['Fecha',fmtDate(dateKey)],['Estado',n.done?'Completada':'Pendiente']]; }
@@ -4094,12 +4539,13 @@ function openModal(type, id, extra) {
     html=`<h3 class="text-lg font-bold text-slate-800 mb-1">${title}</h3>
     <p class="text-sm text-slate-500 mb-4">${subtitle}</p>
     <div class="flex items-center gap-3 card p-3 mb-3">
-      <div class="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center">${renderStoredIcon(icon,kind,'')}</div>
+      <div class="w-11 h-11 rounded-xl ${accentCls} flex items-center justify-center">${renderStoredIcon(icon,kind,'')}</div>
       <div class="flex-1 min-w-0"><div class="text-xs text-indigo-400 font-bold uppercase">Resumen</div><div class="font-bold text-slate-800 truncate">${amount!==null?fmt(amount):title}</div></div>
     </div>
-    <div class="card p-3 space-y-2 text-sm">
-      ${rows.map(([label,value])=>`<div class="flex justify-between gap-3"><span class="text-slate-400">${label}</span><span class="font-semibold text-slate-700 text-right">${value}</span></div>`).join('')}
-    </div>`;
+    ${rows.length?`<div class="card p-3 space-y-2 text-sm">
+      ${rows.map(([label,value])=>`<div class="flex justify-between gap-3"><span class="text-slate-400">${label}</span><span class="font-semibold text-slate-700 text-right">${value||'—'}</span></div>`).join('')}
+    </div>`:''}`
+    ;
   }
 
   else if(type==='analysisCategoryDetail') {
@@ -4199,8 +4645,11 @@ function openModal(type, id, extra) {
       <input id="mOtherName" value="${p&&p.category==='otro'&&p.sourceName?p.sourceName:''}" placeholder="Describe el ingreso" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       <div class="flex gap-3">
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Tipo</label><select id="mPayType" onchange="updatePaycheckRecurringFields()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"><option value="recurrente" ${!p||p.paymentType==='recurrente'?'selected':''}>Recurrente</option><option value="unico" ${p&&p.paymentType==='unico'?'selected':''}>Único</option></select></div>
-        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Método</label><select id="mMethod" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"><option value="deposito" ${p&&p.method==='deposito'?'selected':''}>Depósito</option><option value="efectivo" ${p&&p.method==='efectivo'?'selected':''}>Efectivo</option><option value="transferencia" ${p&&p.method==='transferencia'?'selected':''}>Transferencia</option></select></div>
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Método del ingreso</label><select id="mMethod" onchange="updateIncomeMethodFields()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"><option value="efectivo" ${p&&p.method==='efectivo'?'selected':''}>Efectivo</option><option value="deposito" ${!p||p.method!=='efectivo'?'selected':''}>Depósito</option></select></div>
       </div>
+      <div id="incomeAccountWrap" class="${p&&p.method==='efectivo'?'hidden':''}"><label class="text-xs font-bold text-slate-500 uppercase">Seleccionar cuenta bancaria</label>
+      <select id="mTargetAccount" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">${incomeAccountOptions(p&&p.targetAccountId?p.targetAccountId:defaultIncomeAccountId())}</select>
+      <p class="text-[10px] text-slate-400 mt-1">El saldo se suma a esta cuenta cuando marques el ingreso como recibido.</p></div>
       <div id="recWrap" class="${p&&p.paymentType==='unico'?'hidden':''} bg-indigo-50 border border-indigo-100 rounded-xl p-3 space-y-2">
         <div class="flex gap-2">
           <div class="flex-1"><label class="text-xs text-indigo-500 font-bold uppercase">Cada cuánto</label><select id="mRecFreq" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"><option value="weekly" ${p&&p.recurrenceFreq==='weekly'?'selected':''}>Semanal</option><option value="every_two_weeks" ${!p||!p.recurrenceFreq||p.recurrenceFreq==='biweekly'||p.recurrenceFreq==='every_two_weeks'?'selected':''}>Cada 2 semanas</option><option value="semimonthly" ${p&&(p.recurrenceFreq==='semimonthly'||p.recurrenceFreq==='quincenal')?'selected':''}>Quincenal</option><option value="monthly" ${p&&p.recurrenceFreq==='monthly'?'selected':''}>Mensual</option></select></div>
@@ -4311,7 +4760,11 @@ function openModal(type, id, extra) {
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Meta ($) — opcional</label>
         <input type="number" id="mTarget" value="${pk&&pk.target?pk.target:''}" placeholder="0" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       </div>
-      <p class="text-xs text-slate-400">Disponible para este bolsillo: <span class="font-bold text-green-600">${fmt(available)}</span>. El saldo se resta del balance libre.</p>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">¿De dónde estás separando este dinero?</label>
+      <select id="mPocketAccount" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+        ${(S.accounts||[]).filter(a=>a.active!==false).map(a=>`<option value="${a.id}" ${pk&&pk.sourceAccountId===a.id?'selected':(!pk&&a.id==='cash_account'?'selected':'')}>${a.emoji||'💵'} ${a.name} — disponible ${fmt(accountAvailable(a.id))}</option>`).join('')}
+      </select>
+      <p class="text-xs text-slate-400 mt-1">El bolsillo <strong>no crea dinero nuevo</strong>. Solo separa dinero que ya existe en esa cuenta.</p></div>
       <button onclick="savePocket(${pk?`'${id}'`:'null'})" class="w-full btn-primary py-3">${pk?'Guardar':'Crear bolsillo'}</button>
     </div>`;
   }
@@ -4416,7 +4869,33 @@ function openModal(type, id, extra) {
       </div>
       <div id="borrowedPmtPreview" class="hidden bg-indigo-50 rounded-xl px-3 py-2.5 text-sm text-indigo-700 font-semibold text-center"></div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Descripción opcional</label><input id="mDesc" value="${l?l.description||'':''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
-      <button onclick="saveBorrowedLoan(${l?`'${id}'`:'null'})" class="w-full btn-primary py-3">Guardar préstamo</button>
+      <div class="border-2 border-amber-200 bg-amber-50 rounded-2xl p-4 space-y-3">
+        <div class="font-extrabold text-amber-700 text-sm flex items-center gap-2">
+          <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+          Paso requerido: ¿Todavía tienes este dinero?
+        </div>
+        <input type="hidden" id="mAlreadySpent" value="${!l||l.alreadySpent!==false?'yes':'no'}">
+        <input type="hidden" id="mStillHave" value="${l&&l.addsToLiquidity?'yes':'no'}">
+        <div class="grid grid-cols-1 gap-2">
+          <button type="button" id="mLiqCardNo" onclick="selectBorrowedLiq('no')"
+            class="rounded-xl px-4 py-3 border-2 text-left transition ${!l||l.alreadySpent!==false?'border-indigo-400 bg-indigo-50':'border-slate-100 bg-white'}">
+            <div class="font-bold text-slate-800 text-sm">❌ No, ya fue usado</div>
+            <div class="text-xs text-slate-500 mt-0.5">El préstamo fue para cubrir algo que ya pagué. Solo lo registro como deuda.</div>
+          </button>
+          <button type="button" id="mLiqCardYes" onclick="selectBorrowedLiq('yes')"
+            class="rounded-xl px-4 py-3 border-2 text-left transition ${l&&l.addsToLiquidity?'border-indigo-400 bg-indigo-50':'border-slate-100 bg-white'}">
+            <div class="font-bold text-slate-800 text-sm">✅ Sí, todavía lo tengo</div>
+            <div class="text-xs text-slate-500 mt-0.5">El dinero está disponible y quiero que cuente en mis cuentas.</div>
+          </button>
+        </div>
+        <div id="borrowedAccountWrap" class="${l&&l.addsToLiquidity?'':'hidden'} pt-1">
+          <label class="text-xs font-bold text-slate-500 uppercase">¿En qué cuenta lo recibiste?</label>
+          <select id="mReceivedAccount" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2.5 mt-1">
+            ${(S.accounts||[]).filter(a=>a.active!==false).map(a=>`<option value="${a.id}" ${l&&l.receivedAccountId===a.id?'selected':''}>${a.emoji||'💵'} ${a.name}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <button id="mSaveBorrowedBtn" onclick="saveBorrowedLoan(${l?`'${id}'`:'null'})" class="w-full btn-primary py-3 ${l?'':'opacity-40 cursor-not-allowed'}" ${l?'':'disabled'}>Guardar préstamo</button>
     </div>`;
   }
 
@@ -4737,46 +5216,167 @@ function openModal(type, id, extra) {
     const people=getPersonasData();
     const p=people.find(x=>x.name===name);
     if(!p){html=`<p class="text-center text-slate-400">No encontrado</p>`;document.getElementById('modalContent').innerHTML=html;document.getElementById('modalOverlay').classList.remove('hidden');return;}
-    const balance=p.lent-p.borrowed;
-    const balanceCls=balance>0?'text-green-600':balance<0?'text-red-500':'text-slate-400';
-    const balanceLabel=balance>0?`Te deben ${fmt(balance)}`:balance<0?`Debes ${fmt(Math.abs(balance))}`:'Todo saldado ✓';
-    const activeTxs=p.txs.filter(t=>!t.done);
-    const doneTxs=p.txs.filter(t=>t.done);
-    function txCard(tx){
+    const profile=(S.personaProfiles||[]).find(x=>x.personName===name)||{};
+    const meDebe=p.txs.filter(t=>t.type==='lent').reduce((s,t)=>s+(t.pending||0),0);
+    const leDebo=p.txs.filter(t=>t.type==='borrowed').reduce((s,t)=>s+(t.pending||0),0);
+    const meHaPagado=p.txs.filter(t=>t.type==='income').reduce((s,t)=>s+(t.amount||0),0);
+    const netBalance=meDebe-leDebo;
+    const netCls=netBalance>0?'text-green-600':netBalance<0?'text-red-500':'text-slate-400';
+    const netLabel=netBalance>0?`Te debe ${fmt(netBalance)}`:netBalance<0?`Le debes ${fmt(Math.abs(netBalance))}`:'Saldado ✓';
+    const stats=[[meDebe,'Me debe','bg-green-50 text-green-700'],[leDebo,'Le debo','bg-red-50 text-red-600'],[meHaPagado,'Me pagó','bg-indigo-50 text-indigo-700']].filter(([v])=>v>0);
+    const lentTxs=p.txs.filter(t=>t.type==='lent'&&!t.done);
+    const borrowedTxs=p.txs.filter(t=>t.type==='borrowed'&&!t.done);
+    const incomeTxs=p.txs.filter(t=>t.type==='income');
+    const doneTxs=p.txs.filter(t=>t.done&&t.type!=='income');
+    function txRow(tx){
       const isLent=tx.type==='lent';
       const paidCuotas=isLent?tx.payments.length:(tx.installments||[]).filter(i=>i.paid).length;
       const totalCuotas=isLent?(tx.recurring?Math.ceil(tx.amount/(tx.recurring.amount||1)):tx.payments.length):(tx.paymentsCount||1);
       const cuotaInfo=totalCuotas>1?`${paidCuotas}/${totalCuotas} pagos`:'Pago único';
       const nextInst=isLent?null:(tx.installments||[]).find(i=>!i.paid);
-      return `<div class="py-3 border-t border-slate-100">
+      return `<div class="py-3 border-t border-slate-100 first:border-t-0">
         <div class="flex items-start gap-3">
-          <div class="w-10 h-10 rounded-xl ${isLent?'bg-green-50':'bg-red-50'} flex items-center justify-center text-xl flex-shrink-0">${isLent?'💸':'🏦'}</div>
+          <div class="w-9 h-9 rounded-xl ${isLent?'bg-green-50':'bg-red-50'} flex items-center justify-center text-base flex-shrink-0">${isLent?'💸':'🏦'}</div>
           <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 flex-wrap">
+            <div class="flex items-center gap-1.5 flex-wrap">
               <span class="font-semibold text-slate-800 text-sm">${tx.loanName||(isLent?'Préstamo prestado':'Préstamo recibido')}</span>
-              ${tx.done?'<span class="text-[10px] bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded-full">Saldado ✓</span>':'<span class="text-[10px] bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">Activo</span>'}
+              <span class="text-[9px] ${tx.done?'bg-green-100 text-green-700':'bg-amber-100 text-amber-700'} font-bold px-1.5 py-0.5 rounded-full">${tx.done?'✓ Saldado':'Activo'}</span>
             </div>
-            <div class="text-xs text-slate-400 mt-0.5">${isLent?'Prestaste':'Te prestaron'} ${fmt(tx.amount)} · ${tx.date} · ${cuotaInfo}</div>
-            ${tx.note?`<div class="text-xs text-slate-500 mt-1">${tx.note}</div>`:''}
-            ${!tx.done&&tx.pending?`<div class="text-xs font-bold ${isLent?'text-green-600':'text-red-500'} mt-1">Pendiente: ${fmt(tx.pending)}</div>`:''}
-            ${!isLent&&nextInst?`<div class="text-xs text-indigo-500 mt-1">Próxima cuota ${fmtDate(nextInst.date)} · ${fmt(nextInst.amount)}</div>`:''}
-            ${isLent&&tx.payments.length?`<div class="mt-2 space-y-0.5">${tx.payments.map(pmt=>`<div class="flex justify-between text-xs text-slate-400"><span>Abono ${pmt.date}</span><span class="text-green-600 font-semibold">+${fmt(pmt.amount)}</span></div>`).join('')}</div>`:''}
-            ${!isLent&&(tx.installments||[]).length>1?`<div class="mt-2 space-y-0.5">${(tx.installments||[]).map(inst=>`<div class="flex justify-between text-xs ${inst.paid?'text-slate-300 line-through':'text-slate-500'}"><span>Cuota ${inst.number} · ${inst.date}</span><span>${fmt(inst.amount)}</span></div>`).join('')}</div>`:''}
+            <div class="text-xs text-slate-400 mt-0.5">${isLent?'Prestaste':'Te prestaron'} ${fmt(tx.amount)} · ${fmtDate(tx.date)} · ${cuotaInfo}</div>
+            ${tx.note?`<div class="text-xs text-slate-500 mt-0.5 italic">${tx.note}</div>`:''}
+            ${!tx.done&&tx.pending?`<div class="text-xs font-bold ${isLent?'text-green-600':'text-red-500'} mt-0.5">Pendiente: ${fmt(tx.pending)}</div>`:''}
+            ${!isLent&&nextInst?`<div class="text-xs text-indigo-500 mt-0.5">Próxima cuota ${fmtDate(nextInst.date)} · ${fmt(nextInst.amount)}</div>`:''}
+            ${isLent&&tx.payments.length?`<div class="mt-1.5 space-y-0.5">${tx.payments.slice(-3).map(pmt=>`<div class="flex justify-between text-xs text-slate-400"><span>Abono ${fmtDate(pmt.date)}</span><span class="text-green-600 font-semibold">+${fmt(pmt.amount)}</span></div>`).join('')}</div>`:''}
           </div>
         </div>
       </div>`;
     }
-    html=`<div class="flex items-center gap-3 mb-4">
-      <div style="width:48px;height:48px;border-radius:50%;background:${personaColor(name)};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:white">${personaInitials(name)}</div>
-      <div><div class="text-lg font-bold text-slate-800">${name}</div><div class="font-semibold ${balanceCls} text-sm">${balanceLabel}</div></div>
+    const contact=(S.personContacts||[]).find(c=>c.displayName===name)||null;
+    const connStatus=contact?contact.connectionStatus:'manual_only';
+    const connBannerHtml={
+      connected:`<div class="flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl px-3 py-2 mb-3 text-xs font-semibold text-green-700">🔗 Conectado con ${contact?.linkedDisplayName||'usuario real'}</div>`,
+      connection_pending:`<div class="flex items-center justify-between bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 mb-3 text-xs font-semibold text-amber-700"><span>⏳ Solicitud de conexión enviada, esperando respuesta...</span></div>`,
+      rejected:`<div class="bg-red-50 border border-red-100 rounded-xl px-3 py-2 mb-3 text-xs font-semibold text-red-500">✗ Solicitud rechazada. Edita el perfil para intentar de nuevo.</div>`,
+    }[connStatus]||'';
+    html=`<div class="flex items-center gap-3 mb-3">
+      <div style="width:48px;height:48px;border-radius:50%;background:${personaColor(name)};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:white;flex-shrink:0">${profile.emoji&&ICON_DEFS[profile.emoji]?renderIcon(profile.emoji,'w-6 h-6'):personaInitials(name)}</div>
+      <div class="flex-1 min-w-0">
+        <div class="text-lg font-bold text-slate-800 leading-tight">${name}</div>
+        <div class="font-semibold ${netCls} text-sm">${netLabel}</div>
+      </div>
+      <button onclick="closeModal();setTimeout(()=>openModal('editPersona','${encodeURIComponent(name)}'),180)" class="bg-slate-100 text-slate-500 rounded-xl px-3 py-2 text-xs font-semibold flex-shrink-0">✏️ Editar</button>
     </div>
-    <div class="grid grid-cols-${p.lent&&p.borrowed?'2':'1'} gap-2 mb-4">
-      ${p.lent?`<div class="card p-3 text-center"><div class="text-[10px] text-slate-400 font-bold uppercase">Les prestaste</div><div class="text-base font-bold text-green-600">${fmt(p.lent)}</div></div>`:''}
-      ${p.borrowed?`<div class="card p-3 text-center"><div class="text-[10px] text-slate-400 font-bold uppercase">Te prestaron</div><div class="text-base font-bold text-red-500">${fmt(p.borrowed)}</div></div>`:''}
-    </div>
-    ${activeTxs.length?`<div class="text-xs font-bold text-indigo-700 uppercase tracking-wide mb-1">Activos (${activeTxs.length})</div>${activeTxs.map(txCard).join('')}`:''}
-    ${doneTxs.length?`<div class="text-xs font-bold text-slate-400 uppercase tracking-wide mt-4 mb-1">Terminados (${doneTxs.length})</div>${doneTxs.map(txCard).join('')}`:''}
-    ${!p.txs.length?'<p class="text-center text-slate-400 py-4">Sin transacciones.</p>':''}`;
+    ${connBannerHtml}
+    ${stats.length?`<div class="grid grid-cols-${stats.length} gap-2 mb-4">${stats.map(([v,l,cls])=>`<div class="${cls.split(' ')[0]} rounded-xl p-2.5 text-center"><div class="text-[9px] font-bold uppercase ${cls.split(' ')[1]} mb-0.5">${l}</div><div class="font-bold text-sm ${cls.split(' ')[1]}">${fmt(v)}</div></div>`).join('')}</div>`:'<div class="bg-slate-50 rounded-xl p-3 text-center text-sm text-slate-400 mb-4">Sin balance pendiente</div>'}
+    ${lentTxs.length?`<div class="text-[10px] font-bold text-green-700 uppercase tracking-wide mb-1">💸 Prestaste (${lentTxs.length} activo${lentTxs.length!==1?'s':''})</div><div class="mb-3">${lentTxs.map(txRow).join('')}</div>`:''}
+    ${borrowedTxs.length?`<div class="text-[10px] font-bold text-red-600 uppercase tracking-wide mb-1">🏦 Te prestaron (${borrowedTxs.length} activo${borrowedTxs.length!==1?'s':''})</div><div class="mb-3">${borrowedTxs.map(txRow).join('')}</div>`:''}
+    ${incomeTxs.length?`<div class="text-[10px] font-bold text-indigo-600 uppercase tracking-wide mb-1">💰 Ingresos recibidos (${incomeTxs.length})</div>
+    <div class="space-y-1 mb-3">${incomeTxs.map(t=>`<div class="flex justify-between items-center px-3 py-2 bg-indigo-50 rounded-xl">
+      <div class="min-w-0 flex-1"><div class="text-slate-700 font-semibold text-sm truncate">${t.loanName||'Ingreso'}</div>${t.date?`<div class="text-[10px] text-slate-400">${fmtDate(t.date)}</div>`:''}</div>
+      <span class="font-bold text-indigo-600 text-sm ml-2">+${fmt(t.amount||0)}</span>
+    </div>`).join('')}</div>`:''}
+    ${doneTxs.length?`<div class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">✓ Historial saldado (${doneTxs.length})</div><div class="mb-3 opacity-60">${doneTxs.map(txRow).join('')}</div>`:''}
+    ${!p.txs.length?'<p class="text-center text-slate-400 py-4">Sin transacciones con esta persona.</p>':''}`;
+  }
+  else if(type==='editPersona') {
+    const name=decodeURIComponent(id||'');
+    const profile=(S.personaProfiles||[]).find(x=>x.personName===name)||{};
+    const contact=(S.personContacts||[]).find(c=>c.displayName===name)||null;
+    const pEmoji=normalizeIcon(profile.emoji||'brief','loan');
+    const connStatus=contact?contact.connectionStatus:'manual_only';
+    const connStatusHtml={
+      connected:`<div class="flex items-center gap-2 bg-green-50 rounded-xl p-3 text-sm"><span class="text-green-600 font-bold">🔗 Conectado con ${contact?.linkedDisplayName||'usuario real'}</span></div>`,
+      connection_pending:`<div class="flex items-center justify-between bg-amber-50 rounded-xl p-3 text-sm"><span class="text-amber-700 font-semibold">⏳ Solicitud enviada, esperando respuesta...</span><button onclick="cancelConnectionRequest('${contact?.id||''}')" class="text-red-400 text-xs font-bold ml-2">Cancelar</button></div>`,
+      rejected:`<div class="bg-red-50 rounded-xl p-3 text-sm text-red-600 font-semibold">✗ Solicitud rechazada. Puedes intentar de nuevo con otro PIN.</div>`,
+      disconnected:`<div class="bg-slate-50 rounded-xl p-3 text-sm text-slate-500">Conexión desactivada. Agrega un PIN para reconectar.</div>`,
+    }[connStatus]||'';
+    const showPinField=connStatus==='manual_only'||connStatus==='rejected'||connStatus==='disconnected';
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">Editar persona</h3>
+    <div class="space-y-3">
+      <div class="flex gap-3 items-end">
+        <div style="width:52px;flex-shrink:0">${iconPicker('loan',pEmoji,true)}</div>
+        <div class="flex-1 min-w-0"><label class="text-xs font-bold text-slate-500 uppercase">Nombre</label>
+        <input type="text" id="mPersonaName" value="${name}" placeholder="Nombre de la persona" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold"></div>
+      </div>
+      ${contact?`<div><label class="text-xs font-bold text-slate-500 uppercase">Teléfono</label>
+      <input type="tel" id="mPersonaPhone" value="${contact.phone||''}" placeholder="Opcional" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Email</label>
+      <input type="email" id="mPersonaEmail" value="${contact.email||''}" placeholder="Opcional" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>`:''}
+      <p class="text-xs text-slate-400">Cambiar el nombre actualizará todos los préstamos e ingresos vinculados a esta persona.</p>
+      <button onclick="savePersona('${encodeURIComponent(name)}')" class="w-full btn-primary py-3">Guardar cambios</button>
+      <div class="border-t border-slate-100 pt-3">
+        <div class="text-xs font-bold text-slate-500 uppercase mb-2">Conexión con usuario de la app</div>
+        ${connStatusHtml}
+        ${showPinField?`<div class="mt-2">
+          <label class="text-xs font-bold text-slate-500 uppercase">PIN de conexión, opcional</label>
+          <div class="flex gap-2 mt-1">
+            <input type="text" id="mConnectPin" maxlength="6" placeholder="ej. A3F7K2" class="flex-1 border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-slate-800 font-mono font-bold text-center text-lg tracking-widest uppercase" oninput="this.value=this.value.toUpperCase()">
+            <button onclick="validateAndConnectPin('${encodeURIComponent(name)}','${contact?.id||''}')" class="bg-indigo-600 text-white font-bold px-4 rounded-xl text-sm">Conectar</button>
+          </div>
+          <p class="text-[10px] text-slate-400 mt-1">También puedes escribir el PIN y tocar Guardar cambios. Se enviará una solicitud que debe aceptar.</p>
+        </div>`:''}
+      </div>
+      <button onclick="openModal('confirmArchivePersona','${encodeURIComponent(name)}')" class="w-full bg-red-50 text-red-500 font-bold py-3 rounded-xl">Eliminar persona</button>
+    </div>`;
+  }
+  else if(type==='addPersonContact') {
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">Agregar persona</h3>
+    <div class="space-y-3">
+      <div class="flex gap-3 items-end">
+        <div style="width:52px;flex-shrink:0">${iconPicker('loan','brief',true)}</div>
+        <div class="flex-1 min-w-0"><label class="text-xs font-bold text-slate-500 uppercase">Nombre *</label>
+        <input type="text" id="mPersonaName" placeholder="Nombre completo" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold"></div>
+      </div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Teléfono</label>
+      <input type="tel" id="mPersonaPhone" placeholder="Opcional" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Email</label>
+      <input type="email" id="mPersonaEmail" placeholder="Opcional" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Nota</label>
+      <input type="text" id="mPersonaNotes" placeholder="Opcional" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">PIN de conexión, opcional</label>
+      <input type="text" id="mConnectPin" maxlength="6" placeholder="ej. A3F7K2" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-mono font-bold text-center tracking-widest uppercase" oninput="this.value=this.value.toUpperCase()"></div>
+      <p class="text-xs text-slate-400">Si agregas un PIN válido, se enviará una solicitud de conexión. También puedes dejarlo vacío.</p>
+      <button onclick="saveNewPersonContact()" class="w-full btn-primary py-3">Agregar persona</button>
+    </div>`;
+  }
+  else if(type==='confirmArchivePersona') {
+    const name=decodeURIComponent(id||'');
+    html=`<div class="text-center">
+      <div class="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-3"><svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 7h12M10 11v6m4-6v6M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0l1 13h8l1-13"/></svg></div>
+      <h3 class="text-lg font-bold text-slate-800 mb-2">¿Eliminar esta persona?</h3>
+      <p class="text-sm text-slate-500 mb-5">Se ocultará del Directorio, pero los préstamos, pagos e historial financiero asociado se conservan.</p>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="closeModal()" class="bg-slate-100 text-slate-600 font-bold py-3 rounded-xl">Cancelar</button>
+        <button onclick="archivePersona('${encodeURIComponent(name)}')" class="bg-red-500 text-white font-bold py-3 rounded-xl">Eliminar</button>
+      </div>
+    </div>`;
+  }
+  else if(type==='notificationsPanel') {
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">Notificaciones</h3>
+    <p class="text-sm text-slate-500 mb-4">Solicitudes, pagos, tareas y actividad de espacios.</p>
+    <div id="notificationsContent"><div class="text-center py-6 text-slate-400 text-sm">Cargando notificaciones...</div></div>`;
+    setTimeout(()=>loadNotificationsContent(),50);
+  }
+  else if(type==='notificationDetail') {
+    const n=getLocalNotificationById(id);
+    if(!n){html=`<p class="text-center text-slate-400 py-5">Notificación no encontrada.</p>`;}
+    else {
+      markNotificationRead(n.id,false);
+      html=`<h3 class="text-lg font-bold text-slate-800 mb-1">${n.title}</h3>
+      <p class="text-sm text-slate-500 mb-4">${n.description}</p>
+      <div class="space-y-2 mb-4">${(n.items||[]).map(item=>`<div class="flex justify-between gap-3 bg-slate-50 rounded-xl px-3 py-2 text-sm">
+        <span class="font-semibold text-slate-700">${item.name}</span>
+        <span class="font-bold text-slate-800">${item.amount!==undefined?fmt(item.amount):item.meta||''}</span>
+      </div>`).join('')||'<div class="text-sm text-slate-400 text-center py-4">Sin detalle adicional.</div>'}</div>
+      <button onclick="closeModal()" class="w-full btn-primary py-3">Listo</button>`;
+    }
+  }
+  else if(type==='inboxRequests') {
+    // Rendered async after load — show skeleton first
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">📬 Solicitudes recibidas</h3>
+    <div id="inboxContent"><div class="text-center py-6 text-slate-400 text-sm">Cargando solicitudes...</div></div>`;
+    // Load async after modal renders
+    setTimeout(()=>loadInboxContent(),50);
   }
   else if(type==='showSpaceCode') {
     const parts=String(extra||'').split('|');
@@ -5018,6 +5618,119 @@ function openModal(type, id, extra) {
     <button onclick="saveIncomeCategory()" class="w-full btn-primary py-3">Guardar</button></div>`;
   }
 
+  else if(type==='confirmIncomeReceived') {
+    const p=S.paychecks.find(x=>x.id===id); if(!p) return;
+    const isCash=(p.method||'deposito')==='efectivo';
+    const selectedAccount=p.targetAccountId||defaultIncomeAccountId();
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">Marcar como recibido</h3>
+  <p class="text-sm text-slate-500 mb-4">${fmt(p.amount)} · ${fmtDate(p.date)}</p>
+  <div class="space-y-3">
+    ${isCash?`<div class="bg-green-50 text-green-700 rounded-xl px-3 py-2.5 text-sm font-semibold">Método del ingreso: Efectivo · se sumará a Cash</div>`:`<div><label class="text-xs font-bold text-slate-500 uppercase">Seleccionar cuenta bancaria</label>
+    <select id="mReceivedAccount" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+      ${incomeAccountOptions(selectedAccount)}
+    </select></div>`}
+    <div><label class="text-xs font-bold text-slate-500 uppercase">Fecha recibido</label>
+    <input type="date" id="mDate" value="${isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+    <button onclick="confirmIncomeWithAccount('${id}')" class="w-full btn-primary py-3">✓ Confirmar recibido</button>
+  </div>`;
+  }
+
+  else if(type==='addAccount'||type==='editAccount') {
+    const a=type==='editAccount'?S.accounts.find(x=>x.id===id):null;
+    const isCash=a&&a.id==='cash_account';
+    const accIcon=normalizeIcon(a?a.emoji:'bank','finance');
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${a?'Editar cuenta':'Nueva cuenta'}</h3>
+  <div class="space-y-3">
+    <div class="flex gap-3 items-end">
+      <div style="width:52px;flex-shrink:0">${iconPicker('finance',accIcon,true)}</div>
+      <div class="flex-1 min-w-0"><label class="text-xs font-bold text-slate-500 uppercase">Nombre de la cuenta</label>
+      <input type="text" id="mAccName" value="${a?a.name:''}" placeholder="ej. Chase, Nequi, Efectivo casa..." class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold" ${isCash?'readonly':''}>
+      </div>
+    </div>
+    <div><label class="text-xs font-bold text-slate-500 uppercase">Tipo de cuenta</label>
+    <div class="grid grid-cols-2 gap-2 mt-1">
+      <button type="button" id="accTypeBankBtn" onclick="selectAccType('bank')" class="rounded-xl px-3 py-3 border-2 text-sm font-bold transition ${!a||a.type==='bank'?'border-indigo-400 bg-indigo-50 text-indigo-700':'border-slate-100 bg-white text-slate-500'}">
+        🏦<br><span class="text-xs font-normal">Banco / Digital</span>
+      </button>
+      <button type="button" id="accTypeCashBtn" onclick="selectAccType('cash')" class="rounded-xl px-3 py-3 border-2 text-sm font-bold transition ${a&&a.type==='cash'?'border-indigo-400 bg-indigo-50 text-indigo-700':'border-slate-100 bg-white text-slate-500'}">
+        💵<br><span class="text-xs font-normal">Efectivo</span>
+      </button>
+    </div>
+    <input type="hidden" id="mAccType" value="${a?a.type:'bank'}">
+    </div>
+    <div><label class="text-xs font-bold text-slate-500 uppercase">Balance actual ($)</label>
+    <input type="number" id="mAccBalance" value="${a?a.balance||0:''}" placeholder="0.00" step="0.01" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold text-lg"></div>
+    <div><label class="text-xs font-bold text-slate-500 uppercase">Nota opcional</label>
+    <input type="text" id="mAccNote" value="${a?a.note||'':''}" placeholder="ej. Solo para ahorros, cuenta conjunta..." class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800"></div>
+    <button onclick="saveAccount(${a?`'${id}'`:'null'})" class="w-full btn-primary py-3">${a?'Guardar cambios':'Crear cuenta'}</button>
+    ${a&&!isCash?`<button onclick="deleteAccount('${a.id}')" class="w-full bg-red-50 text-red-500 font-semibold py-2.5 rounded-xl text-sm">Eliminar cuenta</button>`:''}
+    ${isCash?`<p class="text-center text-xs text-slate-400">La cuenta Cash es permanente y no puede eliminarse.</p>`:''}
+  </div>`;
+  }
+  else if(type==='accountDetail') {
+    const a=S.accounts.find(x=>x.id===id); if(!a) return;
+    const reserved=accountReservedAmount(a.id);
+    const avail=accountAvailable(a.id);
+    const pockets=(S.pockets||[]).filter(p=>p.sourceAccountId===a.id);
+    const accIncomes=(S.paychecks||[]).filter(p=>p.received&&p.receivedAccountId===a.id).sort((x,y)=>((y.receivedDate||y.date)>(x.receivedDate||x.date)?1:-1));
+    const accLoans=(S.borrowedLoans||[]).filter(l=>l.addsToLiquidity&&l.receivedAccountId===a.id);
+    const typeLabel={bank:'Banco / Digital',cash:'Efectivo',savings:'Ahorros'};
+    const typeIcon=a.type==='cash'?'💵':'🏦';
+    const accTxs=(S.accountTransactions||[]).filter(t=>t.accountId===a.id).sort((x,y)=>(y.date>x.date?1:-1)).slice(0,8);
+    html=`<div class="flex items-center gap-3 mb-4">
+    <div class="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center flex-shrink-0 text-indigo-500">${renderStoredIcon(a.emoji,a.type==='cash'?'cash':'bank',a.type)||`<span style="font-size:1.5rem">${typeIcon}</span>`}</div>
+    <div class="flex-1 min-w-0">
+      <div class="text-lg font-bold text-slate-800 leading-tight">${a.name}</div>
+      <div class="text-xs text-slate-400 mt-0.5">${typeLabel[a.type]||a.type}${a.permanent?' · Cuenta permanente':''}${a.note?` · ${a.note}`:''}</div>
+    </div>
+  </div>
+  <div class="grid grid-cols-3 gap-2 mb-4">
+    <div class="bg-slate-50 rounded-xl p-3 text-center">
+      <div class="text-[9px] text-slate-400 font-bold uppercase mb-0.5">Balance total</div>
+      <div class="text-sm font-extrabold text-slate-800">${fmt(a.balance||0)}</div>
+    </div>
+    <div class="bg-indigo-50 rounded-xl p-3 text-center">
+      <div class="text-[9px] text-indigo-400 font-bold uppercase mb-0.5">En bolsillos</div>
+      <div class="text-sm font-extrabold text-indigo-600">${fmt(reserved)}</div>
+    </div>
+    <div class="bg-green-50 rounded-xl p-3 text-center">
+      <div class="text-[9px] text-green-500 font-bold uppercase mb-0.5">Disponible</div>
+      <div class="text-sm font-extrabold text-green-600">${fmt(avail)}</div>
+    </div>
+  </div>
+  ${pockets.length?`<div class="text-[10px] font-bold text-indigo-600 uppercase tracking-wide mb-1.5">💼 Bolsillos (${pockets.length})</div>
+  <div class="space-y-1 mb-4">${pockets.map(p=>`<div class="flex justify-between items-center px-3 py-2 bg-indigo-50 rounded-xl">
+    <span class="text-slate-700 font-semibold text-sm">${p.emoji||'💼'} ${p.name}</span>
+    <span class="font-bold text-indigo-600 text-sm">${fmt(p.saved||0)}</span>
+  </div>`).join('')}</div>`:''}
+  ${accLoans.length?`<div class="text-[10px] font-bold text-amber-600 uppercase tracking-wide mb-1.5">🏦 Préstamos recibidos (${accLoans.length})</div>
+  <div class="space-y-1 mb-4">${accLoans.map(l=>`<div class="flex justify-between items-center px-3 py-2 bg-amber-50 rounded-xl">
+    <div class="min-w-0 flex-1">
+      <div class="text-slate-700 font-semibold text-sm truncate">${l.loanName||'Préstamo'}${l.personName?` — ${l.personName}`:''}</div>
+      ${l.receivedDate?`<div class="text-[10px] text-slate-400">${fmtDate(l.receivedDate)}</div>`:''}
+    </div>
+    <span class="font-bold text-amber-600 text-sm ml-2">+${fmt(l.totalAmount||l.amount||0)}</span>
+  </div>`).join('')}</div>`:''}
+  ${accIncomes.length?`<div class="text-[10px] font-bold text-green-600 uppercase tracking-wide mb-1.5">💰 Ingresos recibidos (${accIncomes.length})</div>
+  <div class="space-y-1 mb-4">${accIncomes.slice(0,6).map(p=>`<div class="flex justify-between items-center px-3 py-2 bg-green-50 rounded-xl">
+    <div class="min-w-0 flex-1">
+      <div class="text-slate-700 font-semibold text-sm truncate">${p.note||p.category||'Ingreso'}</div>
+      <div class="text-[10px] text-slate-400">${fmtDate(p.receivedDate||p.date||'')}</div>
+    </div>
+    <span class="font-bold text-green-600 text-sm ml-2">+${fmt(p.amount||0)}</span>
+  </div>`).join('')}${accIncomes.length>6?`<div class="text-center text-xs text-slate-400 pt-1">+${accIncomes.length-6} más</div>`:''}</div>`:''}
+  ${accTxs.length?`<div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">📋 Movimientos recientes</div>
+  <div class="space-y-1 mb-4">${accTxs.map(t=>`<div class="flex justify-between items-center px-3 py-2 bg-slate-50 rounded-xl">
+    <div class="min-w-0 flex-1">
+      <div class="text-slate-700 font-semibold text-sm truncate">${t.label||t.type}</div>
+      <div class="text-[10px] text-slate-400">${fmtDate(t.date)}</div>
+    </div>
+    <span class="font-bold text-sm ml-2 ${t.type==='deposit'?'text-green-600':'text-red-500'}">${t.type==='deposit'?'+':'−'}${fmt(Math.abs(t.amount||0))}</span>
+  </div>`).join('')}</div>`:''}
+  ${!pockets.length&&!accIncomes.length&&!accLoans.length&&!accTxs.length?`<div class="text-sm text-slate-400 text-center py-4 mb-3">Sin actividad registrada en esta cuenta aún.</div>`:''}
+  <button onclick="openModal('editAccount','${a.id}')" class="w-full bg-slate-100 text-slate-600 font-semibold py-3 rounded-xl text-sm">✏️ Editar cuenta</button>`;
+  }
+
   document.getElementById('modalContent').innerHTML=html;
   if(type==='editCustomPlan'||type==='editHousePlan'||type==='addHousePlan') {
     const rows=[..._customPlanItems];
@@ -5065,6 +5778,11 @@ function updatePaycheckPersonFields() {
   if(other&&cat) other.classList.toggle('hidden', cat.value!=='otro');
   if(input&&sel) input.classList.toggle('hidden', sel.value!=='new');
 }
+function updateIncomeMethodFields() {
+  const method=document.getElementById('mMethod')?.value||'deposito';
+  const wrap=document.getElementById('incomeAccountWrap');
+  if(wrap) wrap.classList.toggle('hidden', method==='efectivo');
+}
 
 function updateCalendarNoteFields() {
   const type=document.getElementById('mNoteType');
@@ -5083,7 +5801,7 @@ function ensureIncomeSchedule(seed) {
   let lastDate=(same.length?same[same.length-1].date:seed.date);
   while((S.paychecks||[]).filter(p=>!p.received && paycheckSourceLabel(p)===source).length<8) {
     lastDate=nextPaycheckDate(lastDate, seed.recurrenceFreq, 1);
-    S.paychecks.push({id:uid(),date:lastDate,amount:seed.amount,received:false,category:seed.category,note:seed.note||'',paymentType:seed.paymentType,method:seed.method,recurrenceFreq:seed.recurrenceFreq,recurrenceTerm:seed.recurrenceTerm,recurrenceCount:null,personName:seed.personName||'',sourceName:seed.sourceName||'',emoji:seed.emoji||'brief'});
+    S.paychecks.push({id:uid(),date:lastDate,amount:seed.amount,received:false,category:seed.category,note:seed.note||'',paymentType:seed.paymentType,method:seed.method,targetAccountId:seed.targetAccountId||null,recurrenceFreq:seed.recurrenceFreq,recurrenceTerm:seed.recurrenceTerm,recurrenceCount:null,personName:seed.personName||'',sourceName:seed.sourceName||'',emoji:seed.emoji||'brief'});
   }
 }
 
@@ -5111,6 +5829,7 @@ function savePaycheck(id) {
   const emoji=normalizeIcon(document.getElementById('mEmoji')?.value.trim()||'brief','income');
   const category=document.getElementById('mCat').value, note=document.getElementById('mNote').value.trim();
   const paymentType=document.getElementById('mPayType')?document.getElementById('mPayType').value:'recurrente', method=document.getElementById('mMethod')?document.getElementById('mMethod').value:'deposito';
+  const targetAccountId=method==='deposito'?(document.getElementById('mTargetAccount')?.value||defaultIncomeAccountId()):null;
   const recurrenceFreq=document.getElementById('mRecFreq')?document.getElementById('mRecFreq').value:null;
   const recurrenceTerm=document.getElementById('mRecTerm')?document.getElementById('mRecTerm').value:'indefinite';
   const recurrenceCount=paymentType==='recurrente'&&recurrenceTerm==='term'?(parseInt(document.getElementById('mRecCount').value)||1):null;
@@ -5119,9 +5838,10 @@ function savePaycheck(id) {
   const sourceName=category==='trabajo'?(document.getElementById('mWorkName').value.trim()||'Trabajo'):category==='otro'?(document.getElementById('mOtherName').value.trim()||'Otro'):'';
   if(!date||!amount){showToast('❌ Completa fecha y monto');return;}
   if(category==='persona'&&!personName){showToast('Selecciona o agrega una persona');return;}
-  if(id){const p=S.paychecks.find(x=>x.id===id);if(p){const oldSource=paycheckSourceLabel(p);const shared={amount,category,note,paymentType,method,recurrenceFreq,recurrenceTerm,recurrenceCount,personName,sourceName,emoji};Object.assign(p,{date,...shared});S.paychecks.forEach(x=>{if(x.id!==id&&!x.received&&paycheckSourceLabel(x)===oldSource) Object.assign(x,shared);});ensureIncomeSchedule(p);}}
+  if(category==='persona') ensureDirectoryPerson(personName,'heart');
+  if(id){const p=S.paychecks.find(x=>x.id===id);if(p){const oldSource=paycheckSourceLabel(p);const shared={amount,category,note,paymentType,method,targetAccountId,recurrenceFreq,recurrenceTerm,recurrenceCount,personName,sourceName,emoji};Object.assign(p,{date,...shared});S.paychecks.forEach(x=>{if(x.id!==id&&!x.received&&paycheckSourceLabel(x)===oldSource) Object.assign(x,shared);});ensureIncomeSchedule(p);}}
   else {
-    const base={amount,received:false,category,note,paymentType,method,recurrenceFreq,recurrenceTerm,recurrenceCount,personName,sourceName,emoji};
+    const base={amount,received:false,category,note,paymentType,method,targetAccountId,recurrenceFreq,recurrenceTerm,recurrenceCount,personName,sourceName,emoji};
     if(paymentType==='recurrente'&&recurrenceTerm==='term'&&recurrenceCount>1) {
       const rows=Array.from({length:recurrenceCount},(_,i)=>({id:uid(),date:nextPaycheckDate(date,recurrenceFreq,i),...base}));
       S.paychecks.unshift(...rows);
@@ -5171,10 +5891,13 @@ function saveExpense(id=null) {
 function savePocket(id) {
   const name=document.getElementById('mName').value.trim(), emoji=normalizeIcon(document.getElementById('mEmoji').value.trim()||'💼','pocket');
   const saved=parseFloat(document.getElementById('mSaved').value)||0, target=parseFloat(document.getElementById('mTarget').value)||0;
+  const sourceAccountId=document.getElementById('mPocketAccount')?.value||S.accounts[0]?.id||null;
+  const sourceType=sourceAccountId==='cash'?'cash':'account';
+  const realAccountId=sourceType==='cash'?null:sourceAccountId;
   if(!name){showToast('❌ Escribe un nombre');return;}
   if(saved>availableForPocket(id)){showToast('No hay suficiente balance libre');return;}
-  if(id){const p=S.pockets.find(x=>x.id===id);if(p){const diff=saved-(p.saved||0);Object.assign(p,{name,emoji,saved,target});if(diff) S.pocketTransactions.unshift({id:uid(),pocketId:id,label:'Ajuste manual',amount:diff,date:isoToday(),createdAt:new Date().toISOString()});}}
-  else {const newId=uid();S.pockets.unshift({id:newId,name,emoji,saved,target});if(saved) S.pocketTransactions.unshift({id:uid(),pocketId:newId,label:'Saldo inicial',amount:saved,date:isoToday(),createdAt:new Date().toISOString()});}
+  if(id){const p=S.pockets.find(x=>x.id===id);if(p){const diff=saved-(p.saved||0);Object.assign(p,{name,emoji,saved,target,sourceType,sourceAccountId:realAccountId});if(diff) S.pocketTransactions.unshift({id:uid(),pocketId:id,label:'Ajuste manual',amount:diff,date:isoToday(),createdAt:new Date().toISOString()});}}
+  else {const newId=uid();S.pockets.unshift({id:newId,name,emoji,saved,target,sourceType,sourceAccountId:realAccountId});if(saved) S.pocketTransactions.unshift({id:uid(),pocketId:newId,label:'Saldo inicial',amount:saved,date:isoToday(),createdAt:new Date().toISOString()});}
   setLastAction(); closeModal(); renderCurrentView(); showToast('✅ Bolsillo guardado');
 }
 
@@ -5185,6 +5908,7 @@ function saveLoan(id) {
   const emoji=normalizeIcon(document.getElementById('mEmoji')?.value.trim()||'brief','loan');
   const category=document.getElementById('mCat')?.value||'personal';
   if(!personName||!totalAmount){showToast('❌ Completa los campos');return;}
+  ensureDirectoryPerson(personName,emoji);
   const isRec=document.getElementById('mRecurring').checked;
   let recurring=null;
   if(isRec){
@@ -5205,6 +5929,16 @@ function saveLoan(id) {
     if(source.type==='pocket'){const p=S.pockets.find(x=>x.id===source.id); if(!p||totalAmount>(p.saved||0)){showToast('No hay suficiente dinero en ese bolsillo');return;}}
     adjustSource(source,-totalAmount);
     S.loans.unshift({id:uid(),personName,loanName,totalAmount,note,emoji,category,source,payments:[],recurring,createdAt:new Date().toISOString()});
+    // If this person is connected, send a transaction request
+    const connContact=(S.personContacts||[]).find(c=>c.displayName===personName&&c.connectionStatus==='connected');
+    if(connContact&&connContact.linkedUserId){
+      save(); closeModal(); renderCurrentView();
+      showToast('✅ Préstamo guardado');
+      sendTransactionRequest(personName,'loan_given',totalAmount,loanName||`Préstamo a ${personName}`,{paymentsCount:recurring?.totalPayments||1}).then(sent=>{
+        if(sent) showToast(`📨 Solicitud enviada a ${connContact.linkedDisplayName||personName}. Debe aceptarla para reflejarse en su cuenta.`);
+      });
+      return;
+    }
   }
   save(); closeModal(); renderCurrentView(); showToast('✅ Préstamo guardado');
 }
@@ -5228,6 +5962,45 @@ function updateBorrowedTypeFields() {
   const wrap=document.getElementById('borrowedRecurringWrap');
   if(wrap) wrap.classList.toggle('hidden', isOnce);
 }
+function updateBorrowedLiquidityUI() {
+  const isHave=document.getElementById('mStillHave')?.checked;
+  const wrap=document.getElementById('borrowedAccountWrap');
+  if(wrap) wrap.classList.toggle('hidden',!isHave);
+  // Enable save button once selection is made
+  const btn=document.getElementById('mSaveBorrowedBtn');
+  if(btn) { btn.disabled=false; btn.classList.remove('opacity-40','cursor-not-allowed'); }
+  // Visual active state for cards
+  const noCard=document.getElementById('mLiqCardNo'), yesCard=document.getElementById('mLiqCardYes');
+  if(noCard&&yesCard) {
+    const spent=document.getElementById('mAlreadySpent')?.checked;
+    noCard.classList.toggle('border-indigo-400',!!spent); noCard.classList.toggle('bg-indigo-50',!!spent);
+    noCard.classList.toggle('border-slate-100',!spent); noCard.classList.toggle('bg-white',!spent);
+    yesCard.classList.toggle('border-indigo-400',!!isHave); yesCard.classList.toggle('bg-indigo-50',!!isHave);
+    yesCard.classList.toggle('border-slate-100',!isHave); yesCard.classList.toggle('bg-white',!isHave);
+  }
+}
+function selectBorrowedLiq(choice) {
+  const isHave=choice==='yes';
+  const spent=document.getElementById('mAlreadySpent');
+  const have=document.getElementById('mStillHave');
+  if(spent) spent.value=isHave?'no':'yes';
+  if(have) have.value=isHave?'yes':'no';
+  const wrap=document.getElementById('borrowedAccountWrap');
+  if(wrap) wrap.classList.toggle('hidden',!isHave);
+  const btn=document.getElementById('mSaveBorrowedBtn');
+  if(btn) { btn.disabled=false; btn.classList.remove('opacity-40','cursor-not-allowed'); }
+  const noCard=document.getElementById('mLiqCardNo'), yesCard=document.getElementById('mLiqCardYes');
+  if(noCard) { noCard.className=`rounded-xl px-4 py-3 border-2 text-left transition ${!isHave?'border-indigo-400 bg-indigo-50':'border-slate-100 bg-white'}`; }
+  if(yesCard) { yesCard.className=`rounded-xl px-4 py-3 border-2 text-left transition ${isHave?'border-indigo-400 bg-indigo-50':'border-slate-100 bg-white'}`; }
+}
+function selectAccType(type) {
+  document.getElementById('mAccType').value=type;
+  const bk=document.getElementById('accTypeBankBtn'), cs=document.getElementById('accTypeCashBtn');
+  if(bk&&cs) {
+    bk.className=`rounded-xl px-3 py-3 border-2 text-sm font-bold transition ${type==='bank'?'border-indigo-400 bg-indigo-50 text-indigo-700':'border-slate-100 bg-white text-slate-500'}`;
+    cs.className=`rounded-xl px-3 py-3 border-2 text-sm font-bold transition ${type==='cash'?'border-indigo-400 bg-indigo-50 text-indigo-700':'border-slate-100 bg-white text-slate-500'}`;
+  }
+}
 function saveBorrowedLoan(id=null) {
   const personName=document.getElementById('mName').value.trim(), amount=parseFloat(document.getElementById('mAmount').value), dueDate=document.getElementById('mDate').value;
   const loanName=document.getElementById('mLoanName')?.value.trim()||'';
@@ -5239,17 +6012,45 @@ function saveBorrowedLoan(id=null) {
   const frequency=isOnce?'once':(document.getElementById('mFreq')?.value||'monthly');
   const perPayment=amount/paymentsCount;
   if(!personName||!amount||!dueDate){showToast('Completa persona, monto y fecha');return;}
+  ensureDirectoryPerson(personName,emoji);
+  const stillHaveVal=document.getElementById('mStillHave')?.value;
+  if(!stillHaveVal&&!id){showToast('Selecciona si todavía tienes el dinero');return;}
+  const addsToLiquidity=stillHaveVal==='yes';
+  const alreadySpent=!addsToLiquidity;
+  const receivedAccountId=addsToLiquidity?(document.getElementById('mReceivedAccount')?.value||null):null;
   const existing=id?S.borrowedLoans.find(x=>x.id===id):null;
+  const prevLiquidity=existing?existing.addsToLiquidity:false;
+  const prevAccountId=existing?existing.receivedAccountId:null;
+  const prevAmount=existing?existing.totalAmount:0;
+  // Adjust accounts: undo previous, apply new
+  if(existing && prevLiquidity && prevAccountId) {
+    adjustAccountBalance(prevAccountId, -prevAmount);
+  }
+  if(addsToLiquidity && receivedAccountId) {
+    adjustAccountBalance(receivedAccountId, amount);
+  }
   const previousPaid=existing?borrowedInstallments(existing).filter(p=>p.paid):[];
   if(existing && previousPaid.length && !confirm('Se recalculará el plan de pagos. Intentaré conservar las cuotas ya pagadas por número de pago. ¿Continuar?')) return;
   const installments=Array.from({length:paymentsCount},(_,i)=>{
     const prev=previousPaid.find(p=>p.number===i+1);
     return {id:prev?.id||uid(),number:i+1,amount:perPayment,date:nextDateByFrequency(dueDate,frequency,i),paid:!!prev,paidDate:prev?.paidDate||null,paidAt:prev?.paidAt||null,createdAt:prev?.createdAt||new Date().toISOString()};
   });
-  const payload={personName,loanName,totalAmount:amount,amount,dueDate,startDate:dueDate,description,emoji,category,paymentsCount,frequency,perPayment,installments,paid:installments.every(p=>p.paid),createdDate:existing?.createdDate||isoToday(),createdAt:existing?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+  const payload={personName,loanName,totalAmount:amount,amount,dueDate,startDate:dueDate,description,emoji,category,paymentsCount,frequency,perPayment,installments,paid:installments.every(p=>p.paid),addsToLiquidity,alreadySpent,receivedAccountId,receivedDate:addsToLiquidity?(existing?.receivedDate||isoToday()):null,createdDate:existing?.createdDate||isoToday(),createdAt:existing?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
   if(existing) Object.assign(existing,payload);
   else S.borrowedLoans.unshift({id:uid(),...payload});
-  setLastAction(); closeModal(); renderCurrentView(); showToast('Préstamo recibido guardado');
+  setLastAction();
+  // If this person is connected, send a transaction request (they registered they gave me a loan)
+  if(!existing){
+    const connContact=(S.personContacts||[]).find(c=>c.displayName===personName&&c.connectionStatus==='connected');
+    if(connContact&&connContact.linkedUserId){
+      closeModal(); renderCurrentView(); showToast('Préstamo recibido guardado');
+      sendTransactionRequest(personName,'loan_received',amount,description||`Préstamo recibido de ${personName}`,{paymentsCount}).then(sent=>{
+        if(sent) showToast(`📨 Solicitud enviada a ${connContact.linkedDisplayName||personName}. Debe aceptar para reflejarse en su cuenta.`);
+      });
+      return;
+    }
+  }
+  closeModal(); renderCurrentView(); showToast('Préstamo recibido guardado');
 }
 
 function saveIncomeCategory() {
@@ -5321,13 +6122,746 @@ function saveCustomPlan(id=null) {
 }
 
 // ═══════════════════════════════════════
+// CUENTAS
+// ═══════════════════════════════════════
+function renderAccounts() {
+  const accs=activeAccounts();
+  const totalBal=totalAccountsBalance();
+  const totalPkt=totalPockets();
+  const libre=freeBalance();
+  let html=`<div class="grid grid-cols-3 gap-2 mb-4">
+    <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">Total cuentas</div><div class="text-lg font-extrabold text-slate-800">${fmt(totalBal)}</div></div>
+    <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">En bolsillos</div><div class="text-lg font-extrabold text-indigo-600">${fmt(totalPkt)}</div></div>
+    <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">Disponible</div><div class="text-lg font-extrabold text-green-600">${fmt(libre)}</div></div>
+  </div>
+  <div class="flex justify-between items-center mb-3">
+    <div class="font-bold text-indigo-700 text-xs uppercase tracking-wide">Mis cuentas</div>
+    <button onclick="openModal('addAccount')" class="btn-primary text-xs px-3 py-1.5">+ Cuenta</button>
+  </div>`;
+  const typeLabel={bank:'Banco',cash:'Efectivo',savings:'Ahorros'};
+  const typeColor={bank:'bg-indigo-50 text-indigo-600',cash:'bg-green-50 text-green-600',savings:'bg-amber-50 text-amber-600'};
+  if(!accs.length) {
+    html+=`<div class="card p-5 text-center text-indigo-300 text-sm">Sin cuentas. Agrega tu primera cuenta bancaria.</div>`;
+  } else {
+    accs.forEach(a=>{
+      const reserved=accountReservedAmount(a.id);
+      const avail=accountAvailable(a.id);
+      const pockets=(S.pockets||[]).filter(p=>p.sourceAccountId===a.id);
+      html+=`<div onclick="openModal('accountDetail','${a.id}')" class="card p-4 mb-3 cursor-pointer active:scale-[.99] transition">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl ${typeColor[a.type]||'bg-indigo-50 text-indigo-600'} flex items-center justify-center text-2xl">${a.emoji||'🏦'}</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2"><span class="font-bold text-slate-800">${a.name}</span><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${typeColor[a.type]||''}">${typeLabel[a.type]||a.type}</span></div>
+            <div class="text-xs text-slate-400 mt-0.5">${pockets.length} bolsillo${pockets.length!==1?'s':''} · Reservado ${fmt(reserved)}</div>
+          </div>
+          <div class="text-right">
+            <div class="font-extrabold text-slate-800 text-lg">${fmt(a.balance||0)}</div>
+            <div class="text-xs text-green-600 font-semibold">Disponible ${fmt(avail)}</div>
+          </div>
+        </div>
+        ${pockets.length?`<div class="mt-3 pt-3 border-t border-slate-50 space-y-1">${pockets.map(p=>`<div class="flex justify-between text-xs"><span class="text-slate-500">${p.emoji||'💼'} ${p.name}</span><span class="text-indigo-600 font-semibold">${fmt(p.saved||0)}</span></div>`).join('')}</div>`:''}
+      </div>`;
+    });
+  }
+  document.getElementById('cuentasContent').innerHTML=html;
+}
+
+function saveAccount(id=null) {
+  const rawName=document.getElementById('mAccName').value.trim();
+  const type=document.getElementById('mAccType').value||'bank';
+  const balance=parseFloat(document.getElementById('mAccBalance').value)||0;
+  const emoji=normalizeIcon(document.getElementById('mEmoji')?.value||'bank','finance');
+  const note=document.getElementById('mAccNote')?.value.trim()||'';
+  const isCash=id==='cash_account';
+  const name=isCash?'Cash':(rawName||'');
+  if(!name){showToast('Escribe el nombre de la cuenta');return;}
+  if(id){
+    const a=S.accounts.find(x=>x.id===id);
+    if(a){
+      a.note=note; a.balance=balance;
+      if(!isCash){a.name=name;a.type=type;a.emoji=emoji;}
+    }
+  } else {
+    S.accounts.push({id:uid(),name,type,balance,emoji,note,active:true,createdAt:new Date().toISOString()});
+  }
+  syncBankBalanceFromAccounts();
+  save(); closeModal(); renderCurrentView(); updateHeaderBalance(); showToast(id?'Cuenta actualizada':'Cuenta creada');
+}
+
+function deleteAccount(id) {
+  if(id==='cash_account'){showToast('La cuenta Cash no puede eliminarse');return;}
+  if(!confirm('¿Eliminar esta cuenta? Los bolsillos vinculados se moverán a Cash.')) return;
+  S.accounts=S.accounts.filter(x=>x.id!==id);
+  S.pockets.forEach(p=>{if(p.sourceAccountId===id){p.sourceAccountId='cash_account';}});
+  syncBankBalanceFromAccounts();
+  save(); closeModal(); renderCurrentView(); updateHeaderBalance(); showToast('Cuenta eliminada');
+}
+
+async function validateOptionalConnectionPin(pin) {
+  const clean=(pin||'').trim().toUpperCase();
+  if(!clean) return {ok:true,found:null,pin:''};
+  if(clean.length!==6){showToast('El PIN debe tener 6 caracteres');return {ok:false};}
+  if(!supabase||!CURRENT_USER){showToast('Necesitas estar conectado a internet para validar el PIN');return {ok:false};}
+  const found=await lookupPin(clean);
+  if(!found){showToast('No encontramos un usuario con ese PIN. Revisa el código e inténtalo de nuevo.');return {ok:false};}
+  if(found.user_id===CURRENT_USER.id){showToast('No puedes conectarte contigo mismo.');return {ok:false};}
+  return {ok:true,found,pin:clean};
+}
+
+async function savePersona(encodedOldName) {
+  const oldName=decodeURIComponent(encodedOldName||'');
+  const newName=(document.getElementById('mPersonaName')?.value||'').trim();
+  if(!newName){showToast('Escribe el nombre');return;}
+  const emoji=document.getElementById('mEmoji')?.value||'brief';
+  const pinCheck=await validateOptionalConnectionPin(document.getElementById('mConnectPin')?.value||'');
+  if(!pinCheck.ok) return;
+  if(!S.personaProfiles) S.personaProfiles=[];
+  let prof=S.personaProfiles.find(x=>x.personName===oldName);
+  if(prof){prof.personName=newName;prof.emoji=emoji;prof.isArchived=false;prof.updatedAt=new Date().toISOString();}
+  else S.personaProfiles.push({personName:newName,emoji,createdAt:new Date().toISOString()});
+  // Update personContact displayName if exists
+  const contact=(S.personContacts||[]).find(c=>c.displayName===oldName);
+  if(contact){
+    contact.displayName=newName;
+    contact.matchName=newName.trim().toLowerCase();
+    contact.phone=document.getElementById('mPersonaPhone')?.value.trim()||contact.phone||'';
+    contact.email=document.getElementById('mPersonaEmail')?.value.trim()||contact.email||'';
+    contact.isArchived=false;
+    contact.updatedAt=new Date().toISOString();
+  }
+  if(newName!==oldName){
+    (S.loans||[]).forEach(l=>{if(l.personName===oldName)l.personName=newName;});
+    (S.borrowedLoans||[]).forEach(l=>{if(l.personName===oldName)l.personName=newName;});
+    (S.paychecks||[]).forEach(p=>{if(p.personName===oldName)p.personName=newName;});
+  }
+  save();
+  if(pinCheck.found){
+    await sendConnectionRequest(newName, contact?.id||'', pinCheck.found.user_id, pinCheck.found.display_name, pinCheck.pin);
+    return;
+  }
+  closeModal();renderCurrentView();showToast('Perfil actualizado ✓');
+}
+
+async function saveNewPersonContact() {
+  const name=(document.getElementById('mPersonaName')?.value||'').trim();
+  if(!name){showToast('Escribe el nombre');return;}
+  // Check duplicate
+  if((S.personContacts||[]).some(c=>!c.isArchived&&c.displayName.toLowerCase()===name.toLowerCase())){
+    showToast('Ya existe un contacto con ese nombre');return;
+  }
+  const pinCheck=await validateOptionalConnectionPin(document.getElementById('mConnectPin')?.value||'');
+  if(!pinCheck.ok) return;
+  const phone=document.getElementById('mPersonaPhone')?.value.trim()||'';
+  const email=document.getElementById('mPersonaEmail')?.value.trim()||'';
+  const notes=document.getElementById('mPersonaNotes')?.value.trim()||'';
+  const emoji=document.getElementById('mEmoji')?.value||'brief';
+  if(!S.personContacts) S.personContacts=[];
+  const contact={
+    id:'pc_'+uid(),displayName:name,matchName:name.toLowerCase(),
+    phone,email,notes,emoji,
+    linkedUserId:null,linkedDisplayName:null,
+    connectionStatus:'manual_only',connectionId:null,
+    createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()
+  };
+  S.personContacts.push(contact);
+  // Also add to personaProfiles for icon
+  if(!S.personaProfiles) S.personaProfiles=[];
+  if(!S.personaProfiles.find(x=>x.personName===name))
+    S.personaProfiles.push({personName:name,emoji,createdAt:new Date().toISOString()});
+  save();
+  if(pinCheck.found){
+    await sendConnectionRequest(name, contact.id, pinCheck.found.user_id, pinCheck.found.display_name, pinCheck.pin);
+    return;
+  }
+  closeModal();renderCurrentView();showToast('Persona agregada ✓');
+}
+
+function archivePersona(encodedName) {
+  const name=decodeURIComponent(encodedName||'');
+  if(!name) return;
+  if(!S.personContacts) S.personContacts=[];
+  if(!S.personaProfiles) S.personaProfiles=[];
+  const now=new Date().toISOString();
+  let contact=S.personContacts.find(c=>c.displayName===name);
+  if(contact){contact.isArchived=true;contact.updatedAt=now;}
+  let prof=S.personaProfiles.find(p=>p.personName===name);
+  if(prof){prof.isArchived=true;prof.updatedAt=now;}
+  else S.personaProfiles.push({personName:name,emoji:'brief',isArchived:true,createdAt:now,updatedAt:now});
+  save();closeModal();renderCurrentView();showToast('Persona eliminada del Directorio');
+}
+
+// ═══════════════════════════════════════
+// PIN — sistema de conexión entre usuarios
+// ═══════════════════════════════════════
+function generatePin() {
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let pin='';
+  for(let i=0;i<6;i++) pin+=chars[Math.floor(Math.random()*chars.length)];
+  return pin;
+}
+
+async function ensureUserPin() {
+  if(!supabase||!CURRENT_USER) return;
+  if(S.userPin) {
+    // Just make sure it's registered in Supabase (upsert idempotent)
+    try {
+      await supabase.from('user_pins').upsert(
+        {user_id:CURRENT_USER.id, pin:S.userPin, display_name:S.profileName||CURRENT_USER.email, updated_at:new Date().toISOString()},
+        {onConflict:'user_id'}
+      );
+    } catch(e){ console.warn('ensureUserPin upsert:',e); }
+    return;
+  }
+  // Generate a new PIN, retry up to 5 times on collision
+  for(let attempt=0;attempt<5;attempt++){
+    const pin=generatePin();
+    try {
+      const {error}=await supabase.from('user_pins').insert(
+        {user_id:CURRENT_USER.id, pin, display_name:S.profileName||CURRENT_USER.email}
+      );
+      if(!error){ S.userPin=pin; save(); return; }
+      if(error.code==='23505') continue; // unique violation → retry
+      console.warn('ensureUserPin insert error:',error); break;
+    } catch(e){ console.warn('ensureUserPin:',e); break; }
+  }
+}
+
+async function lookupPin(pin) {
+  if(!supabase||!pin) return null;
+  const cleanPin=pin.trim().toUpperCase();
+  if(cleanPin.length!==6) return null;
+  try {
+    const {data,error}=await supabase.from('user_pins')
+      .select('user_id,display_name').eq('pin',cleanPin).maybeSingle();
+    if(error||!data) return null;
+    return data; // {user_id, display_name}
+  } catch(e){ return null; }
+}
+
+async function validateAndConnectPin(encodedName, contactId) {
+  const name=decodeURIComponent(encodedName||'');
+  const pinInput=document.getElementById('mConnectPin');
+  if(!pinInput) return;
+  const pin=pinInput.value.trim().toUpperCase();
+  if(pin.length!==6){showToast('El PIN debe tener 6 caracteres');return;}
+  if(!supabase||!CURRENT_USER){showToast('Necesitas estar conectado a internet');return;}
+  // Disable button during lookup
+  const btn=document.querySelector('#mConnectPin+button');
+  if(btn){btn.disabled=true;btn.textContent='Verificando...';}
+  try {
+    const found=await lookupPin(pin);
+    if(!found){
+      showToast('No encontramos ningún usuario con ese PIN. Revisa el código e intenta de nuevo.');
+      if(btn){btn.disabled=false;btn.textContent='Conectar';}
+      return;
+    }
+    if(found.user_id===CURRENT_USER.id){
+      showToast('No puedes conectarte contigo mismo.');
+      if(btn){btn.disabled=false;btn.textContent='Conectar';}
+      return;
+    }
+    // Check if already connected
+    let contact=(S.personContacts||[]).find(c=>c.id===contactId||c.displayName===name);
+    if(contact&&contact.linkedUserId===found.user_id&&contact.connectionStatus==='connected'){
+      showToast('Esta persona ya está conectada.');
+      if(btn){btn.disabled=false;btn.textContent='Conectar';}
+      return;
+    }
+    // All good — send connection request
+    await sendConnectionRequest(name, contactId, found.user_id, found.display_name, pin);
+  } catch(e){
+    console.error('validateAndConnectPin:',e);
+    showToast('Error al verificar el PIN. Intenta de nuevo.');
+    if(btn){btn.disabled=false;btn.textContent='Conectar';}
+  }
+}
+
+async function sendConnectionRequest(personName, contactId, receiverUserId, receiverDisplayName, pinUsed) {
+  if(!supabase||!CURRENT_USER) return;
+  const senderName=S.profileName||CURRENT_USER.email||'Usuario';
+  try {
+    const {data,error}=await supabase.from('persona_connections').insert({
+      sender_user_id:CURRENT_USER.id,
+      receiver_user_id:receiverUserId,
+      sender_person_id:contactId||('nocontact_'+personName),
+      display_name_sender_uses:personName,
+      sender_display_name:senderName,
+      pin_used:pinUsed,
+      status:'pending'
+    }).select('id').single();
+    if(error){showToast('Error al enviar solicitud: '+error.message);return;}
+    // Update local contact status
+    if(!S.personContacts) S.personContacts=[];
+    let contact=S.personContacts.find(c=>c.id===contactId||c.displayName===personName);
+    if(!contact){
+      // Create contact if didn't exist
+      contact={id:'pc_'+uid(),displayName:personName,matchName:personName.toLowerCase(),
+        phone:'',email:'',notes:'',emoji:'brief',linkedUserId:null,linkedDisplayName:null,
+        connectionStatus:'manual_only',connectionId:null,
+        createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+      S.personContacts.push(contact);
+    }
+    contact.connectionStatus='connection_pending';
+    contact.linkedUserId=receiverUserId;
+    contact.linkedDisplayName=receiverDisplayName;
+    contact.connectionId=data.id;
+    contact.updatedAt=new Date().toISOString();
+    save();closeModal();renderCurrentView();
+    showToast(`Solicitud enviada a ${receiverDisplayName}. Esta persona debe aceptarla.`);
+  } catch(e){
+    console.error('sendConnectionRequest:',e);
+    showToast('Error al enviar solicitud.');
+  }
+}
+
+async function cancelConnectionRequest(contactId) {
+  if(!supabase||!CURRENT_USER){showToast('Sin conexión');return;}
+  const contact=(S.personContacts||[]).find(c=>c.id===contactId);
+  if(!contact||!contact.connectionId){showToast('No se encontró la solicitud');return;}
+  try {
+    await supabase.from('persona_connections')
+      .update({status:'cancelled'}).eq('id',contact.connectionId).eq('sender_user_id',CURRENT_USER.id);
+    contact.connectionStatus='manual_only';
+    contact.connectionId=null;
+    contact.linkedUserId=null;
+    contact.linkedDisplayName=null;
+    contact.updatedAt=new Date().toISOString();
+    save();closeModal();renderCurrentView();showToast('Solicitud cancelada');
+  } catch(e){ showToast('Error al cancelar: '+e.message); }
+}
+
+async function respondToConnection(connectionId, accept) {
+  if(!supabase||!CURRENT_USER){showToast('Sin conexión');return;}
+  try {
+    // Load full connection details
+    const {data:conn,error}=await supabase.from('persona_connections')
+      .select('*').eq('id',connectionId).single();
+    if(error||!conn){showToast('Solicitud no encontrada');return;}
+    const newStatus=accept?'accepted':'rejected';
+    // Create a local person_id for receiver if accepted
+    let receiverPersonId=null;
+    if(accept){
+      const senderName=conn.sender_display_name||'Usuario';
+      if(!S.personContacts) S.personContacts=[];
+      // Check if receiver already has this person as contact
+      let existing=S.personContacts.find(c=>c.linkedUserId===conn.sender_user_id);
+      if(!existing){
+        existing=S.personContacts.find(c=>c.displayName.toLowerCase()===senderName.toLowerCase());
+      }
+      if(existing){
+        existing.connectionStatus='connected';
+        existing.linkedUserId=conn.sender_user_id;
+        existing.linkedDisplayName=senderName;
+        existing.connectionId=connectionId;
+        existing.updatedAt=new Date().toISOString();
+        receiverPersonId=existing.id;
+      } else {
+        const newContact={id:'pc_'+uid(),displayName:senderName,matchName:senderName.toLowerCase(),
+          phone:'',email:'',notes:'',emoji:'brief',
+          linkedUserId:conn.sender_user_id,linkedDisplayName:senderName,
+          connectionStatus:'connected',connectionId,
+          createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+        S.personContacts.push(newContact);
+        receiverPersonId=newContact.id;
+        if(!S.personaProfiles) S.personaProfiles=[];
+        if(!S.personaProfiles.find(x=>x.personName===senderName))
+          S.personaProfiles.push({personName:senderName,emoji:'brief',createdAt:new Date().toISOString()});
+      }
+      save();
+    }
+    // Update Supabase row
+    await supabase.from('persona_connections')
+      .update({status:newStatus,receiver_person_id:receiverPersonId,responded_at:new Date().toISOString()})
+      .eq('id',connectionId).eq('receiver_user_id',CURRENT_USER.id);
+    renderCurrentView();
+    closeModal();
+    if(accept) showToast(`Conexión aceptada ✓ Ahora están vinculados.`);
+    else showToast('Solicitud rechazada.');
+    pollInbox();
+  } catch(e){ console.error('respondToConnection:',e); showToast('Error al responder: '+e.message); }
+}
+
+async function respondToTransactionRequest(requestId, accept) {
+  if(!supabase||!CURRENT_USER){showToast('Sin conexión');return;}
+  try {
+    const {data:req,error}=await supabase.from('persona_transaction_requests')
+      .select('*').eq('id',requestId).single();
+    if(error||!req){showToast('Solicitud no encontrada');return;}
+    const newStatus=accept?'accepted':'rejected';
+    const sharedId='stx_'+requestId;
+    if(accept){
+      // Mirror transaction locally
+      const payload=req.payload_json||{};
+      if(req.type==='loan_given'){
+        // Sender gave a loan → I received a borrowed loan
+        S.borrowedLoans=S.borrowedLoans||[];
+        S.borrowedLoans.unshift({
+          id:uid(),personName:req.payload_json?.senderName||'Usuario',
+          loanName:req.description||'Préstamo recibido',
+          totalAmount:req.amount,amount:req.amount,
+          dueDate:req.date||isoToday(),
+          description:req.description||'',
+          frequency:'once',paymentsCount:payload.paymentsCount||1,
+          perPayment:req.amount/(payload.paymentsCount||1),
+          addsToLiquidity:false,alreadySpent:true,
+          receivedAccountId:null,receivedDate:req.date||isoToday(),
+          emoji:'bank',category:'deuda',
+          sharedTransactionId:sharedId,
+          createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()
+        });
+      } else if(req.type==='loan_received'){
+        // Sender received a loan from me → I have a loan they owe me
+        S.loans=S.loans||[];
+        S.loans.unshift({
+          id:uid(),personName:req.payload_json?.senderName||'Usuario',
+          loanName:req.description||'Préstamo',
+          totalAmount:req.amount,note:req.description||'',
+          emoji:'brief',category:'personal',source:{type:'balance',id:null},
+          payments:[],
+          recurring:{freq:'once',amount:req.amount,nextDate:req.date||isoToday(),totalPayments:1},
+          sharedTransactionId:sharedId,
+          createdAt:new Date().toISOString()
+        });
+      }
+      save();
+    }
+    await supabase.from('persona_transaction_requests')
+      .update({status:newStatus,shared_transaction_id:accept?sharedId:null,responded_at:new Date().toISOString()})
+      .eq('id',requestId).eq('receiver_user_id',CURRENT_USER.id);
+    renderCurrentView();closeModal();
+    if(accept) showToast('Solicitud aceptada ✓ La transacción fue registrada.');
+    else showToast('Solicitud rechazada. No se creó ninguna transacción.');
+    pollInbox();
+  } catch(e){ console.error('respondToTransactionRequest:',e); showToast('Error: '+e.message); }
+}
+
+async function sendTransactionRequest(personName, type, amount, description, payloadExtra={}) {
+  if(!supabase||!CURRENT_USER) return false;
+  const contact=(S.personContacts||[]).find(c=>c.displayName===personName&&c.connectionStatus==='connected');
+  if(!contact||!contact.linkedUserId) return false;
+  const senderName=S.profileName||CURRENT_USER.email||'Usuario';
+  try {
+    await supabase.from('persona_transaction_requests').insert({
+      sender_user_id:CURRENT_USER.id,
+      receiver_user_id:contact.linkedUserId,
+      sender_person_id:contact.id,
+      type,amount,description,
+      date:isoToday(),
+      payload_json:{...payloadExtra, senderName},
+      status:'pending'
+    });
+    return true;
+  } catch(e){ console.error('sendTransactionRequest:',e); return false; }
+}
+
+// ═══════════════════════════════════════
+// INBOX — polling y UI
+// ═══════════════════════════════════════
+let _inboxPollInterval=null;
+
+function notificationTimeLabel(dateLike) {
+  if(!dateLike) return 'Hoy';
+  const d=new Date(dateLike), now=new Date();
+  const mins=Math.max(0,Math.floor((now-d)/60000));
+  if(mins<1) return 'Ahora';
+  if(mins<60) return `Hace ${mins} min`;
+  const hrs=Math.floor(mins/60);
+  if(hrs<24) return `Hace ${hrs} h`;
+  return fmtDate(fmtISO(d));
+}
+
+function getTodayPaymentNotification() {
+  const todayKey=isoToday();
+  const rows=getMonthPayments(monthKey(today())).filter(p=>p.date===todayKey&&!p.paid&&p.kind!=='loan');
+  if(!rows.length) return null;
+  return {
+    id:`today-payments:${todayKey}`,type:'daily_payments',priority:3,createdAt:todayKey,
+    title:'Hoy tienes pagos programados',
+    description:`${rows.length} pago${rows.length!==1?'s':''} pendiente${rows.length!==1?'s':''} para hoy`,
+    status:'recordatorio',
+    items:rows.map(p=>({name:p.name,amount:p.amount,meta:catLabel(p.category||'pago')})),
+    actionLabel:'Ver detalles'
+  };
+}
+
+function getTodayTaskNotification() {
+  const todayKey=isoToday();
+  const notes=((S.calendarNotes||{})[todayKey]||[]).filter(n=>!n.done).map(n=>({name:n.text,meta:noteTypeLabel(n.type||'pendiente')}));
+  const lists=(S.shoppingLists||[]).filter(l=>l.date===todayKey&&!l.completed&&(l.items||[]).some(i=>!i.done)).map(l=>({name:`Compras: ${l.title}`,meta:`${(l.items||[]).filter(i=>!i.done).length} pendientes`}));
+  const plans=(S.plans||[]).filter(p=>p.date===todayKey&&!p.completed).map(p=>({name:p.label||'Plan',amount:p.amount||0}));
+  const items=[...notes,...lists,...plans];
+  if(!items.length) return null;
+  return {
+    id:`today-tasks:${todayKey}`,type:'daily_tasks',priority:2,createdAt:todayKey,
+    title:'Hoy tienes tareas programadas',
+    description:`${items.length} tarea${items.length!==1?'s':''} pendiente${items.length!==1?'s':''} para hoy`,
+    status:'recordatorio',items,actionLabel:'Ver detalles'
+  };
+}
+
+function spaceItemsForNotifications() {
+  const rows=[];
+  (S.spaces||[]).forEach(sp=>{
+    const items=sp.id===currentSpaceId?(H.items||[]):((spaceItemsCache||{})[sp.id]||[]);
+    const who=currentHousePerson(sp.id);
+    (items||[]).forEach(item=>rows.push({sp,item,who}));
+  });
+  return rows;
+}
+
+function recentSpaceNotifications() {
+  const cutoff=Date.now()-14*24*60*60*1000;
+  const assigned=spaceItemsForNotifications()
+    .filter(({item,who})=>(item.assignedTo||'both')===who)
+    .filter(({item})=>!item.createdAt||new Date(item.createdAt).getTime()>=cutoff)
+    .map(({sp,item})=>({
+      id:`space-assigned:${sp.id}:${item.id}`,type:'space_assigned',priority:2,createdAt:item.createdAt||item.dueDate||isoToday(),
+      title:'Pago asignado',
+      description:`Te asignaron ${item.name} en ${sp.name||'Espacio'}.`,
+      status:'no_leida',
+      items:[{name:item.name,amount:item.amount||0,meta:sp.name||'Espacio'}]
+    }));
+  const activeSpace=(currentSpaceId&&H&&Array.isArray(H.transactions))?H.transactions:[];
+  const actor=currentActorName();
+  const tx=activeSpace.filter(t=>t.createdAt&&new Date(t.createdAt).getTime()>=cutoff&&t.by!==actor).slice(0,8).map(t=>{
+    const rejected=/no pagar|rechaz/i.test(t.label||'');
+    const confirmed=/abono|confirm/i.test(t.label||'');
+    return {
+      id:`space-tx:${currentSpaceId}:${t.id}`,type:rejected?'space_rejected':confirmed?'space_confirmed':'space_change',
+      priority:rejected?3:2,createdAt:t.createdAt,
+      title:rejected?'Pago rechazado':confirmed?'Pago confirmado':'Cambio en espacio compartido',
+      description:`${t.by||'Alguien'} ${rejected?'rechazó':confirmed?'confirmó':'actualizó'} ${t.label||'un movimiento'}${currentSpaceName?' en '+currentSpaceName:''}.`,
+      status:'no_leida',
+      items:[{name:t.label||'Movimiento',amount:t.amount||0,meta:t.by||''}]
+    };
+  });
+  return [...assigned,...tx];
+}
+
+function buildLocalNotifications() {
+  const archived=S.notificationArchived||{};
+  return [getTodayPaymentNotification(),getTodayTaskNotification(),...recentSpaceNotifications()].filter(Boolean).filter(n=>!archived[n.id])
+    .sort((a,b)=>(b.priority||0)-(a.priority||0)||String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+}
+
+function getLocalNotificationById(id) {
+  return buildLocalNotifications().find(n=>n.id===id)||null;
+}
+
+function markNotificationRead(id, rerender=true) {
+  if(!id) return;
+  if(!S.notificationRead) S.notificationRead={};
+  S.notificationRead[id]=new Date().toISOString();
+  save(); updateNotificationBadge();
+  if(rerender) loadNotificationsContent();
+}
+
+function archiveNotification(id) {
+  if(!id) return;
+  if(!S.notificationArchived) S.notificationArchived={};
+  S.notificationArchived[id]=new Date().toISOString();
+  save(); updateNotificationBadge(); loadNotificationsContent();
+}
+
+function localUnreadNotificationCount() {
+  const read=S.notificationRead||{};
+  return buildLocalNotifications().filter(n=>!read[n.id]).length;
+}
+
+function updateNotificationBadge() {
+  const badge=document.getElementById('notificationBadge');
+  if(!badge) return;
+  const total=(S._pendingConnCount||0)+(S._pendingTxCount||0)+localUnreadNotificationCount();
+  badge.classList.toggle('hidden',total<=0);
+  badge.textContent=total>99?'99+':String(total);
+}
+
+function updateBadges() {
+  const total=(S._pendingConnCount||0)+(S._pendingTxCount||0);
+  const btn=document.getElementById('personasInboxBtn');
+  const cnt=document.getElementById('personasInboxCount');
+  if(btn){ btn.classList.toggle('hidden', total===0); }
+  if(cnt) cnt.textContent=total;
+  updateNotificationBadge();
+}
+
+async function pollInbox() {
+  if(!supabase||!CURRENT_USER) return;
+  try {
+    const [connRes,txRes]=await Promise.all([
+      supabase.from('persona_connections').select('id').eq('receiver_user_id',CURRENT_USER.id).eq('status','pending'),
+      supabase.from('persona_transaction_requests').select('id').eq('receiver_user_id',CURRENT_USER.id).eq('status','pending')
+    ]);
+    const connCount=(connRes.data||[]).length;
+    const txCount=(txRes.data||[]).length;
+    const changed=connCount!==S._pendingConnCount||txCount!==S._pendingTxCount;
+    S._pendingConnCount=connCount; S._pendingTxCount=txCount;
+    if(changed) updateBadges();
+    // Also check if any of our SENT connection requests changed status
+    checkSentConnectionUpdates();
+  } catch(e){ console.warn('pollInbox:',e); }
+}
+
+async function checkSentConnectionUpdates() {
+  if(!supabase||!CURRENT_USER) return;
+  const pendingContacts=(S.personContacts||[]).filter(c=>c.connectionStatus==='connection_pending'&&c.connectionId);
+  if(!pendingContacts.length) return;
+  try {
+    const ids=pendingContacts.map(c=>c.connectionId);
+    const {data}=await supabase.from('persona_connections')
+      .select('id,status,receiver_person_id').in('id',ids);
+    if(!data) return;
+    let changed=false;
+    data.forEach(row=>{
+      const contact=pendingContacts.find(c=>c.connectionId===row.id);
+      if(!contact) return;
+      if(row.status==='accepted'){
+        contact.connectionStatus='connected';
+        contact.updatedAt=new Date().toISOString();
+        changed=true;
+        showToast(`✅ ${contact.displayName} aceptó la solicitud de conexión`);
+      } else if(row.status==='rejected'){
+        contact.connectionStatus='rejected';
+        contact.updatedAt=new Date().toISOString();
+        changed=true;
+        showToast(`${contact.displayName} rechazó la solicitud de conexión`);
+      }
+    });
+    if(changed){ save(); renderCurrentView(); }
+  } catch(e){ console.warn('checkSentConnectionUpdates:',e); }
+}
+
+function startInboxPolling() {
+  if(_inboxPollInterval) clearInterval(_inboxPollInterval);
+  if(!supabase||!CURRENT_USER) return;
+  pollInbox(); // First poll immediately
+  _inboxPollInterval=setInterval(pollInbox, 45000);
+}
+
+function stopInboxPolling() {
+  if(_inboxPollInterval){ clearInterval(_inboxPollInterval); _inboxPollInterval=null; }
+}
+
+async function loadInboxContent() {
+  const el=document.getElementById('inboxContent');
+  if(!el||!supabase||!CURRENT_USER){
+    if(el) el.innerHTML='<p class="text-center text-slate-400 py-4 text-sm">Necesitas estar conectado.</p>';
+    return;
+  }
+  try {
+    const [connRes,txRes]=await Promise.all([
+      supabase.from('persona_connections').select('*').eq('receiver_user_id',CURRENT_USER.id).eq('status','pending').order('created_at',{ascending:false}),
+      supabase.from('persona_transaction_requests').select('*').eq('receiver_user_id',CURRENT_USER.id).eq('status','pending').order('created_at',{ascending:false})
+    ]);
+    const conns=connRes.data||[];
+    const txs=txRes.data||[];
+    if(!conns.length&&!txs.length){
+      el.innerHTML='<div class="text-center py-6 text-slate-400"><div class="text-3xl mb-2">✅</div><div class="font-semibold">Sin solicitudes pendientes</div></div>';
+      return;
+    }
+    let html='';
+    conns.forEach(c=>{
+      const sName=c.sender_display_name||'Un usuario';
+      const personName=c.display_name_sender_uses||'ti';
+      html+=`<div class="bg-indigo-50 rounded-2xl p-4 mb-3">
+        <div class="font-bold text-slate-800 text-sm mb-1">🔗 Solicitud de conexión</div>
+        <div class="text-sm text-slate-600 mb-3"><strong>${sName}</strong> quiere conectarte en su Directorio como <strong>"${personName}"</strong>.</div>
+        <div class="flex gap-2">
+          <button onclick="respondToConnection('${c.id}',true)" class="flex-1 bg-green-600 text-white font-bold py-2 rounded-xl text-sm">✓ Aceptar</button>
+          <button onclick="respondToConnection('${c.id}',false)" class="flex-1 bg-red-50 text-red-500 font-bold py-2 rounded-xl text-sm">✗ Rechazar</button>
+        </div>
+      </div>`;
+    });
+    txs.forEach(t=>{
+      const sName=t.payload_json?.senderName||'Un usuario';
+      const typeLabels={loan_given:`prestó ${fmt(t.amount)}`,loan_received:`registró que le prestaste ${fmt(t.amount)}`,shared_payment:`registró un pago compartido de ${fmt(t.amount)}`};
+      const typeLabel=typeLabels[t.type]||`registró una transacción de ${fmt(t.amount)}`;
+      html+=`<div class="bg-amber-50 rounded-2xl p-4 mb-3">
+        <div class="font-bold text-slate-800 text-sm mb-1">💸 Solicitud de transacción</div>
+        <div class="text-sm text-slate-600 mb-1"><strong>${sName}</strong> ${typeLabel}.</div>
+        ${t.description?`<div class="text-xs text-slate-400 mb-3 italic">"${t.description}"</div>`:'<div class="mb-3"></div>'}
+        <div class="flex gap-2">
+          <button onclick="respondToTransactionRequest('${t.id}',true)" class="flex-1 bg-green-600 text-white font-bold py-2 rounded-xl text-sm">✓ Aceptar</button>
+          <button onclick="respondToTransactionRequest('${t.id}',false)" class="flex-1 bg-red-50 text-red-500 font-bold py-2 rounded-xl text-sm">✗ Rechazar</button>
+        </div>
+      </div>`;
+    });
+    el.innerHTML=html;
+  } catch(e){
+    if(el) el.innerHTML='<p class="text-center text-red-400 py-4 text-sm">Error al cargar solicitudes.</p>';
+    console.error('loadInboxContent:',e);
+  }
+}
+
+async function loadNotificationsContent() {
+  const el=document.getElementById('notificationsContent');
+  if(!el) return;
+  const local=buildLocalNotifications();
+  let conns=[], txs=[];
+  if(supabase&&CURRENT_USER) {
+    try {
+      const [connRes,txRes]=await Promise.all([
+        supabase.from('persona_connections').select('*').eq('receiver_user_id',CURRENT_USER.id).eq('status','pending').order('created_at',{ascending:false}),
+        supabase.from('persona_transaction_requests').select('*').eq('receiver_user_id',CURRENT_USER.id).eq('status','pending').order('created_at',{ascending:false})
+      ]);
+      conns=connRes.data||[];
+      txs=txRes.data||[];
+    } catch(e){ console.error('loadNotificationsContent:',e); }
+  }
+  const read=S.notificationRead||{};
+  let html='';
+  conns.forEach(c=>{
+    const sName=c.sender_display_name||'Un usuario';
+    html+=`<div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-3">
+      <div class="flex justify-between gap-3 mb-1"><div class="font-bold text-slate-800 text-sm">Solicitud de conexión</div><span class="text-[10px] bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">Accionable</span></div>
+      <div class="text-sm text-slate-600 mb-1">${sName} quiere conectarse contigo.</div>
+      <div class="text-[10px] text-slate-400 mb-3">${notificationTimeLabel(c.created_at)}</div>
+      <div class="flex gap-2"><button onclick="respondToConnection('${c.id}',true)" class="flex-1 bg-green-600 text-white font-bold py-2 rounded-xl text-sm">Aceptar</button><button onclick="respondToConnection('${c.id}',false)" class="flex-1 bg-red-50 text-red-500 font-bold py-2 rounded-xl text-sm">Rechazar</button></div>
+    </div>`;
+  });
+  txs.forEach(t=>{
+    const sName=t.payload_json?.senderName||'Un usuario';
+    const typeLabels={loan_given:`te registró un préstamo de ${fmt(t.amount)}`,loan_received:`registró que le prestaste ${fmt(t.amount)}`,shared_payment:`registró un pago compartido de ${fmt(t.amount)}`};
+    html+=`<div class="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-3">
+      <div class="flex justify-between gap-3 mb-1"><div class="font-bold text-slate-800 text-sm">Solicitud financiera</div><span class="text-[10px] bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">Accionable</span></div>
+      <div class="text-sm text-slate-600 mb-1">${sName} ${typeLabels[t.type]||`registró una transacción de ${fmt(t.amount)}`}.</div>
+      ${t.description?`<div class="text-xs text-slate-400 italic mb-1">"${t.description}"</div>`:''}
+      <div class="text-[10px] text-slate-400 mb-3">${notificationTimeLabel(t.created_at)}</div>
+      <div class="flex gap-2"><button onclick="respondToTransactionRequest('${t.id}',true)" class="flex-1 bg-green-600 text-white font-bold py-2 rounded-xl text-sm">Aceptar</button><button onclick="respondToTransactionRequest('${t.id}',false)" class="flex-1 bg-red-50 text-red-500 font-bold py-2 rounded-xl text-sm">Rechazar</button></div>
+    </div>`;
+  });
+  local.forEach(n=>{
+    const isRead=!!read[n.id];
+    html+=`<div class="card p-4 mb-3 ${isRead?'opacity-75':''}">
+      <div class="flex justify-between gap-3 mb-1"><div class="font-bold text-slate-800 text-sm">${n.title}</div><span class="text-[10px] ${isRead?'bg-slate-100 text-slate-500':'bg-red-100 text-red-600'} font-bold px-2 py-0.5 rounded-full">${isRead?'Leída':(n.status==='recordatorio'?'No leída':'No leída')}</span></div>
+      <div class="text-sm text-slate-600 mb-1">${n.description}</div>
+      <div class="text-[10px] text-slate-400 mb-3">${notificationTimeLabel(n.createdAt)}</div>
+      <div class="flex gap-2">
+        ${(n.items||[]).length?`<button onclick="openModal('notificationDetail','${n.id}')" class="flex-1 bg-indigo-50 text-indigo-700 font-bold py-2 rounded-xl text-sm">${n.actionLabel||'Ver detalles'}</button>`:''}
+        ${!isRead?`<button onclick="markNotificationRead('${n.id}')" class="bg-slate-100 text-slate-600 font-bold px-3 rounded-xl text-sm">Marcar leída</button>`:''}
+        <button onclick="archiveNotification('${n.id}')" class="bg-slate-100 text-slate-500 font-bold px-3 rounded-xl text-sm">Eliminar</button>
+      </div>
+    </div>`;
+  });
+  if(!html) html='<div class="text-center py-6 text-slate-400"><div class="text-3xl mb-2">✓</div><div class="font-semibold">Sin notificaciones</div></div>';
+  el.innerHTML=html;
+  updateNotificationBadge();
+}
+
+function copyUserPin() {
+  const pin=S.userPin;
+  if(!pin){showToast('Aún no tienes PIN generado');return;}
+  navigator.clipboard.writeText(pin).then(()=>showToast('PIN copiado: '+pin)).catch(()=>showToast('Tu PIN: '+pin));
+}
+
+// ═══════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════
 function showView(view) {
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+view).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active','text-indigo-600'));
-  const idx={home:0,cheques:1,facturas:2,cal:3,casa:4,personas:undefined,plan:undefined,analysis:undefined,bolsillos:undefined,config:undefined}[view];
+  const idx={home:0,cheques:1,facturas:2,cal:3,casa:4,personas:undefined,plan:undefined,analysis:undefined,bolsillos:undefined,cuentas:undefined,config:undefined}[view];
   const btns=document.querySelectorAll('.nav-btn');
   if(idx!==undefined){btns[idx].classList.add('active','text-indigo-600');}
   currentView=view; updateHeaderTitle(); updateHeaderBalance(); renderCurrentView(); window.scrollTo(0,0);
@@ -5342,7 +6876,9 @@ function openAppMenu() {
     ['casa','Espacios','Espacios compartidos con otras personas'],
     ['plan','Planes','Planes cheque a cheque editables'],
     ['analysis','Análisis mensual','Gráfico de ingresos, egresos y gastos'],
-    ['personas','Personas','Historial de préstamos por persona']
+    ['personas','Directorio','Contactos, préstamos y trabajos'],
+    ['cuentas','Cuentas','Mis cuentas, efectivo y ahorros'],
+    ['bolsillos','Bolsillos','Fondos guardados y metas de ahorro'],
   ];
   document.getElementById('sideMenuItems').innerHTML=items.map(([view,title,desc])=>`<button onclick="closeAppMenu();showView('${view}')" class="w-full bg-white border border-indigo-100 rounded-xl px-3 py-2.5 text-left active:scale-[.99] transition">
       <div class="font-bold text-indigo-700 text-sm">${title}</div>
@@ -5373,12 +6909,23 @@ function renderCurrentView() {
   else if(currentView==='analysis') renderAnalysis();
   else if(currentView==='casa') renderEspacios();
   else if(currentView==='personas') renderPersonas();
+  else if(currentView==='cuentas') renderAccounts();
   else if(currentView==='config'){
     const el=document.getElementById('bankBalanceInput');if(el)el.value=S.bankBalance||'';
     const nameEl=document.getElementById('profileNameInput');if(nameEl)nameEl.value=S.profileName||'';
     decorateMoneyInputs();
     const dmToggle=document.getElementById('darkModeToggle');
     if(dmToggle) dmToggle.checked=document.body.classList.contains('dark');
+    const ns=S.notificationSettings||{};
+    const notifP=document.getElementById('notifPayments'); if(notifP) notifP.checked=!!ns.upcomingPayments;
+    const notifI=document.getElementById('notifIncome'); if(notifI) notifI.checked=!!ns.incomeDue;
+    const notifL=document.getElementById('notifLowBalance'); if(notifL) notifL.checked=!!ns.lowBalance;
+    // Render PIN (async: generate if needed)
+    const pinEl=document.getElementById('pinDisplay');
+    if(pinEl) {
+      if(S.userPin) { pinEl.textContent=S.userPin; }
+      else { pinEl.textContent='——'; ensureUserPin().then(()=>{ const pe=document.getElementById('pinDisplay'); if(pe)pe.textContent=S.userPin||'——'; }); }
+    }
   }
 }
 
@@ -5395,6 +6942,35 @@ function switchTab(tab,btn) {
 function toggleDarkMode(enabled) {
   document.body.classList.toggle('dark', enabled);
   localStorage.setItem('fh_darkMode', enabled ? '1' : '0');
+}
+
+function saveNotificationSettings() {
+  if(!S.notificationSettings) S.notificationSettings={enabled:false,upcomingPayments:false,incomeDue:false,lowBalance:false};
+  S.notificationSettings.upcomingPayments=document.getElementById('notifPayments')?.checked||false;
+  S.notificationSettings.incomeDue=document.getElementById('notifIncome')?.checked||false;
+  S.notificationSettings.lowBalance=document.getElementById('notifLowBalance')?.checked||false;
+  save(); showToast('Preferencias guardadas');
+}
+
+async function requestNotificationPermission() {
+  if(!('Notification' in window)) {
+    showToast('Tu dispositivo no soporta notificaciones web. Instala la app como PWA para mejor experiencia.');
+    return;
+  }
+  try {
+    const permission=await Notification.requestPermission();
+    if(permission==='granted') {
+      if(!S.notificationSettings) S.notificationSettings={enabled:false,upcomingPayments:false,incomeDue:false,lowBalance:false};
+      S.notificationSettings.enabled=true;
+      save();
+      showToast('Notificaciones activadas');
+      new Notification('BearAgenda', {body:'Recordatorios activados correctamente.', icon:'./apple-touch-icon.png'});
+    } else {
+      showToast('Permiso denegado. Actívalos en Configuración del dispositivo.');
+    }
+  } catch(e) {
+    showToast('No fue posible activar notificaciones en este dispositivo.');
+  }
 }
 function loadDarkMode() {
   const dark = localStorage.getItem('fh_darkMode') === '1';
@@ -5526,6 +7102,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       renderHome();
       const wName = S.profileName ? `, ${S.profileName}` : '';
       showToast(`Bienvenido${wName}`);
+      // Ensure PIN exists and start inbox polling
+      ensureUserPin();
+      startInboxPolling();
     } else {
       // sin sesión — mostrar login
       authScreen.classList.remove('auth-loading-active');
@@ -5610,6 +7189,9 @@ async function loginUser() {
     renderCurrentView();
     const wName = S.profileName ? `, ${S.profileName}` : '';
     showToast(`Bienvenido${wName}`);
+    // Ensure PIN exists and start inbox polling
+    ensureUserPin();
+    startInboxPolling();
 
   } catch(e) {
     console.error('loginUser error:', e);
@@ -5618,6 +7200,7 @@ async function loginUser() {
 }
 
 async function logoutUser() {
+  stopInboxPolling();
   // Borrar caché local del usuario actual antes de salir
   try { localStorage.removeItem(userLocalKey()); } catch(e){}
   // Borrar la clave compartida legacy para que el próximo usuario arranque limpio
