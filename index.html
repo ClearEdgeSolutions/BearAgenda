@@ -11,9 +11,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="BearAgenda">
   <!-- Favicon + iOS home screen icon -->
-  <link rel="icon" type="image/png" sizes="32x32" href="./apple-touch-icon.png?v=20260506">
-  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon-180.png?v=20260506">
-  <link rel="apple-touch-icon" sizes="1024x1024" href="./apple-touch-icon.png?v=20260506">
+  <link rel="icon" type="image/png" sizes="32x32" href="./logo-dark-bear.png?v=20260507">
+  <link rel="apple-touch-icon" sizes="180x180" href="./logo-dark-bear.png?v=20260507">
+  <link rel="apple-touch-icon" sizes="1024x1024" href="./logo-dark-bear.png?v=20260507">
   <!-- PWA manifest -->
   <link rel="manifest" href="manifest.json?v=20260506">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -64,7 +64,7 @@
     .month-carousel::-webkit-scrollbar { display:none; }
     .m-active { background:#4f46e5; color:white; font-size:14px; font-weight:800; padding:8px 20px; border-radius:12px; white-space:nowrap; scroll-snap-align:center; flex-shrink:0; border:none; }
     .m-inactive { background:white; color:#6366f1; font-size:11px; font-weight:700; padding:7px 14px; border-radius:10px; white-space:nowrap; scroll-snap-align:center; flex-shrink:0; border:1px solid #e0e7ff; }
-    .header-title { position:absolute; left:50%; right:auto; transform:translateX(-50%); width:min(52vw,220px); text-align:center; pointer-events:none; }
+    .header-title { font-size:15px; font-weight:800; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:calc(100vw - 170px); }
     .module-title-inline { display:none !important; }
     .origin-badge { display:inline-flex; align-items:center; gap:3px; border-radius:999px; padding:2px 7px; font-size:10px; font-weight:800; background:#eef2ff; color:#4f46e5; border:1px solid #c7d2fe; }
     .shopping-item-input { outline:none; background:transparent; width:100%; }
@@ -77,9 +77,9 @@
     main { padding-top:4rem !important; }
     main .view > div { padding-top:.75rem !important; }
     @media (max-width:390px) {
-      .header-title { left:50%; right:auto; transform:translateX(-50%); width:48vw; font-size:14px; }
-      #headerBalanceWrap { max-width:74px; }
-      #headerBalance { font-size:14px; }
+      .header-title { font-size:13px; max-width:calc(100vw - 160px); }
+      #headerBalanceWrap { max-width:68px; }
+      #headerBalance { font-size:13px; }
       #headerBalanceLabel { font-size:8px; }
     }
     @media (max-width:640px) {
@@ -182,20 +182,20 @@
 </head>
 <body class="min-h-screen select-none">
 
-<header class="fixed top-0 left-0 right-0 z-40 bg-white border-b border-indigo-100" style="box-shadow:0 2px 12px rgba(79,70,229,0.07)">
-  <div class="px-4 h-16 flex items-center justify-between">
-    <div class="flex items-center gap-2 w-14">
-      <button onclick="openAppMenu()" class="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-500">
-        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm1 4a1 1 0 100 2h12a1 1 0 100-2H4z"/></svg>
+<header class="fixed top-0 left-0 right-0 z-40" style="background:linear-gradient(135deg,#4f46e5,#7c3aed);box-shadow:0 2px 16px rgba(79,70,229,0.25)">
+  <div class="px-3 h-16 flex items-center justify-between gap-2">
+    <div class="flex items-center gap-2 min-w-0 flex-1">
+      <button onclick="openAppMenu()" class="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0" style="min-width:40px;background:rgba(255,255,255,0.15)">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm1 4a1 1 0 100 2h12a1 1 0 100-2H4z"/></svg>
       </button>
+      <div id="headerTitle" class="header-title">Inicio</div>
     </div>
-    <div id="headerTitle" class="header-title text-base font-extrabold text-slate-800 truncate">Inicio</div>
-    <div class="flex items-center gap-3 h-full">
+    <div class="flex items-center gap-2 h-full shrink-0">
       <div id="headerBalanceWrap" class="flex flex-col items-end gap-0.5">
         <div id="headerBalanceLabel" class="hidden"></div>
-        <div id="headerBalance" class="text-lg font-bold leading-none text-indigo-600">$0</div>
+        <div id="headerBalance" class="text-lg font-bold leading-none text-white">$0</div>
       </div>
-      <button id="notificationBellBtn" onclick="openModal('notificationsPanel')" class="relative w-9 h-9 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0" aria-label="Notificaciones">
+      <button id="notificationBellBtn" onclick="openModal('notificationsPanel')" class="relative w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-white" style="background:rgba(255,255,255,0.15)" aria-label="Notificaciones">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
         <span id="notificationBadge" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-extrabold leading-[18px] text-center"></span>
       </button>
@@ -205,6 +205,16 @@
     </div>
   </div>
 </header>
+
+<div id="pullRefreshBar" style="position:fixed;top:64px;left:0;right:0;z-index:35;display:flex;align-items:center;justify-content:center;height:50px;background:linear-gradient(135deg,#4f46e5,#7c3aed);transform:translateY(-100%);transition:transform 0.18s ease;pointer-events:none;will-change:transform">
+  <div style="display:flex;align-items:center;gap:8px;color:white">
+    <svg id="pullRefreshArrow" style="width:18px;height:18px;transition:transform 0.2s;flex-shrink:0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+    </svg>
+    <span id="pullRefreshLabel" style="font-size:12px;font-weight:700">Desliza para actualizar</span>
+  </div>
+</div>
+
 <div id="authScreen" class="fixed inset-0 z-[999] flex items-center justify-center px-5" style="background:#fff">
 
   <!-- Pantalla de carga (visible mientras verifica sesión) -->
@@ -230,9 +240,12 @@
       <input id="authEmail" type="email" placeholder="Correo electrónico" autocomplete="email"
         class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 bg-slate-50"
         style="outline:none" onkeydown="if(event.key==='Enter')document.getElementById('authPassword').focus()">
-      <input id="authPassword" type="password" placeholder="Contraseña" autocomplete="current-password"
-        class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 bg-slate-50"
-        style="outline:none" onkeydown="if(event.key==='Enter')loginUser()">
+      <div class="relative">
+        <input id="authPassword" type="password" placeholder="Contraseña" autocomplete="current-password"
+          class="w-full border border-slate-200 rounded-xl px-4 py-3 pr-11 text-sm text-slate-800 bg-slate-50"
+          style="outline:none" onkeydown="if(event.key==='Enter')loginUser()">
+        <button type="button" id="authPasswordToggle" onclick="(function(){const i=document.getElementById('authPassword'),b=document.getElementById('authPasswordToggle');if(i.type==='password'){i.type='text';b.textContent='🙈';}else{i.type='password';b.textContent='👁';}})()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg leading-none">👁</button>
+      </div>
       <button onclick="loginUser()" id="loginBtn"
         class="w-full py-3 rounded-xl font-bold text-white text-sm"
         style="background:linear-gradient(135deg,#6366f1,#4f46e5)">
@@ -358,16 +371,7 @@
           onchange="updateProfileName(this.value)">
         <p class="text-xs text-slate-400 mt-2">Este nombre aparece al iniciar sesión y en los movimientos de Casa.</p>
       </div>
-      <div class="card p-4">
-        <h3 class="font-semibold text-indigo-700 mb-3">Balance actual en banco</h3>
-        <div class="flex gap-2 items-center">
-          <span class="text-slate-400 font-medium">$</span>
-          <input type="number" id="bankBalanceInput" placeholder="0.00" step="0.01"
-            class="flex-1 border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2 text-slate-800 font-semibold text-lg focus:border-indigo-300"
-            onchange="updateBankBalance(this.value)">
-        </div>
-        <p class="text-xs text-slate-400 mt-2">Actualiza cada vez que revises tu banco. El balance libre se calcula restando los bolsillos.</p>
-      </div>
+
       <div class="card p-4">
         <h3 class="font-semibold text-indigo-700 mb-3">Apariencia</h3>
         <div class="flex items-center justify-between">
@@ -2269,26 +2273,49 @@ function renderHome() {
   </div>
 
   <div class="grid grid-cols-3 gap-2">
-    <div onclick="showView('cuentas')" class="bg-gradient-to-br from-indigo-50 via-violet-50 to-blue-50 border border-indigo-100 rounded-2xl p-4 cursor-pointer active:scale-[.98] transition" style="box-shadow:0 4px 20px rgba(99,102,241,0.10)">
-      <div class="text-indigo-400 text-[10px] font-bold uppercase tracking-wide">Balance</div>
-      <div class="text-xl font-extrabold leading-tight ${bal>=0?'text-indigo-700':'text-red-500'}">${bal<0?'-':''}${fmt(Math.abs(bal))}</div>
-      <div class="text-[11px] text-slate-400 truncate">${fmt(pkt)} bolsillos</div>
+    <div onclick="currentTab='prestamos';showView('facturas')" class="bg-gradient-to-br from-blue-50 via-indigo-50 to-violet-50 border border-blue-100 rounded-2xl p-4 cursor-pointer active:scale-[.98] transition" style="box-shadow:0 4px 20px rgba(99,102,241,0.12)">
+      <div class="text-blue-500 text-[10px] font-bold uppercase tracking-wide">Me deben</div>
+      <div class="text-xl font-extrabold leading-tight text-blue-700">${fmt(owedToMe)}</div>
+      <div class="text-[11px] text-blue-400 truncate">${S.loans.length} persona${S.loans.length!==1?'s':''}</div>
     </div>
     <div onclick="currentTab='monthly';showView('facturas')" class="card p-4 cursor-pointer active:scale-[.98] transition">
-      <div class="text-indigo-400 text-[10px] font-bold uppercase tracking-wide">Pagar 14 días</div>
+      <div class="text-indigo-400 text-[10px] font-bold uppercase tracking-wide">Pagar 14d</div>
       <div class="text-xl font-extrabold leading-tight text-red-500">${fmt(pay14)}</div>
       <div class="text-[11px] text-slate-400 truncate">${upcoming.filter(x=>['bill','onetime','expense','borrowed','house'].includes(x.type)).length} pagos</div>
     </div>
-    <div onclick="currentTab='prestamos';showView('facturas')" class="card p-4 cursor-pointer active:scale-[.98] transition">
-      <div class="text-indigo-400 text-[10px] font-bold uppercase tracking-wide">Me deben</div>
-      <div class="text-xl font-extrabold leading-tight text-green-600">${fmt(owedToMe)}</div>
-      <div class="text-[11px] text-slate-400 truncate">${S.loans.length} personas</div>
+    <div onclick="showView('cuentas')" class="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 border border-green-100 rounded-2xl p-4 cursor-pointer active:scale-[.98] transition" style="box-shadow:0 4px 20px rgba(16,185,129,0.10)">
+      <div class="text-green-500 text-[10px] font-bold uppercase tracking-wide">Balance Total</div>
+      <div class="text-lg font-extrabold leading-tight ${totalAccountsBalance()>=0?'text-green-700':'text-red-500'}">${totalAccountsBalance()<0?'-':''}${fmt(Math.abs(totalAccountsBalance()))}</div>
+      <div class="flex flex-col gap-0.5 mt-0.5">
+        <div class="text-[10px] text-green-500 font-semibold">💵 ${fmt(totalCashBalance())}</div>
+        <div class="text-[10px] text-green-500 font-semibold">🏦 ${fmt(totalBankBalance())}</div>
+      </div>
     </div>
   </div>
 
   ${S.lastActionTime?`<div class="text-[11px] text-indigo-400 font-semibold">Actualizado ${fmtActionTime(S.lastActionTime)}</div>`:''}
 
   ${lastUndoAction?`<div class="card p-3 flex items-center justify-between border border-amber-100 bg-amber-50"><div><div class="text-sm font-bold text-amber-700">Última acción</div><div class="text-xs text-amber-600">${lastUndoAction.label}</div></div><button onclick="undoLastAction()" class="bg-white text-amber-700 border border-amber-200 text-xs font-bold px-3 py-2 rounded-xl">Deshacer</button></div>`:''}
+
+  ${(()=>{
+    const pendingLoans=(S.loans||[]).filter(l=>l.pendingTxId);
+    const pendingBorrowed=(S.borrowedLoans||[]).filter(l=>l.pendingTxId);
+    if(!pendingLoans.length&&!pendingBorrowed.length) return '';
+    const rows=[
+      ...pendingLoans.map(l=>`<div class="flex items-center justify-between py-2 border-t border-amber-50 first:border-0">
+        <div class="min-w-0"><div class="text-sm font-semibold text-slate-700 truncate">Presté a ${l.personName}</div><div class="text-xs text-amber-600">⏳ Esperando confirmación</div></div>
+        <div class="font-bold text-slate-700 ml-2">${fmt(l.totalAmount||0)}</div>
+      </div>`),
+      ...pendingBorrowed.map(l=>`<div class="flex items-center justify-between py-2 border-t border-amber-50 first:border-0">
+        <div class="min-w-0"><div class="text-sm font-semibold text-slate-700 truncate">${l.personName} me prestó</div><div class="text-xs text-amber-600">⏳ Esperando confirmación</div></div>
+        <div class="font-bold text-slate-700 ml-2">${fmt(l.totalAmount||l.amount||0)}</div>
+      </div>`)
+    ];
+    return `<div class="card p-4 border border-amber-100 bg-amber-50">
+      <div class="text-[10px] font-bold text-amber-600 uppercase tracking-wide mb-2">Préstamos pendientes de aprobación</div>
+      ${rows.join('')}
+    </div>`;
+  })()}
 
   <div class="card p-4">
     <div class="flex justify-between items-center mb-2">
@@ -2460,7 +2487,7 @@ function renderChecks() {
   </div>`;
 
   if(incomeTab==='active') {
-    // Activos: fuentes de ingreso con pagos FUTUROS pendientes
+    // Activos: todas las fuentes de ingreso que siguen vigentes (tienen pagos pendientes sin importar el mes)
     const activeGroups=Object.entries(groups).filter(([cat,items])=>items.some(p=>!p.received&&!p.inactive)).sort(([a],[b])=>a.localeCompare(b));
     html+=`<div class="font-bold text-indigo-700 text-xs uppercase tracking-wide mb-2">Fuentes de ingreso activas</div>`;
     if(!activeGroups.length) html+=`<div class="card p-4 text-center text-indigo-300 text-sm">Sin fuentes de ingreso activas. Agrega un ingreso para empezar.</div>`;
@@ -2483,10 +2510,12 @@ function renderChecks() {
       </button>`;
     });
   } else if(incomeTab==='pending') {
-    html+=`<div class="font-bold text-indigo-700 text-xs uppercase tracking-wide mb-2">Por recibir</div>`;
-    const pending=(S.paychecks||[]).filter(p=>!p.received&&!p.inactive).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
+    const [py,pm]=incomeMonth.split('-').map(Number);
+    const monthLabel=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][pm-1];
+    html+=`<div class="font-bold text-indigo-700 text-xs uppercase tracking-wide mb-2">Por recibir en ${monthLabel} ${py}</div>`;
+    const pending=(S.paychecks||[]).filter(p=>!p.received&&!p.inactive&&monthKey(parseDate(p.date))===incomeMonth).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
     html+=pending.length?pending.map(p=>incomeRow(p,false,true)).join(''):
-      `<div class="card p-4 text-center text-indigo-300 text-sm">Sin ingresos programados pendientes.</div>`;
+      `<div class="card p-4 text-center text-indigo-300 text-sm">Sin ingresos programados para ${monthLabel} ${py}.</div>`;
   } else if(incomeTab==='received') {
     html+=`<div class="font-bold text-indigo-700 text-xs uppercase tracking-wide mb-2">Recibidos en ${['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][im-1]} ${iy}</div>`;
     const received=(S.paychecks||[]).filter(p=>p.received&&monthKey(parseDate(p.receivedDate||p.date))===incomeMonth).sort((a,b)=>parseDate(b.receivedDate||b.date)-parseDate(a.receivedDate||a.date));
@@ -3069,16 +3098,31 @@ function renderHouse() {
   const total=visibleItems.reduce((s,i)=>s+(i.amount||0),0);
   const paid=visibleItems.reduce((s,i)=>s+housePaid(i),0);
   const pending=Math.max(0,total-paid);
-  let html=`<div class="flex items-center gap-2 mb-4">
+  const myId=CURRENT_USER?CURRENT_USER.id:'';
+  const membersRowHtml=currentSpaceMembers.length?`<div class="flex gap-2 overflow-x-auto pb-1 mb-3" style="scrollbar-width:none">
+    ${currentSpaceMembers.map((m,i)=>{
+      const isMe=m.id===myId;
+      const connContact=(S.personContacts||[]).find(c=>c.linkedUserId===m.id);
+      const connStatus=connContact?connContact.connectionStatus:'none';
+      let badge='';
+      if(isMe) badge=`<span class="text-[9px] bg-slate-100 text-slate-400 font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap">Tú</span>`;
+      else if(connStatus==='connected') badge=`<span class="text-[9px] bg-green-100 text-green-700 font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap">✓ Amigo</span>`;
+      else if(connStatus==='connection_pending') badge=`<span class="text-[9px] bg-amber-100 text-amber-700 font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap">⏳ Enviada</span>`;
+      else badge=`<button onclick="inviteSpaceMember('${m.id.replace(/'/g,"\\'")}','${(m.name||'').replace(/'/g,"\\'")}')" class="text-[9px] bg-indigo-100 text-indigo-700 font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap active:bg-indigo-200 transition">+ Invitar</button>`;
+      return `<div class="flex flex-col items-center gap-1 flex-shrink-0">
+        <div style="width:36px;height:36px;border-radius:50%;background:${memberColor(i)};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white">${memberInitials(m.name,true)}</div>
+        <span class="text-[9px] text-slate-600 font-semibold max-w-[48px] truncate text-center">${(m.name||'').split(' ')[0]}</span>
+        ${badge}
+      </div>`;
+    }).join('')}
+  </div>`:'';
+  let html=`<div class="flex items-center gap-2 mb-3">
     <button onclick="exitSpace()" class="bg-white border border-indigo-100 text-indigo-500 rounded-xl px-3 py-2 text-sm font-bold flex items-center gap-1 flex-shrink-0">
       <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
       Espacios
     </button>
     <div class="flex-1 min-w-0">
-      <div class="flex items-center gap-2">
-        <div class="font-bold text-slate-800 truncate text-sm">${currentSpaceName}</div>
-        ${currentSpaceMembers.length?renderMemberAvatars(currentSpaceMembers,24):''}
-      </div>
+      <div class="font-bold text-slate-800 truncate text-sm">${currentSpaceName}</div>
       ${currentSpaceCode?`<div class="text-[10px] text-slate-400">Código: <span class="font-mono font-bold">${currentSpaceCode}</span></div>`:''}
     </div>
     <div class="flex items-center gap-1 flex-shrink-0">
@@ -3088,6 +3132,7 @@ function renderHouse() {
       </button>
     </div>
   </div>
+  ${membersRowHtml}
   <div class="grid grid-cols-4 gap-1 mb-3">
     <button class="pill-tab ${houseTab==='payments'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="setHouseTab('payments')">Pagos</button>
     <button class="pill-tab ${houseTab==='pockets'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="setHouseTab('pockets')">Bolsillos</button>
@@ -3639,10 +3684,10 @@ function renderPersonas() {
   if(directoryTab==='trabajos') {
     html+=`<div class="mb-4">
       <div class="text-[10px] font-bold text-indigo-500 uppercase tracking-wide mb-2">Trabajos</div>
-      ${jobs.length?`<div class="space-y-2">${jobs.map(j=>`<div class="card p-3 flex items-center gap-3">
+      ${jobs.length?`<div class="space-y-2">${jobs.map(j=>`<div onclick="openModal('jobDetail','${encodeURIComponent(j.name)}')" class="card p-3 flex items-center gap-3 cursor-pointer active:scale-[.99] transition">
         <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center">${renderStoredIcon('brief','loan','')}</div>
         <div class="flex-1 min-w-0"><div class="font-bold text-slate-800 text-sm truncate">${j.name}</div><div class="text-xs text-slate-400">${j.count} ingreso${j.count!==1?'s':''} recibido${j.count!==1?'s':''}${j.lastDate?' · Último '+fmtDate(j.lastDate):''}</div></div>
-        <div class="text-right"><div class="text-[10px] text-slate-400 font-bold uppercase">Recibido</div><div class="font-bold text-green-600 text-sm">${fmt(j.received)}</div></div>
+        <div class="text-right"><div class="text-[10px] text-slate-400 font-bold uppercase">Recibido</div><div class="font-bold text-green-600 text-sm">${fmt(j.received)}</div><svg class="w-3 h-3 text-slate-300 ml-auto mt-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg></div>
       </div>`).join('')}</div>`:`<div class="card p-6 text-center"><div class="text-3xl mb-2">💼</div><div class="font-bold text-slate-700 mb-1">${q?'Sin resultados':'Sin trabajos recibidos'}</div><div class="text-sm text-slate-400">${q?'Prueba con otro nombre.':'Aquí aparecerán empresas cuando marques ingresos de trabajo como recibidos.'}</div></div>`}
     </div>`;
     document.getElementById('personasContent').innerHTML=html;
@@ -4735,7 +4780,8 @@ function openModal(type, id, extra) {
     const pk=S.pockets.find(x=>x.id===id); if(!pk) return;
     const pct=pk.target>0?Math.min(100,Math.round((pk.saved||0)/pk.target*100)):0;
     const moves=(S.pocketTransactions||[]).filter(t=>t.pocketId===pk.id).sort((a,b)=>parseDate(b.date)-parseDate(a.date));
-    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">${pk.name}</h3>
+    const backBtn=(extra&&extra.backTo)?`<button onclick="openModal('${extra.backTo}','${extra.backId||''}')" class="flex items-center gap-1.5 text-indigo-600 text-sm font-bold mb-3"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Volver</button>`:'';
+    html=`${backBtn}<h3 class="text-lg font-bold text-slate-800 mb-1">${pk.name}</h3>
     <p class="text-sm text-slate-500 mb-4">Bolsillo personal</p>
     <div class="card p-4 mb-3"><div class="flex justify-between items-center"><div><div class="text-xs text-cyan-500 font-bold uppercase">Guardado</div><div class="text-2xl font-extrabold text-cyan-700">${fmt(pk.saved||0)}</div></div><div class="text-right"><div class="text-xs text-slate-400">Meta</div><div class="font-bold text-slate-700">${pk.target?fmt(pk.target):'Sin meta'}</div></div></div>${pk.target?`<div class="mt-3"><div class="w-full bg-cyan-50 rounded-full h-2.5"><div class="bg-gradient-to-r from-cyan-400 to-teal-400 h-2.5 rounded-full" style="width:${pct}%"></div></div></div>`:''}</div>
     <div class="font-bold text-indigo-700 text-xs uppercase mb-2">Historial de transacciones</div>
@@ -5178,8 +5224,22 @@ function openModal(type, id, extra) {
     const sp=(S.spaces||[]).find(x=>x.id===id);
     if(!sp) return;
     const members=sp.members||[];
+    const myId=CURRENT_USER?CURRENT_USER.id:'';
     const membersHtml=members.length
-      ?`<div class="flex flex-wrap gap-2">${members.map((m,i)=>`<div class="flex items-center gap-1.5 bg-slate-100 rounded-full pl-1 pr-2 py-1"><div style="width:22px;height:22px;border-radius:50%;background:${memberColor(i)};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:white;flex-shrink:0">${memberInitials(m.name,true)}</div><span class="text-xs font-semibold text-slate-700">${m.name.split(' ')[0]}</span></div>`).join('')}</div>`
+      ?`<div class="space-y-2">${members.map((m,i)=>{
+          const isMe=m.id===myId;
+          const connContact=(S.personContacts||[]).find(c=>c.linkedUserId===m.id);
+          const connStatus=connContact?connContact.connectionStatus:'none';
+          let actionBtn='';
+          if(!isMe){
+            if(connStatus==='connected') actionBtn=`<span class="text-[10px] bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded-full">✓ Conectado</span>`;
+            else if(connStatus==='connection_pending') actionBtn=`<span class="text-[10px] bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">⏳ Solicitud enviada</span>`;
+            else actionBtn=`<button onclick="inviteSpaceMember('${m.id.replace(/'/g,"\\'")}','${(m.name||'').replace(/'/g,"\\'")}')" class="text-[10px] bg-indigo-100 text-indigo-700 font-bold px-2 py-1 rounded-full">+ Invitar como amigo</button>`;
+          } else {
+            actionBtn=`<span class="text-[10px] text-slate-400">(tú)</span>`;
+          }
+          return `<div class="flex items-center gap-2"><div style="width:28px;height:28px;border-radius:50%;background:${memberColor(i)};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:white;flex-shrink:0">${memberInitials(m.name,true)}</div><span class="text-sm font-semibold text-slate-700 flex-1 min-w-0 truncate">${m.name}</span>${actionBtn}</div>`;
+        }).join('')}</div>`
       :'<p class="text-xs text-slate-400">Sin participantes aún — únanse con el código del espacio.</p>';
     html=`<h3 class="text-lg font-bold text-slate-800 mb-4">Editar espacio</h3>
     <div class="space-y-4">
@@ -5223,7 +5283,13 @@ function openModal(type, id, extra) {
     const netBalance=meDebe-leDebo;
     const netCls=netBalance>0?'text-green-600':netBalance<0?'text-red-500':'text-slate-400';
     const netLabel=netBalance>0?`Te debe ${fmt(netBalance)}`:netBalance<0?`Le debes ${fmt(Math.abs(netBalance))}`:'Saldado ✓';
-    const stats=[[meDebe,'Me debe','bg-green-50 text-green-700'],[leDebo,'Le debo','bg-red-50 text-red-600'],[meHaPagado,'Me pagó','bg-indigo-50 text-indigo-700']].filter(([v])=>v>0);
+    // Mostrar "Le debo" en stats solo cuando también existe "Me debe" (si no, netLabel ya lo muestra)
+    const showBothSides=meDebe>0&&leDebo>0;
+    const stats=[
+      ...(meDebe>0?[[meDebe,'Me debe','bg-green-50 text-green-700']]:[]),
+      ...(showBothSides?[[leDebo,'Le debo','bg-red-50 text-red-600']]:[]),
+      ...(meHaPagado>0?[[meHaPagado,'Me pagó','bg-indigo-50 text-indigo-700']]:[])
+    ];
     const lentTxs=p.txs.filter(t=>t.type==='lent'&&!t.done);
     const borrowedTxs=p.txs.filter(t=>t.type==='borrowed'&&!t.done);
     const incomeTxs=p.txs.filter(t=>t.type==='income');
@@ -5277,6 +5343,44 @@ function openModal(type, id, extra) {
     </div>`).join('')}</div>`:''}
     ${doneTxs.length?`<div class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">✓ Historial saldado (${doneTxs.length})</div><div class="mb-3 opacity-60">${doneTxs.map(txRow).join('')}</div>`:''}
     ${!p.txs.length?'<p class="text-center text-slate-400 py-4">Sin transacciones con esta persona.</p>':''}`;
+  }
+  else if(type==='jobDetail') {
+    const jobName=decodeURIComponent(id||'');
+    const paychecks=(S.paychecks||[]).filter(p=>p.category==='trabajo'&&p.received&&(p.sourceName||'Trabajo').trim()===jobName).sort((a,b)=>parseDate(b.receivedDate||b.date)-parseDate(a.receivedDate||a.date));
+    const totalReceived=paychecks.reduce((s,p)=>s+(p.amount||0),0);
+    const lastDate=paychecks[0]?(paychecks[0].receivedDate||paychecks[0].date):null;
+    const relatedPeople=[...new Set(paychecks.map(p=>p.personName).filter(Boolean))];
+    html=`<div class="flex items-center gap-3 mb-4">
+      <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center">${renderStoredIcon('brief','loan','')}</div>
+      <div class="flex-1 min-w-0">
+        <div class="text-lg font-bold text-slate-800 leading-tight">${jobName}</div>
+        <div class="text-xs text-slate-400 mt-0.5">${paychecks.length} ingreso${paychecks.length!==1?'s':''} recibido${paychecks.length!==1?'s':''}${lastDate?' · Último '+fmtDate(lastDate):''}</div>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-2 mb-4">
+      <div class="bg-green-50 rounded-xl p-3 text-center">
+        <div class="text-[9px] text-green-500 font-bold uppercase mb-0.5">Total recibido</div>
+        <div class="text-lg font-extrabold text-green-700">+${fmt(totalReceived)}</div>
+      </div>
+      <div class="bg-indigo-50 rounded-xl p-3 text-center">
+        <div class="text-[9px] text-indigo-400 font-bold uppercase mb-0.5">Pagos</div>
+        <div class="text-lg font-extrabold text-indigo-700">${paychecks.length}</div>
+      </div>
+    </div>
+    ${relatedPeople.length?`<div class="text-[10px] font-bold text-slate-500 uppercase mb-1.5">Personas vinculadas</div><div class="flex flex-wrap gap-1.5 mb-4">${relatedPeople.map(n=>`<span class="bg-slate-100 text-slate-600 text-xs font-semibold px-2.5 py-1 rounded-full">${n}</span>`).join('')}</div>`:''}
+    <div class="text-[10px] font-bold text-green-600 uppercase tracking-wide mb-2">Historial de ingresos</div>
+    <div class="space-y-1">
+      ${paychecks.length?paychecks.map(p=>{
+        const accName=p.receivedAccountId?((S.accounts||[]).find(a=>a.id===p.receivedAccountId)?.name||'Cuenta'):'Balance libre';
+        return `<div class="flex justify-between items-center px-3 py-2.5 bg-green-50 rounded-xl">
+          <div class="min-w-0 flex-1">
+            <div class="text-slate-700 font-semibold text-sm">${fmtDate(p.receivedDate||p.date)}</div>
+            <div class="text-[10px] text-slate-400">${accName}${p.note?' · '+p.note:''}</div>
+          </div>
+          <span class="font-bold text-green-600 text-sm ml-2">+${fmt(p.amount||0)}</span>
+        </div>`;
+      }).join(''):`<div class="text-sm text-slate-400 text-center py-4">Sin ingresos registrados.</div>`}
+    </div>`;
   }
   else if(type==='editPersona') {
     const name=decodeURIComponent(id||'');
@@ -5699,9 +5803,9 @@ function openModal(type, id, extra) {
     </div>
   </div>
   ${pockets.length?`<div class="text-[10px] font-bold text-indigo-600 uppercase tracking-wide mb-1.5">💼 Bolsillos (${pockets.length})</div>
-  <div class="space-y-1 mb-4">${pockets.map(p=>`<div class="flex justify-between items-center px-3 py-2 bg-indigo-50 rounded-xl">
+  <div class="space-y-1 mb-4">${pockets.map(p=>`<div onclick="openModal('pocketDetail','${p.id}',{backTo:'accountDetail',backId:'${a.id}'})" class="flex justify-between items-center px-3 py-2 bg-indigo-50 rounded-xl cursor-pointer active:scale-[.99] transition">
     <span class="text-slate-700 font-semibold text-sm">${p.emoji||'💼'} ${p.name}</span>
-    <span class="font-bold text-indigo-600 text-sm">${fmt(p.saved||0)}</span>
+    <div class="flex items-center gap-1.5"><span class="font-bold text-indigo-600 text-sm">${fmt(p.saved||0)}</span><svg class="w-3 h-3 text-slate-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg></div>
   </div>`).join('')}</div>`:''}
   ${accLoans.length?`<div class="text-[10px] font-bold text-amber-600 uppercase tracking-wide mb-1.5">🏦 Préstamos recibidos (${accLoans.length})</div>
   <div class="space-y-1 mb-4">${accLoans.map(l=>`<div class="flex justify-between items-center px-3 py-2 bg-amber-50 rounded-xl">
@@ -5729,6 +5833,31 @@ function openModal(type, id, extra) {
   </div>`).join('')}</div>`:''}
   ${!pockets.length&&!accIncomes.length&&!accLoans.length&&!accTxs.length?`<div class="text-sm text-slate-400 text-center py-4 mb-3">Sin actividad registrada en esta cuenta aún.</div>`:''}
   <button onclick="openModal('editAccount','${a.id}')" class="w-full bg-slate-100 text-slate-600 font-semibold py-3 rounded-xl text-sm">✏️ Editar cuenta</button>`;
+  }
+
+  else if(type==='linkContactPicker') {
+    const pending=window._pendingConnection||{};
+    const conn=pending.conn||{};
+    const connectionId=pending.connectionId||'';
+    const senderName=conn.sender_display_name||'Usuario';
+    const unlinked=(S.personContacts||[]).filter(c=>!c.linkedUserId&&c.connectionStatus!=='connected');
+    const listHtml=unlinked.map(c=>`
+      <button onclick="finishAcceptConnection('${connectionId}','${c.id}',window._pendingConnection.conn)"
+              class="w-full text-left card p-3 flex items-center gap-3 active:bg-indigo-50 transition">
+        <span class="text-2xl">${emojiFor(c.emoji||'brief')}</span>
+        <div class="min-w-0">
+          <div class="font-semibold text-slate-800 truncate">${c.displayName}</div>
+          ${c.phone?`<div class="text-xs text-slate-400">${c.phone}</div>`:''}
+        </div>
+      </button>`).join('');
+    html=`<div class="p-5 space-y-4">
+      <h3 class="text-lg font-bold text-slate-800">Vincular contacto</h3>
+      <p class="text-sm text-slate-500"><strong>${senderName}</strong> quiere conectarse contigo. ¿Es alguno de tus contactos existentes?</p>
+      <div class="space-y-2 max-h-60 overflow-y-auto">${listHtml}</div>
+      <button onclick="finishAcceptConnection('${connectionId}',null,window._pendingConnection.conn)"
+              class="w-full py-3 rounded-xl bg-indigo-600 text-white font-semibold text-sm">➕ Crear nuevo contacto</button>
+      <button onclick="closeModal()" class="w-full py-2 text-sm text-slate-400">Cancelar</button>
+    </div>`;
   }
 
   document.getElementById('modalContent').innerHTML=html;
@@ -5902,7 +6031,9 @@ function savePocket(id) {
 }
 
 function saveLoan(id) {
-  const personName=document.getElementById('mName').value.trim(), totalAmount=parseFloat(document.getElementById('mAmount').value);
+  const rawPersonName=document.getElementById('mName').value.trim(), totalAmount=parseFloat(document.getElementById('mAmount').value);
+  const existingContact=(S.personContacts||[]).find(c=>normalizePersonKey(c.displayName)===normalizePersonKey(rawPersonName));
+  const personName=existingContact?existingContact.displayName:rawPersonName;
   const loanName=document.getElementById('mLoanName')?.value.trim()||'';
   const note=document.getElementById('mNote').value.trim();
   const emoji=normalizeIcon(document.getElementById('mEmoji')?.value.trim()||'brief','loan');
@@ -5928,14 +6059,19 @@ function saveLoan(id) {
     if(source.type==='balance' && totalAmount>freeBalance()){showToast('No hay suficiente balance libre');return;}
     if(source.type==='pocket'){const p=S.pockets.find(x=>x.id===source.id); if(!p||totalAmount>(p.saved||0)){showToast('No hay suficiente dinero en ese bolsillo');return;}}
     adjustSource(source,-totalAmount);
-    S.loans.unshift({id:uid(),personName,loanName,totalAmount,note,emoji,category,source,payments:[],recurring,createdAt:new Date().toISOString()});
+    const newLoanId=uid();
+    S.loans.unshift({id:newLoanId,personName,loanName,totalAmount,note,emoji,category,source,payments:[],recurring,createdAt:new Date().toISOString()});
     // If this person is connected, send a transaction request
     const connContact=(S.personContacts||[]).find(c=>c.displayName===personName&&c.connectionStatus==='connected');
     if(connContact&&connContact.linkedUserId){
       save(); closeModal(); renderCurrentView();
       showToast('✅ Préstamo guardado');
-      sendTransactionRequest(personName,'loan_given',totalAmount,loanName||`Préstamo a ${personName}`,{paymentsCount:recurring?.totalPayments||1}).then(sent=>{
-        if(sent) showToast(`📨 Solicitud enviada a ${connContact.linkedDisplayName||personName}. Debe aceptarla para reflejarse en su cuenta.`);
+      sendTransactionRequest(personName,'loan_given',totalAmount,loanName||`Préstamo a ${personName}`,{paymentsCount:recurring?.totalPayments||1}).then(txId=>{
+        if(txId){
+          const l=S.loans.find(x=>x.id===newLoanId);
+          if(l){l.pendingTxId=txId;save();renderCurrentView();}
+          showToast(`📨 Solicitud enviada a ${connContact.linkedDisplayName||personName}. Debe aceptarla para reflejarse en su cuenta.`);
+        }
       });
       return;
     }
@@ -6002,7 +6138,9 @@ function selectAccType(type) {
   }
 }
 function saveBorrowedLoan(id=null) {
-  const personName=document.getElementById('mName').value.trim(), amount=parseFloat(document.getElementById('mAmount').value), dueDate=document.getElementById('mDate').value;
+  const rawPersonName=document.getElementById('mName').value.trim(), amount=parseFloat(document.getElementById('mAmount').value), dueDate=document.getElementById('mDate').value;
+  const existingContact=(S.personContacts||[]).find(c=>normalizePersonKey(c.displayName)===normalizePersonKey(rawPersonName));
+  const personName=existingContact?existingContact.displayName:rawPersonName;
   const loanName=document.getElementById('mLoanName')?.value.trim()||'';
   const description=document.getElementById('mDesc').value.trim();
   const emoji=normalizeIcon(document.getElementById('mEmoji')?.value.trim()||'bank','borrowed');
@@ -6037,15 +6175,20 @@ function saveBorrowedLoan(id=null) {
   });
   const payload={personName,loanName,totalAmount:amount,amount,dueDate,startDate:dueDate,description,emoji,category,paymentsCount,frequency,perPayment,installments,paid:installments.every(p=>p.paid),addsToLiquidity,alreadySpent,receivedAccountId,receivedDate:addsToLiquidity?(existing?.receivedDate||isoToday()):null,createdDate:existing?.createdDate||isoToday(),createdAt:existing?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
   if(existing) Object.assign(existing,payload);
-  else S.borrowedLoans.unshift({id:uid(),...payload});
+  else { const newBlId=uid(); S.borrowedLoans.unshift({id:newBlId,...payload}); }
   setLastAction();
   // If this person is connected, send a transaction request (they registered they gave me a loan)
   if(!existing){
+    const newBlId=(S.borrowedLoans[0]||{}).id;
     const connContact=(S.personContacts||[]).find(c=>c.displayName===personName&&c.connectionStatus==='connected');
     if(connContact&&connContact.linkedUserId){
       closeModal(); renderCurrentView(); showToast('Préstamo recibido guardado');
-      sendTransactionRequest(personName,'loan_received',amount,description||`Préstamo recibido de ${personName}`,{paymentsCount}).then(sent=>{
-        if(sent) showToast(`📨 Solicitud enviada a ${connContact.linkedDisplayName||personName}. Debe aceptar para reflejarse en su cuenta.`);
+      sendTransactionRequest(personName,'loan_received',amount,description||`Préstamo recibido de ${personName}`,{paymentsCount}).then(txId=>{
+        if(txId){
+          const bl=S.borrowedLoans.find(x=>x.id===newBlId);
+          if(bl){bl.pendingTxId=txId;save();renderCurrentView();}
+          showToast(`📨 Solicitud enviada a ${connContact.linkedDisplayName||personName}. Debe aceptar para reflejarse en su cuenta.`);
+        }
       });
       return;
     }
@@ -6376,6 +6519,35 @@ async function validateAndConnectPin(encodedName, contactId) {
   }
 }
 
+async function inviteSpaceMember(memberId, memberName) {
+  if(!supabase||!CURRENT_USER){showToast('Sin conexión');return;}
+  if(memberId===CURRENT_USER.id){showToast('Ése eres tú 😄');return;}
+  // Check for any existing connection in either direction
+  try {
+    const [sentRes,recvRes]=await Promise.all([
+      supabase.from('persona_connections').select('id,status').eq('sender_user_id',CURRENT_USER.id).eq('receiver_user_id',memberId).neq('status','rejected'),
+      supabase.from('persona_connections').select('id,status').eq('sender_user_id',memberId).eq('receiver_user_id',CURRENT_USER.id).neq('status','rejected')
+    ]);
+    const sent=(sentRes.data||[]);
+    const recv=(recvRes.data||[]);
+    if(sent.length){
+      showToast('Ya enviaste una solicitud a esta persona. Espera a que la acepte.');
+      return;
+    }
+    if(recv.length){
+      showToast('Esta persona ya te envió una solicitud. Revisa tus notificaciones para aceptarla.');
+      pollInbox();
+      return;
+    }
+    // Find or create local contact for this member
+    if(!S.personContacts) S.personContacts=[];
+    let contact=S.personContacts.find(c=>c.linkedUserId===memberId)||S.personContacts.find(c=>normalizePersonKey(c.displayName)===normalizePersonKey(memberName));
+    const contactId=contact?contact.id:'';
+    await sendConnectionRequest(memberName, contactId, memberId, memberName, 'space_invite');
+    openModal('editSpace', currentSpaceId);
+  } catch(e){ console.error('inviteSpaceMember:',e); showToast('Error al enviar invitación.'); }
+}
+
 async function sendConnectionRequest(personName, contactId, receiverUserId, receiverDisplayName, pinUsed) {
   if(!supabase||!CURRENT_USER) return;
   const senderName=S.profileName||CURRENT_USER.email||'Usuario';
@@ -6430,54 +6602,71 @@ async function cancelConnectionRequest(contactId) {
   } catch(e){ showToast('Error al cancelar: '+e.message); }
 }
 
+async function finishAcceptConnection(connectionId, existingContactId, conn) {
+  const senderName=conn.sender_display_name||'Usuario';
+  if(!S.personContacts) S.personContacts=[];
+  let receiverPersonId=null;
+  if(existingContactId) {
+    const c=S.personContacts.find(x=>x.id===existingContactId);
+    if(c){
+      c.connectionStatus='connected';
+      c.linkedUserId=conn.sender_user_id;
+      c.linkedDisplayName=senderName;
+      c.connectionId=connectionId;
+      c.updatedAt=new Date().toISOString();
+      receiverPersonId=c.id;
+    }
+  } else {
+    const newContact={id:'pc_'+uid(),displayName:senderName,matchName:senderName.toLowerCase(),
+      phone:'',email:'',notes:'',emoji:'brief',
+      linkedUserId:conn.sender_user_id,linkedDisplayName:senderName,
+      connectionStatus:'connected',connectionId,
+      createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+    S.personContacts.push(newContact);
+    receiverPersonId=newContact.id;
+    if(!S.personaProfiles) S.personaProfiles=[];
+    if(!S.personaProfiles.find(x=>x.personName===senderName))
+      S.personaProfiles.push({personName:senderName,emoji:'brief',createdAt:new Date().toISOString()});
+  }
+  save();
+  try {
+    await supabase.from('persona_connections')
+      .update({status:'accepted',receiver_person_id:receiverPersonId,responded_at:new Date().toISOString()})
+      .eq('id',connectionId).eq('receiver_user_id',CURRENT_USER.id);
+  } catch(e){ console.error('finishAcceptConnection supabase:',e); }
+  closeModal();
+  renderCurrentView();
+  showToast('Conexión aceptada ✓ Ahora están vinculados.');
+  pollInbox();
+}
+
 async function respondToConnection(connectionId, accept) {
   if(!supabase||!CURRENT_USER){showToast('Sin conexión');return;}
+  if(!accept){
+    try {
+      await supabase.from('persona_connections')
+        .update({status:'rejected',responded_at:new Date().toISOString()})
+        .eq('id',connectionId).eq('receiver_user_id',CURRENT_USER.id);
+      closeModal(); renderCurrentView(); showToast('Solicitud rechazada.'); pollInbox();
+    } catch(e){ showToast('Error: '+e.message); }
+    return;
+  }
   try {
-    // Load full connection details
     const {data:conn,error}=await supabase.from('persona_connections')
       .select('*').eq('id',connectionId).single();
     if(error||!conn){showToast('Solicitud no encontrada');return;}
-    const newStatus=accept?'accepted':'rejected';
-    // Create a local person_id for receiver if accepted
-    let receiverPersonId=null;
-    if(accept){
-      const senderName=conn.sender_display_name||'Usuario';
-      if(!S.personContacts) S.personContacts=[];
-      // Check if receiver already has this person as contact
-      let existing=S.personContacts.find(c=>c.linkedUserId===conn.sender_user_id);
-      if(!existing){
-        existing=S.personContacts.find(c=>c.displayName.toLowerCase()===senderName.toLowerCase());
-      }
-      if(existing){
-        existing.connectionStatus='connected';
-        existing.linkedUserId=conn.sender_user_id;
-        existing.linkedDisplayName=senderName;
-        existing.connectionId=connectionId;
-        existing.updatedAt=new Date().toISOString();
-        receiverPersonId=existing.id;
-      } else {
-        const newContact={id:'pc_'+uid(),displayName:senderName,matchName:senderName.toLowerCase(),
-          phone:'',email:'',notes:'',emoji:'brief',
-          linkedUserId:conn.sender_user_id,linkedDisplayName:senderName,
-          connectionStatus:'connected',connectionId,
-          createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
-        S.personContacts.push(newContact);
-        receiverPersonId=newContact.id;
-        if(!S.personaProfiles) S.personaProfiles=[];
-        if(!S.personaProfiles.find(x=>x.personName===senderName))
-          S.personaProfiles.push({personName:senderName,emoji:'brief',createdAt:new Date().toISOString()});
-      }
-      save();
+    if(!S.personContacts) S.personContacts=[];
+    // Already linked to this user?
+    const alreadyLinked=S.personContacts.find(c=>c.linkedUserId===conn.sender_user_id);
+    if(alreadyLinked){ await finishAcceptConnection(connectionId,alreadyLinked.id,conn); return; }
+    // Are there unlinked contacts the user could map this person to?
+    const unlinked=S.personContacts.filter(c=>!c.linkedUserId&&c.connectionStatus!=='connected');
+    if(unlinked.length>0){
+      window._pendingConnection={connectionId,conn};
+      openModal('linkContactPicker','');
+    } else {
+      await finishAcceptConnection(connectionId,null,conn);
     }
-    // Update Supabase row
-    await supabase.from('persona_connections')
-      .update({status:newStatus,receiver_person_id:receiverPersonId,responded_at:new Date().toISOString()})
-      .eq('id',connectionId).eq('receiver_user_id',CURRENT_USER.id);
-    renderCurrentView();
-    closeModal();
-    if(accept) showToast(`Conexión aceptada ✓ Ahora están vinculados.`);
-    else showToast('Solicitud rechazada.');
-    pollInbox();
   } catch(e){ console.error('respondToConnection:',e); showToast('Error al responder: '+e.message); }
 }
 
@@ -6541,7 +6730,7 @@ async function sendTransactionRequest(personName, type, amount, description, pay
   if(!contact||!contact.linkedUserId) return false;
   const senderName=S.profileName||CURRENT_USER.email||'Usuario';
   try {
-    await supabase.from('persona_transaction_requests').insert({
+    const {data:txRow,error:txErr}=await supabase.from('persona_transaction_requests').insert({
       sender_user_id:CURRENT_USER.id,
       receiver_user_id:contact.linkedUserId,
       sender_person_id:contact.id,
@@ -6549,9 +6738,10 @@ async function sendTransactionRequest(personName, type, amount, description, pay
       date:isoToday(),
       payload_json:{...payloadExtra, senderName},
       status:'pending'
-    });
-    return true;
-  } catch(e){ console.error('sendTransactionRequest:',e); return false; }
+    }).select('id').single();
+    if(txErr) throw txErr;
+    return txRow?.id||true;
+  } catch(e){ console.error('sendTransactionRequest:',e); return null; }
 }
 
 // ═══════════════════════════════════════
@@ -6640,7 +6830,8 @@ function recentSpaceNotifications() {
 
 function buildLocalNotifications() {
   const archived=S.notificationArchived||{};
-  return [getTodayPaymentNotification(),getTodayTaskNotification(),...recentSpaceNotifications()].filter(Boolean).filter(n=>!archived[n.id])
+  const events=(S.notificationEvents||[]).filter(n=>!archived[n.id]);
+  return [getTodayPaymentNotification(),getTodayTaskNotification(),...recentSpaceNotifications(),...events].filter(Boolean).filter(n=>!archived[n.id])
     .sort((a,b)=>(b.priority||0)-(a.priority||0)||String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
 }
 
@@ -6685,6 +6876,40 @@ function updateBadges() {
   updateNotificationBadge();
 }
 
+async function checkSentTransactionUpdates() {
+  if(!supabase||!CURRENT_USER) return;
+  try {
+    const {data}=await supabase.from('persona_transaction_requests')
+      .select('id,type,amount,description,status,updated_at')
+      .eq('sender_user_id',CURRENT_USER.id)
+      .in('status',['accepted','rejected']);
+    if(!data||!data.length) return;
+    if(!S.notificationEvents) S.notificationEvents=[];
+    if(!S._notifiedSentTxIds) S._notifiedSentTxIds={};
+    let changed=false;
+    data.forEach(row=>{
+      // Clear pendingTxId from any loan/borrowedLoan waiting on this tx
+      const allLoans=[...(S.loans||[]),...(S.borrowedLoans||[])];
+      allLoans.forEach(l=>{ if(l.pendingTxId===row.id){l.pendingTxId=null;changed=true;} });
+      const evId='nev_tx_'+row.id;
+      if(S._notifiedSentTxIds[evId]) return;
+      S._notifiedSentTxIds[evId]=true;
+      const accepted=row.status==='accepted';
+      const typeLabels={loan_given:'préstamo dado',loan_received:'préstamo recibido',shared_payment:'pago compartido'};
+      const typeLabel=typeLabels[row.type]||'transacción';
+      S.notificationEvents.unshift({
+        id:evId,type:'tx_'+row.status,priority:3,
+        createdAt:row.updated_at||new Date().toISOString(),
+        title:accepted?'Transacción aceptada':'Transacción rechazada',
+        description:`Tu ${typeLabel} de ${fmt(row.amount)}${row.description?' ('+row.description+')':''} fue ${accepted?'aceptada':'rechazada'}.`,
+        status:'no_leida',items:[],actionLabel:''
+      });
+      changed=true;
+    });
+    if(changed){ save(); updateNotificationBadge(); }
+  } catch(e){ console.warn('checkSentTransactionUpdates:',e); }
+}
+
 async function pollInbox() {
   if(!supabase||!CURRENT_USER) return;
   try {
@@ -6697,8 +6922,8 @@ async function pollInbox() {
     const changed=connCount!==S._pendingConnCount||txCount!==S._pendingTxCount;
     S._pendingConnCount=connCount; S._pendingTxCount=txCount;
     if(changed) updateBadges();
-    // Also check if any of our SENT connection requests changed status
     checkSentConnectionUpdates();
+    checkSentTransactionUpdates();
   } catch(e){ console.warn('pollInbox:',e); }
 }
 
@@ -6720,11 +6945,19 @@ async function checkSentConnectionUpdates() {
         contact.updatedAt=new Date().toISOString();
         changed=true;
         showToast(`✅ ${contact.displayName} aceptó la solicitud de conexión`);
+        if(!S.notificationEvents) S.notificationEvents=[];
+        const evId='nev_conn_acc_'+row.id;
+        if(!S.notificationEvents.find(e=>e.id===evId))
+          S.notificationEvents.unshift({id:evId,type:'connection_accepted',priority:3,createdAt:new Date().toISOString(),title:'Conexión aceptada',description:`${contact.displayName} aceptó tu solicitud de conexión.`,status:'no_leida',items:[],actionLabel:''});
       } else if(row.status==='rejected'){
         contact.connectionStatus='rejected';
         contact.updatedAt=new Date().toISOString();
         changed=true;
         showToast(`${contact.displayName} rechazó la solicitud de conexión`);
+        if(!S.notificationEvents) S.notificationEvents=[];
+        const evId='nev_conn_rej_'+row.id;
+        if(!S.notificationEvents.find(e=>e.id===evId))
+          S.notificationEvents.unshift({id:evId,type:'connection_rejected',priority:2,createdAt:new Date().toISOString(),title:'Conexión rechazada',description:`${contact.displayName} rechazó tu solicitud de conexión.`,status:'no_leida',items:[],actionLabel:''});
       }
     });
     if(changed){ save(); renderCurrentView(); }
@@ -6793,6 +7026,31 @@ async function loadInboxContent() {
   }
 }
 
+function notificationDayLabel(dateLike) {
+  if(!dateLike) return 'Hoy';
+  const d=new Date(dateLike), now=new Date();
+  const todayStr=isoToday();
+  const dStr=fmtISO(d);
+  if(dStr===todayStr) return 'Hoy';
+  const yest=new Date(now); yest.setDate(yest.getDate()-1);
+  if(dStr===fmtISO(yest)) return 'Ayer';
+  return fmtDateLong(dStr);
+}
+
+function markAllNotificationsRead() {
+  const local=buildLocalNotifications();
+  if(!S.notificationRead) S.notificationRead={};
+  local.forEach(n=>{ S.notificationRead[n.id]=new Date().toISOString(); });
+  save(); updateNotificationBadge(); loadNotificationsContent();
+}
+
+function deleteAllNotifications() {
+  const local=buildLocalNotifications();
+  if(!S.notificationArchived) S.notificationArchived={};
+  local.forEach(n=>{ S.notificationArchived[n.id]=new Date().toISOString(); });
+  save(); updateNotificationBadge(); loadNotificationsContent();
+}
+
 async function loadNotificationsContent() {
   const el=document.getElementById('notificationsContent');
   if(!el) return;
@@ -6809,41 +7067,71 @@ async function loadNotificationsContent() {
     } catch(e){ console.error('loadNotificationsContent:',e); }
   }
   const read=S.notificationRead||{};
-  let html='';
-  conns.forEach(c=>{
-    const sName=c.sender_display_name||'Un usuario';
-    html+=`<div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-3">
-      <div class="flex justify-between gap-3 mb-1"><div class="font-bold text-slate-800 text-sm">Solicitud de conexión</div><span class="text-[10px] bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">Accionable</span></div>
-      <div class="text-sm text-slate-600 mb-1">${sName} quiere conectarse contigo.</div>
-      <div class="text-[10px] text-slate-400 mb-3">${notificationTimeLabel(c.created_at)}</div>
-      <div class="flex gap-2"><button onclick="respondToConnection('${c.id}',true)" class="flex-1 bg-green-600 text-white font-bold py-2 rounded-xl text-sm">Aceptar</button><button onclick="respondToConnection('${c.id}',false)" class="flex-1 bg-red-50 text-red-500 font-bold py-2 rounded-xl text-sm">Rechazar</button></div>
-    </div>`;
-  });
-  txs.forEach(t=>{
-    const sName=t.payload_json?.senderName||'Un usuario';
-    const typeLabels={loan_given:`te registró un préstamo de ${fmt(t.amount)}`,loan_received:`registró que le prestaste ${fmt(t.amount)}`,shared_payment:`registró un pago compartido de ${fmt(t.amount)}`};
-    html+=`<div class="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-3">
-      <div class="flex justify-between gap-3 mb-1"><div class="font-bold text-slate-800 text-sm">Solicitud financiera</div><span class="text-[10px] bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">Accionable</span></div>
-      <div class="text-sm text-slate-600 mb-1">${sName} ${typeLabels[t.type]||`registró una transacción de ${fmt(t.amount)}`}.</div>
-      ${t.description?`<div class="text-xs text-slate-400 italic mb-1">"${t.description}"</div>`:''}
-      <div class="text-[10px] text-slate-400 mb-3">${notificationTimeLabel(t.created_at)}</div>
-      <div class="flex gap-2"><button onclick="respondToTransactionRequest('${t.id}',true)" class="flex-1 bg-green-600 text-white font-bold py-2 rounded-xl text-sm">Aceptar</button><button onclick="respondToTransactionRequest('${t.id}',false)" class="flex-1 bg-red-50 text-red-500 font-bold py-2 rounded-xl text-sm">Rechazar</button></div>
-    </div>`;
-  });
-  local.forEach(n=>{
-    const isRead=!!read[n.id];
-    html+=`<div class="card p-4 mb-3 ${isRead?'opacity-75':''}">
-      <div class="flex justify-between gap-3 mb-1"><div class="font-bold text-slate-800 text-sm">${n.title}</div><span class="text-[10px] ${isRead?'bg-slate-100 text-slate-500':'bg-red-100 text-red-600'} font-bold px-2 py-0.5 rounded-full">${isRead?'Leída':(n.status==='recordatorio'?'No leída':'No leída')}</span></div>
-      <div class="text-sm text-slate-600 mb-1">${n.description}</div>
-      <div class="text-[10px] text-slate-400 mb-3">${notificationTimeLabel(n.createdAt)}</div>
-      <div class="flex gap-2">
-        ${(n.items||[]).length?`<button onclick="openModal('notificationDetail','${n.id}')" class="flex-1 bg-indigo-50 text-indigo-700 font-bold py-2 rounded-xl text-sm">${n.actionLabel||'Ver detalles'}</button>`:''}
-        ${!isRead?`<button onclick="markNotificationRead('${n.id}')" class="bg-slate-100 text-slate-600 font-bold px-3 rounded-xl text-sm">Marcar leída</button>`:''}
-        <button onclick="archiveNotification('${n.id}')" class="bg-slate-100 text-slate-500 font-bold px-3 rounded-xl text-sm">Eliminar</button>
-      </div>
-    </div>`;
-  });
-  if(!html) html='<div class="text-center py-6 text-slate-400"><div class="text-3xl mb-2">✓</div><div class="font-semibold">Sin notificaciones</div></div>';
+  const hasAny=conns.length||txs.length||local.length;
+
+  // Acciones globales
+  let html=hasAny?`<div class="flex gap-2 mb-4">
+    <button onclick="markAllNotificationsRead()" class="flex-1 bg-indigo-50 text-indigo-700 font-bold py-2 rounded-xl text-xs">✓ Marcar todo leído</button>
+    <button onclick="deleteAllNotifications()" class="flex-1 bg-red-50 text-red-500 font-bold py-2 rounded-xl text-xs">🗑 Eliminar todo</button>
+  </div>`:'';
+
+  // Pendientes accionables (conexiones y transacciones) — agrupados como "Hoy" o su día
+  if(conns.length||txs.length) {
+    html+=`<div class="text-[10px] font-bold text-amber-600 uppercase tracking-wide mb-2">Pendientes de acción</div>`;
+    conns.forEach(c=>{
+      const sName=c.sender_display_name||'Un usuario';
+      html+=`<div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-3">
+        <div class="flex justify-between gap-3 mb-1"><div class="font-bold text-slate-800 text-sm">Solicitud de conexión</div><span class="text-[10px] bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">Accionable</span></div>
+        <div class="text-sm text-slate-600 mb-1">${sName} quiere conectarse contigo.</div>
+        <div class="text-[10px] text-slate-400 mb-3">${notificationTimeLabel(c.created_at)}</div>
+        <div class="flex gap-2"><button onclick="respondToConnection('${c.id}',true)" class="flex-1 bg-green-600 text-white font-bold py-2 rounded-xl text-sm">Aceptar</button><button onclick="respondToConnection('${c.id}',false)" class="flex-1 bg-red-50 text-red-500 font-bold py-2 rounded-xl text-sm">Rechazar</button></div>
+      </div>`;
+    });
+    txs.forEach(t=>{
+      const sName=t.payload_json?.senderName||'Un usuario';
+      const typeLabels={loan_given:`te registró un préstamo de ${fmt(t.amount)}`,loan_received:`registró que le prestaste ${fmt(t.amount)}`,shared_payment:`registró un pago compartido de ${fmt(t.amount)}`};
+      html+=`<div class="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-3">
+        <div class="flex justify-between gap-3 mb-1"><div class="font-bold text-slate-800 text-sm">Solicitud financiera</div><span class="text-[10px] bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">Accionable</span></div>
+        <div class="text-sm text-slate-600 mb-1">${sName} ${typeLabels[t.type]||`registró una transacción de ${fmt(t.amount)}`}.</div>
+        ${t.description?`<div class="text-xs text-slate-400 italic mb-1">"${t.description}"</div>`:''}
+        <div class="text-[10px] text-slate-400 mb-3">${notificationTimeLabel(t.created_at)}</div>
+        <div class="flex gap-2"><button onclick="respondToTransactionRequest('${t.id}',true)" class="flex-1 bg-green-600 text-white font-bold py-2 rounded-xl text-sm">Aceptar</button><button onclick="respondToTransactionRequest('${t.id}',false)" class="flex-1 bg-red-50 text-red-500 font-bold py-2 rounded-xl text-sm">Rechazar</button></div>
+      </div>`;
+    });
+  }
+
+  // Notificaciones locales agrupadas por día
+  if(local.length) {
+    const byDay=new Map();
+    local.forEach(n=>{
+      const dayKey=n.createdAt?fmtISO(new Date(n.createdAt)):isoToday();
+      if(!byDay.has(dayKey)) byDay.set(dayKey,[]);
+      byDay.get(dayKey).push(n);
+    });
+    // Ordenar días de más reciente a más antiguo
+    const sortedDays=[...byDay.entries()].sort((a,b)=>b[0].localeCompare(a[0]));
+    sortedDays.forEach(([dayKey,notes])=>{
+      html+=`<div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2 mt-3">${notificationDayLabel(dayKey)}</div>`;
+      notes.forEach(n=>{
+        const isRead=!!read[n.id];
+        html+=`<div class="card p-4 mb-2 ${isRead?'opacity-70':'border-l-2 border-indigo-300'}">
+          <div class="flex justify-between gap-3 mb-1">
+            <div class="font-bold text-slate-800 text-sm">${n.title}</div>
+            <span class="text-[10px] ${isRead?'bg-slate-100 text-slate-400':'bg-red-100 text-red-600'} font-bold px-2 py-0.5 rounded-full shrink-0">${isRead?'Leída':'Nueva'}</span>
+          </div>
+          <div class="text-sm text-slate-600 mb-1">${n.description}</div>
+          <div class="text-[10px] text-slate-400 mb-2">${notificationTimeLabel(n.createdAt)}</div>
+          <div class="flex gap-2">
+            ${(n.items||[]).length?`<button onclick="openModal('notificationDetail','${n.id}')" class="flex-1 bg-indigo-50 text-indigo-700 font-bold py-2 rounded-xl text-sm">${n.actionLabel||'Ver detalles'}</button>`:''}
+            ${!isRead?`<button onclick="markNotificationRead('${n.id}')" class="bg-slate-100 text-slate-600 font-bold px-3 rounded-xl text-sm">Leída</button>`:''}
+            <button onclick="archiveNotification('${n.id}')" class="bg-red-50 text-red-400 font-bold px-3 rounded-xl text-sm">✕</button>
+          </div>
+        </div>`;
+      });
+    });
+  }
+
+  if(!hasAny) html='<div class="text-center py-8 text-slate-400"><div class="text-4xl mb-3">✓</div><div class="font-semibold text-sm">Todo al día</div><div class="text-xs mt-1">Sin notificaciones pendientes</div></div>';
   el.innerHTML=html;
   updateNotificationBadge();
 }
@@ -6911,7 +7199,6 @@ function renderCurrentView() {
   else if(currentView==='personas') renderPersonas();
   else if(currentView==='cuentas') renderAccounts();
   else if(currentView==='config'){
-    const el=document.getElementById('bankBalanceInput');if(el)el.value=S.bankBalance||'';
     const nameEl=document.getElementById('profileNameInput');if(nameEl)nameEl.value=S.profileName||'';
     decorateMoneyInputs();
     const dmToggle=document.getElementById('darkModeToggle');
@@ -7056,19 +7343,54 @@ function confirmReset(){if(confirm('¿Reiniciar todo?')){localStorage.removeItem
 
 let pullStartY = null;
 let pullBusy = false;
+let pullDiff = 0;
+const PULL_THRESHOLD = 80;
+
+function _pullBar() { return document.getElementById('pullRefreshBar'); }
+function _pullArrow() { return document.getElementById('pullRefreshArrow'); }
+function _pullLabel() { return document.getElementById('pullRefreshLabel'); }
+
 document.addEventListener('touchstart', e => {
-  if(currentView==='casa' && currentSpaceId && window.scrollY===0) pullStartY = e.touches[0].clientY;
+  if(!pullBusy && window.scrollY === 0) pullStartY = e.touches[0].clientY;
 }, {passive:true});
+
 document.addEventListener('touchmove', e => {
-  if(pullStartY===null || pullBusy || currentView!=='casa' || !currentSpaceId) return;
-  const diff=e.touches[0].clientY-pullStartY;
-  if(diff>90) {
-    pullBusy=true;
-    pullStartY=null;
-    refreshHouseData(true).finally(()=>setTimeout(()=>pullBusy=false,900));
+  if(pullStartY === null || pullBusy) return;
+  const diff = e.touches[0].clientY - pullStartY;
+  if(diff <= 0) { pullStartY = null; return; }
+  pullDiff = diff;
+  const pct = Math.min(diff / PULL_THRESHOLD, 1);
+  const bar = _pullBar(), arrow = _pullArrow(), label = _pullLabel();
+  if(bar) bar.style.transform = `translateY(${(pct - 1) * 100}%)`;
+  if(arrow) arrow.style.transform = pct >= 1 ? 'rotate(180deg)' : 'rotate(0deg)';
+  if(label) label.textContent = pct >= 1 ? 'Suelta para actualizar' : 'Desliza para actualizar';
+}, {passive:true});
+
+document.addEventListener('touchend', async () => {
+  const bar = _pullBar(), arrow = _pullArrow(), label = _pullLabel();
+  if(pullDiff >= PULL_THRESHOLD && !pullBusy) {
+    pullBusy = true;
+    if(bar) bar.style.transform = 'translateY(0%)';
+    if(label) label.textContent = 'Actualizando...';
+    if(arrow) arrow.style.animation = 'spin 0.7s linear infinite';
+    try {
+      renderCurrentView();
+      if(currentView === 'casa' && currentSpaceId) await refreshHouseData(false);
+      if(supabase && CURRENT_USER) await pollInbox();
+    } finally {
+      setTimeout(() => {
+        if(bar) bar.style.transform = 'translateY(-100%)';
+        if(arrow) { arrow.style.animation = ''; arrow.style.transform = 'rotate(0deg)'; }
+        if(label) label.textContent = 'Desliza para actualizar';
+        pullBusy = false; pullDiff = 0; pullStartY = null;
+      }, 600);
+    }
+  } else {
+    if(bar) bar.style.transform = 'translateY(-100%)';
+    if(arrow) arrow.style.transform = 'rotate(0deg)';
+    pullStartY = null; pullDiff = 0;
   }
 }, {passive:true});
-document.addEventListener('touchend', () => { pullStartY=null; }, {passive:true});
 
 // ═══════════════════════════════════════
 // INIT
