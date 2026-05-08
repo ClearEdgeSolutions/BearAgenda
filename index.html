@@ -2429,7 +2429,7 @@ function completeShoppingList(listId, stay=false) {
 }
 
 function updateHeaderTitle() {
-  const titles={home:'Inicio',cheques:'Ingresos',facturas:'Finanzas',cal:'Calendario',casa:'Espacios',bolsillos:'Bolsillos',cuentas:'Cuentas',plan:'Planes',analysis:'Análisis',config:'Configuración',personas:'Directorio'};
+  const titles={home:'Inicio',cheques:'Ingresos',facturas:'Finanzas',cal:'Calendario',casa:'Espacios',bolsillos:'Patrimonio',cuentas:'Patrimonio',plan:'Planes',analysis:'Análisis',config:'Configuración',personas:'Directorio'};
   const el=document.getElementById('headerTitle');
   const sub=document.getElementById('headerSubtitle');
   const inSpace=currentView==='casa'&&currentSpaceId&&currentSpaceName;
@@ -2863,10 +2863,9 @@ function renderBills() {
   const t=today();
   let html='';
   const [fy,fm]=finMonth.split('-').map(Number);
-  if(currentView==='facturas') html+=`<div class="grid grid-cols-4 gap-1 mb-3">
+  if(currentView==='facturas') html+=`<div class="grid grid-cols-3 gap-1 mb-3">
     <button class="pill-tab ${currentTab==='monthly'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="switchTab('monthly',this)">Pagos</button>
     <button class="pill-tab ${currentTab==='prestamos'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="switchTab('prestamos',this)">Préstamos</button>
-    <button class="pill-tab ${currentTab==='bolsillos'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="switchTab('bolsillos',this)">Bolsillos</button>
     <button class="pill-tab ${currentTab==='gastos'?'active':''} text-[10px] font-bold px-1.5 py-1.5 rounded-full whitespace-nowrap" onclick="switchTab('gastos',this)">Historial</button>
   </div>`;
   if(currentTab!=='bolsillos') {
@@ -3108,6 +3107,35 @@ function changeHouseMonth(delta) {
   renderHouse();
 }
 
+function houseItemOccurrencesForMonth(mk) {
+  const results=[];
+  (H.items||[]).forEach(item=>{
+    const freq=item.frequency||'once';
+    const startKey=(item.dueDate||isoToday()).slice(0,7);
+    if(freq==='once'){
+      if(startKey===mk) results.push(item);
+      return;
+    }
+    if(mk<startKey) return;
+    const maxOcc=item.termType==='term'?(item.totalPayments||1):9999;
+    let cur=item.dueDate||isoToday();
+    let count=0, found=false;
+    while(count<maxOcc){
+      const curMk=cur.slice(0,7);
+      if(curMk===mk){found=true;break;}
+      if(curMk>mk) break;
+      const next=nextDateByFrequency(cur,freq);
+      if(next<=cur) break;
+      cur=next; count++;
+    }
+    if(found){
+      const occPay=(item.payments||[]).filter(p=>(p.date||'').slice(0,7)===mk);
+      results.push({...item,dueDate:cur,payments:occPay});
+    }
+  });
+  return results;
+}
+
 function renderHouse() {
   normalizeHouse();
   updateHouseAddButton();
@@ -3117,7 +3145,7 @@ function renderHouse() {
   const currentSpaceCode=currentSpace?currentSpace.code:'';
   const currentSpaceMembers=H.members||currentSpace?.members||[];
   const myId=CURRENT_USER?CURRENT_USER.id:'';
-  const visibleItems=(H.items||[]).filter(i=>monthKey(parseDate(i.dueDate||i.createdAt&&i.createdAt.slice(0,10)||isoToday()))===houseMonth);
+  const visibleItems=houseItemOccurrencesForMonth(houseMonth);
   const total=visibleItems.reduce((s,i)=>s+(i.amount||0),0);
   const paid=visibleItems.reduce((s,i)=>s+housePaid(i),0);
   const pending=Math.max(0,total-paid);
@@ -3216,8 +3244,25 @@ function renderHouse() {
   document.getElementById('houseContent').innerHTML=html;
 }
 
+function houseItemOccursOnDate(item, dateKey) {
+  const freq=item.frequency||'once';
+  const start=item.dueDate||isoToday();
+  if(freq==='once') return dateKey===start?{...item,payments:(item.payments||[]).filter(p=>(p.date||'').slice(0,7)===dateKey.slice(0,7))}:null;
+  if(dateKey<start) return null;
+  const maxOcc=item.termType==='term'?(item.totalPayments||1):9999;
+  let cur=start, count=0;
+  while(count<maxOcc){
+    if(cur===dateKey){const occPay=(item.payments||[]).filter(p=>(p.date||'').slice(0,7)===dateKey.slice(0,7));return{...item,dueDate:cur,payments:occPay};}
+    if(cur>dateKey) break;
+    const next=nextDateByFrequency(cur,freq);
+    if(next<=cur) break;
+    cur=next; count++;
+  }
+  return null;
+}
+
 function houseCalendarItemsForDate(dateKey) {
-  const payments=(H.items||[]).filter(item=>(item.dueDate||item.createdAt&&item.createdAt.slice(0,10))===dateKey);
+  const payments=(H.items||[]).map(item=>houseItemOccursOnDate(item,dateKey)).filter(Boolean);
   const notes=(H.calendarNotes&&H.calendarNotes[dateKey])||[];
   const lists=(H.shoppingLists||[]).filter(list=>list.date===dateKey);
   const plans=(H.plans||[]).filter(plan=>plan.date===dateKey);
@@ -6336,27 +6381,29 @@ function saveCustomPlan(id=null) {
 function renderAccounts() {
   const accs=activeAccounts();
   const totalBal=totalAccountsBalance();
-  const totalPkt=totalPockets();
   const libre=freeBalance();
-  let html=`<div class="grid grid-cols-3 gap-2 mb-4">
-    <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">Total cuentas</div><div class="text-lg font-extrabold text-slate-800">${fmt(totalBal)}</div></div>
-    <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">En bolsillos</div><div class="text-lg font-extrabold text-indigo-600">${fmt(totalPkt)}</div></div>
-    <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">Disponible</div><div class="text-lg font-extrabold text-green-600">${fmt(libre)}</div></div>
-  </div>
-  <div class="flex justify-between items-center mb-3">
-    <div class="font-bold text-indigo-700 text-xs uppercase tracking-wide">Mis cuentas</div>
-    <button onclick="openModal('addAccount')" class="btn-primary text-xs px-3 py-1.5">+ Cuenta</button>
-  </div>`;
   const typeLabel={bank:'Banco',cash:'Efectivo',savings:'Ahorros'};
   const typeColor={bank:'bg-indigo-50 text-indigo-600',cash:'bg-green-50 text-green-600',savings:'bg-amber-50 text-amber-600'};
+
+  // Summary: 2 cards
+  let html=`<div class="grid grid-cols-2 gap-2 mb-4">
+    <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">Total</div><div class="text-lg font-extrabold text-slate-800">${fmt(totalBal)}</div></div>
+    <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">Disponible</div><div class="text-lg font-extrabold text-green-600">${fmt(libre)}</div></div>
+  </div>`;
+
+  // — Cuentas section —
+  html+=`<div class="flex justify-between items-center mb-2">
+    <div class="font-bold text-indigo-700 text-xs uppercase tracking-wide">Cuentas</div>
+    <button onclick="openModal('addAccount')" class="btn-primary text-xs px-3 py-1.5">+ Cuenta</button>
+  </div>`;
   if(!accs.length) {
-    html+=`<div class="card p-5 text-center text-indigo-300 text-sm">Sin cuentas. Agrega tu primera cuenta bancaria.</div>`;
+    html+=`<div class="card p-4 text-center text-indigo-300 text-sm mb-4">Sin cuentas. Agrega tu primera cuenta bancaria.</div>`;
   } else {
     accs.forEach(a=>{
       const reserved=accountReservedAmount(a.id);
       const avail=accountAvailable(a.id);
       const pockets=(S.pockets||[]).filter(p=>p.sourceAccountId===a.id);
-      html+=`<div onclick="openModal('accountDetail','${a.id}')" class="card p-4 mb-3 cursor-pointer active:scale-[.99] transition">
+      html+=`<div onclick="openModal('accountDetail','${a.id}')" class="card p-4 mb-2 cursor-pointer active:scale-[.99] transition">
         <div class="flex items-center gap-3">
           <div class="w-12 h-12 rounded-2xl ${typeColor[a.type]||'bg-indigo-50 text-indigo-600'} flex items-center justify-center text-2xl">${a.emoji||'🏦'}</div>
           <div class="flex-1 min-w-0">
@@ -6372,7 +6419,37 @@ function renderAccounts() {
       </div>`;
     });
   }
+
   document.getElementById('cuentasContent').innerHTML=html;
+}
+
+function renderPockets() {
+  const total=totalPockets(), disponible=freeBalance();
+  let html=`<div class="grid grid-cols-2 gap-2 mb-4">
+    <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">Disponible</div><div class="text-lg font-extrabold text-green-600">${fmt(disponible)}</div></div>
+    <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">En bolsillos</div><div class="text-lg font-extrabold text-indigo-600">${fmt(total)}</div></div>
+  </div>
+  <div class="flex justify-end mb-3"><button onclick="openModal('addPocket')" class="btn-primary text-sm px-4 py-2.5">+ Bolsillo</button></div>`;
+  if(!(S.pockets||[]).length) {
+    html+=`<div class="card p-5 text-center text-indigo-300 text-sm">Sin bolsillos. Crea categorías para separar dinero con propósito.</div>`;
+  } else {
+    (S.pockets||[]).forEach(pk=>{
+      const pct=pk.target>0?Math.min(100,Math.round((pk.saved||0)/pk.target*100)):0;
+      html+=`<div onclick="openModal('pocketDetail','${pk.id}')" class="card p-4 mb-2 border border-indigo-50 active:scale-[.99] transition">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-400 flex items-center justify-center"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div>
+          <div class="flex-1"><div class="font-bold text-slate-800">${pk.name}</div><div class="text-xs text-slate-400">${pk.target?`Meta ${fmt(pk.target)} · ${pct}%`:'Sin meta definida'}</div></div>
+          <div class="text-right"><div class="text-xl font-bold text-indigo-600">${fmt(pk.saved||0)}</div><div class="text-xs text-slate-400">guardado</div></div>
+        </div>
+        ${pk.target?`<div class="mt-3"><div class="w-full bg-indigo-50 rounded-full h-2.5"><div class="bg-gradient-to-r from-indigo-400 to-violet-400 h-2.5 rounded-full" style="width:${pct}%"></div></div></div>`:''}
+        <div class="flex gap-2 mt-3 pt-3 border-t border-slate-50">
+          <button onclick="event.stopPropagation();openModal('movePocket','${pk.id}')" class="flex-1 bg-indigo-50 text-indigo-700 font-semibold text-sm py-2 rounded-xl">Mover dinero</button>
+          <button onclick="event.stopPropagation();deletePocket('${pk.id}')" class="bg-red-50 text-red-400 text-sm px-3 py-2 rounded-xl">Borrar</button>
+        </div>
+      </div>`;
+    });
+  }
+  document.getElementById('pocketsContent').innerHTML=html;
 }
 
 function saveAccount(id=null) {
@@ -7316,16 +7393,10 @@ function showView(view) {
 
 function openAppMenu() {
   const items=[
-    ['home','Inicio','Resumen principal y accesos rápidos'],
-    ['cheques','Ingresos','Pagos recibidos y próximos ingresos'],
-    ['facturas','Finanzas','Pagos, gastos y préstamos'],
-    ['cal','Calendario','Pagos, citas, notas y tareas'],
-    ['casa','Espacios','Espacios compartidos con otras personas'],
     ['plan','Planes','Planes cheque a cheque editables'],
     ['analysis','Análisis mensual','Gráfico de ingresos, egresos y gastos'],
     ['personas','Directorio','Contactos, préstamos y trabajos'],
-    ['cuentas','Cuentas','Mis cuentas, efectivo y ahorros'],
-    ['bolsillos','Bolsillos','Fondos guardados y metas de ahorro'],
+    ['cuentas','Patrimonio','Mis cuentas, bolsillos y ahorros'],
   ];
   document.getElementById('sideMenuItems').innerHTML=items.map(([view,title,desc])=>`<button onclick="closeAppMenu();showView('${view}')" class="w-full bg-white border border-indigo-100 rounded-xl px-3 py-2.5 text-left active:scale-[.99] transition">
       <div class="font-bold text-indigo-700 text-sm">${title}</div>
@@ -7354,7 +7425,7 @@ function renderCurrentView() {
   else if(currentView==='cheques') renderChecks();
   else if(currentView==='facturas') renderBills();
   else if(currentView==='cal') renderCalendar();
-  else if(currentView==='bolsillos') renderPocketsView();
+  else if(currentView==='bolsillos') renderPockets();
   else if(currentView==='plan') renderPlan();
   else if(currentView==='analysis') renderAnalysis();
   else if(currentView==='casa') renderEspacios();
