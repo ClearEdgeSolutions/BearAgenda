@@ -513,6 +513,7 @@
       <button onclick="closeAppMenu()" style="width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#5c6480;font-size:1.1rem;display:flex;align-items:center;justify-content:center;cursor:pointer">×</button>
     </div>
     <div id="sideMenuItems" class="flex-1 overflow-y-auto" style="padding:12px;scrollbar-width:none"></div>
+    <div id="sideMenuBottom" style="padding:10px 12px 18px;border-top:1px solid rgba(255,255,255,0.05);flex-shrink:0;display:flex;flex-direction:column;gap:4px"></div>
   </aside>
 </div>
 
@@ -1445,7 +1446,7 @@ function renderEspacios() {
   updateHeaderTitle();
   const oldEsFab=document.getElementById('espaciosFab');
   if(oldEsFab) oldEsFab.remove();
-  if(currentSpaceId && houseTab!=='history') {
+  if(!currentSpaceId || houseTab!=='history') {
     const esFab=document.createElement('button');
     esFab.id='espaciosFab'; esFab.className='bear-fab'; esFab.textContent='Nuevo';
     (document.getElementById('view-casa')||document.body).appendChild(esFab);
@@ -1501,8 +1502,11 @@ function renderSpacesList() {
       const spBal=(spaceH.accounts||[]).reduce((s,a)=>s+(a.balance||0),0);
       const spMovThisMonth=(spaceH.transactions||[]).filter(t=>(t.date||'').slice(0,7)===mkNow).length;
       const avatarsHtml=members.slice(0,3).map((m,i)=>`<div title="${m.name||'?'}" style="width:26px;height:26px;border-radius:50%;background:${memberColor(i)};border:2px solid #0d0f1a;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;flex-shrink:0;margin-left:${i>0?'-6px':'0'}">${memberInitials(m.name||'?',true)}</div>`).join('');
+      const _hasZWJ=(emoji||'').includes('‍');
+      const _emojiCp=[...(emoji||'')].filter(c=>c.codePointAt(0)>0x1F000).length;
+      const _emojiFs=(!_hasZWJ&&_emojiCp>1)?'1.3rem':'1.8rem';
       html+=`<div class="card" style="display:flex;align-items:center;padding:12px;gap:10px;cursor:pointer" onclick="enterSpace('${sp.id}','${safeName}')">
-        <div style="width:56px;height:56px;border-radius:14px;background:#252836;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;line-height:1"><span style="font-size:1.8rem;line-height:1;display:flex;align-items:center;justify-content:center;width:100%;height:100%">${renderSpaceEmoji(emoji)}</span></div>
+        <div style="width:56px;height:56px;border-radius:14px;background:#252836;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;line-height:1"><span style="font-size:${_emojiFs};line-height:1;white-space:nowrap;display:flex;align-items:center;justify-content:center;width:100%;height:100%">${renderSpaceEmoji(emoji)}</span></div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;color:#fff;font-size:0.87rem;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sp.name}</div>
           <div style="font-size:0.6rem;color:#5c6480;margin-bottom:5px">Código: <span style="color:#7c6fda;font-weight:700;font-family:monospace">${sp.code||'—'}</span></div>
@@ -2469,10 +2473,10 @@ function renderHome() {
   const catSpend={};
   monthPayments.filter(x=>x.paid).forEach(x=>{const c=x.category||'Otro';catSpend[c]=(catSpend[c]||0)+x.amount;});
   const catTotal=Object.values(catSpend).reduce((s,v)=>s+v,0);
-  const catColors=['#4ade80','#8b7fd4','#f59e0b','#ef4444','#06b6d4','#a78bfa'];
+  const catColors=['#60a5fa','#8b7fd4','#f59e0b','#ef4444','#06b6d4','#a78bfa'];
   const catEntries=Object.entries(catSpend).sort((a,b)=>b[1]-a[1]).slice(0,4);
   S.favoriteContacts = S.favoriteContacts || [];
-  const favContacts=(S.personas||[]).filter(p=>S.favoriteContacts.includes(p.name)).slice(0,4);
+  const _connContacts=(S.personContacts||[]).filter(c=>!c.isArchived&&c.connectionStatus==='connected'&&S.favoriteContacts.includes(c.displayName||'')).slice(0,6);
 
   let html=`
   <div style="margin-bottom:16px">
@@ -2509,7 +2513,7 @@ function renderHome() {
       <div style="font-size:0.65rem;color:#5c6480;margin-bottom:5px">${moNames[mo]} • 1-${lastDay}</div>
       <div style="font-size:1.4rem;font-weight:800;color:#fff;margin-bottom:10px">${fmt(totalMo)}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:10px">
-        <div><div style="font-size:0.6rem;color:#5c6480;margin-bottom:2px">Pagado</div><div style="font-size:0.92rem;font-weight:700;color:#4ade80">${fmt(paidAmt)}</div></div>
+        <div><div style="font-size:0.6rem;color:#5c6480;margin-bottom:2px">Pagado</div><div style="font-size:0.92rem;font-weight:700;color:#60a5fa">${fmt(paidAmt)}</div></div>
         <div><div style="font-size:0.6rem;color:#5c6480;margin-bottom:2px">Por pagar</div><div style="font-size:0.92rem;font-weight:700;color:#94a3b8">${fmt(pendingMo)}</div></div>
       </div>
       <div style="background:#1f2235;border-radius:99px;height:4px;overflow:hidden;margin-bottom:4px">
@@ -2561,11 +2565,11 @@ function renderHome() {
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
     <div class="card p-3">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div style="font-size:0.68rem;color:#94a3b8;font-weight:600">Contactos favoritos</div>
-        <button onclick="event.stopPropagation();openModal('homeFavContactsPicker')" style="width:22px;height:22px;border-radius:50%;background:rgba(124,111,218,0.15);border:1px solid rgba(124,111,218,0.3);color:#8b7fd4;font-size:0.85rem;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1">+</button>
+        <div style="font-size:0.68rem;color:#94a3b8;font-weight:600">Contactos</div>
+        <button onclick="event.stopPropagation();openModal('homeFavContactsPicker')" style="width:20px;height:20px;border-radius:50%;background:rgba(124,111,218,0.15);border:1px solid rgba(124,111,218,0.3);color:#8b7fd4;font-size:0.8rem;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1">+</button>
       </div>
-      ${favContacts.length?favContacts.map(p=>`<div onclick="openModal('personaDetail','${encodeURIComponent(p.name||'')}')" style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer"><div style="width:30px;height:30px;border-radius:50%;background:${p.color||'#3d3560'};display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#fff;flex-shrink:0">${(p.name||'?')[0].toUpperCase()}</div><span style="font-size:0.8rem;font-weight:600;color:#e8eaf2;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name||''}</span><svg style="width:12px;height:12px;color:#5c6480;flex-shrink:0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div>`).join(''):
-      `<div style="font-size:0.7rem;color:#5c6480;text-align:center;padding:14px 0">Toca + para agregar</div>`}
+      ${_connContacts.length?`<div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-start;padding:2px 0">${_connContacts.map(c=>{const key=c.displayName||'';const col=['#6c63c7','#60a5fa','#f59e0b','#06b6d4','#a78bfa','#ef4444'][Math.abs((key).charCodeAt(0))%6];return`<div onclick="openModal('spaceMemberDetail','${encodeURIComponent(key)}')" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer"><div style="width:38px;height:38px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:800;color:#fff;border:2px solid rgba(255,255,255,0.12)">${(key||'?')[0].toUpperCase()}</div><span style="font-size:0.55rem;color:#94a3b8;font-weight:600;white-space:nowrap;max-width:40px;overflow:hidden;text-overflow:ellipsis;text-align:center">${key.split(' ')[0]}</span></div>`;}).join('')}</div>`
+      :`<div style="font-size:0.7rem;color:#5c6480;text-align:center;padding:14px 0">Toca + para agregar</div>`}
     </div>
     <div class="card p-3">
       <div style="font-size:0.68rem;color:#94a3b8;font-weight:600;margin-bottom:8px">Categorías del mes</div>
@@ -3835,7 +3839,7 @@ function renderSchedulePreview(rows=[], modalType='', modalId='', show=4) {
 }
 
 function houseAddAction() {
-  if(!currentSpaceId) return;
+  if(!currentSpaceId) { openModal('spaceAddChoice'); return; }
   if(houseTab==='pockets') openModal('addHousePocket');
   else if(houseTab==='calendar') openModal('houseCalendarAddChoice',houseCalDate||isoToday());
   else openModal('addHouseItem');
@@ -4073,6 +4077,12 @@ function renderHouse() {
     </div>`;
   }
   document.getElementById('houseContent').innerHTML=html;
+  if(currentSpaceId && houseTab!=='history' && !document.getElementById('espaciosFab')) {
+    const esFab=document.createElement('button');
+    esFab.id='espaciosFab'; esFab.className='bear-fab'; esFab.textContent='Nuevo';
+    (document.getElementById('view-casa')||document.body).appendChild(esFab);
+    makeFabDraggable(esFab, ()=>houseAddAction());
+  }
 }
 
 function houseItemOccursOnDate(item, dateKey) {
@@ -5726,20 +5736,88 @@ function openModal(type, id, extra) {
 
   else if(type==='homeFavContactsPicker') {
     S.favoriteContacts = S.favoriteContacts || [];
-    const allPD=getPersonasData();
-    const personas=Object.values(allPD).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
-    html=`<h3 style="font-weight:800;color:#e8eaf2;font-size:1rem;margin-bottom:4px">Contactos favoritos</h3>
-    <p style="font-size:0.72rem;color:#5c6480;margin-bottom:14px">Selecciona los que aparecen en Inicio.</p>
-    ${personas.length?`<div style="display:flex;flex-direction:column;gap:6px;max-height:380px;overflow-y:auto">${personas.map(p=>{
-      const isFav=S.favoriteContacts.includes(p.name);
-      const initials=(p.name||'?')[0].toUpperCase();
-      return `<button onclick="toggleFavContact('${encodeURIComponent(p.name||'')}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:${isFav?'rgba(124,111,218,0.18)':'rgba(255,255,255,0.04)'};border:1px solid ${isFav?'rgba(124,111,218,0.4)':'rgba(255,255,255,0.07)'};text-align:left;cursor:pointer;width:100%">
-        <div style="width:36px;height:36px;border-radius:50%;background:${p.color||'#6c63c7'};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;flex-shrink:0">${initials}</div>
-        <div style="flex:1;min-width:0"><div style="font-weight:600;color:#e8eaf2;font-size:0.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name||'Sin nombre'}</div></div>
+    const connectedContacts=(S.personContacts||[]).filter(c=>!c.isArchived&&c.connectionStatus==='connected');
+    html=`<h3 style="font-weight:800;color:#e8eaf2;font-size:1rem;margin-bottom:4px">Contactos conectados</h3>
+    <p style="font-size:0.72rem;color:#5c6480;margin-bottom:14px">Personas que aceptaron tu invitación y aparecerán en Inicio.</p>
+    ${connectedContacts.length?`<div style="display:flex;flex-direction:column;gap:6px;max-height:380px;overflow-y:auto">${connectedContacts.map(c=>{
+      const key=c.displayName||'';
+      const isFav=S.favoriteContacts.includes(key);
+      const col=['#6c63c7','#60a5fa','#f59e0b','#06b6d4','#a78bfa','#ef4444'][Math.abs((key).charCodeAt(0))%6];
+      return `<button onclick="toggleFavContact('${encodeURIComponent(key)}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:${isFav?'rgba(124,111,218,0.18)':'rgba(255,255,255,0.04)'};border:1px solid ${isFav?'rgba(124,111,218,0.4)':'rgba(255,255,255,0.07)'};text-align:left;cursor:pointer;width:100%">
+        <div style="width:36px;height:36px;border-radius:50%;background:${col};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;flex-shrink:0">${(key||'?')[0].toUpperCase()}</div>
+        <div style="flex:1;min-width:0"><div style="font-weight:600;color:#e8eaf2;font-size:0.82rem">${key||'Contacto'}</div><div style="font-size:0.6rem;color:#4ade80;margin-top:1px">● Conectado${c.linkedDisplayName?' · '+c.linkedDisplayName:''}</div></div>
         <div style="font-size:1.1rem;color:${isFav?'#a5b4fc':'#3a4060'}">${isFav?'★':'☆'}</div>
       </button>`;
-    }).join('')}</div>`:`<div style="text-align:center;color:#5c6480;font-size:0.82rem;padding:24px 0">No hay contactos. Crea uno desde Directorio.</div>`}
-    <button onclick="closeModal()" style="width:100%;background:#6c63c7;color:#fff;font-weight:700;padding:12px;border-radius:12px;border:none;margin-top:14px;font-size:0.875rem;cursor:pointer">Listo</button>`;
+    }).join('')}</div>`:`<div style="text-align:center;color:#5c6480;font-size:0.82rem;padding:24px 0">Ningún contacto conectado todavía. Desde Directorio, invite a alguien y espera que acepte.</div>`}
+    <button onclick="closeModal();renderHome();" style="width:100%;background:#6c63c7;color:#fff;font-weight:700;padding:12px;border-radius:12px;border:none;margin-top:14px;font-size:0.875rem;cursor:pointer">Listo</button>`;
+  }
+
+  else if(type==='spaceMemberDetail') {
+    const key=decodeURIComponent(id||'');
+    const c=(S.personContacts||[]).find(x=>x.displayName===key)||{displayName:key};
+    const col=['#6c63c7','#60a5fa','#f59e0b','#06b6d4','#a78bfa','#ef4444'][Math.abs((key||'a').charCodeAt(0))%6];
+    const initial=(key||'?')[0].toUpperCase();
+    const phone=c.phone||'';
+    const waBase=phone?`https://wa.me/${phone.replace(/\D/g,'')}`:'';
+    // Espacios compartidos
+    const sharedCount=(S.spaces||[]).filter(sp=>(sp.members||[]).some(m=>c.linkedUserId&&m.id===c.linkedUserId)).length;
+    // Deudas por separado
+    const loansByMe=(S.loans||[]).filter(l=>l.personName===key);
+    const totalOwedByThem=loansByMe.reduce((sum,l)=>sum+(l.payments||[]).filter(p=>!p.paid).reduce((s,p)=>s+(p.amount||0),0),0);
+    const loansFromThem=(S.borrowedLoans||[]).filter(l=>l.personName===key);
+    const totalIOweThem=loansFromThem.reduce((sum,l)=>sum+borrowedInstallments(l).filter(p=>!p.paid).reduce((s,p)=>s+(p.amount||0),0),0);
+    // Próximos 14 días
+    const todayStr=isoToday();
+    const end14=new Date(); end14.setDate(end14.getDate()+14);
+    const end14Str=end14.toISOString().slice(0,10);
+    const upPay=[];
+    loansByMe.forEach(l=>(l.payments||[]).filter(p=>!p.paid&&p.date&&p.date>=todayStr&&p.date<=end14Str).forEach(p=>upPay.push({date:p.date,amount:p.amount,dir:'receive',name:l.loanName||'Préstamo'})));
+    loansFromThem.forEach(l=>borrowedInstallments(l).filter(p=>!p.paid&&p.date&&p.date>=todayStr&&p.date<=end14Str).forEach(p=>upPay.push({date:p.date,amount:p.amount,dir:'pay',name:l.loanName||l.description||'Préstamo'})));
+    upPay.sort((a,b)=>a.date<b.date?-1:1);
+    // Botones de emoji
+    const _emojis=['❤️','😄','🙏','👏','🤝','💰'];
+    const emojiBtns=_emojis.map(em=>{
+      const oc=waBase?`window.open('${waBase}?text=${encodeURIComponent(em)}','_blank')`:`showToast('${em}')`;
+      return `<button onclick="${oc}" style="width:42px;height:42px;border-radius:50%;background:#252836;border:1px solid rgba(255,255,255,0.08);font-size:1.3rem;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1">${em}</button>`;
+    }).join('');
+    const pay14Html=upPay.length
+      ?upPay.map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+          <div>
+            <div style="font-size:0.78rem;font-weight:600;color:#e8eaf2">${p.dir==='receive'?'↓ Recibir':'↑ Pagar'}</div>
+            <div style="font-size:0.65rem;color:#94a3b8;margin-top:1px">${fmtDate(p.date)}</div>
+          </div>
+          <div style="font-weight:800;color:${p.dir==='receive'?'#4ade80':'#f87171'};font-size:0.9rem">${p.dir==='receive'?'+':'-'}${fmt(p.amount||0)}</div>
+        </div>`).join('')
+      :`<div style="text-align:center;color:#5c6480;font-size:0.75rem;padding:6px 0">Sin pagos en los próximos 14 días</div>`;
+    html=`<div style="display:flex;align-items:center;gap:10px;padding:4px 0 12px">
+      <div style="width:44px;height:44px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;color:#fff;flex-shrink:0;border:2px solid rgba(255,255,255,0.15)">${initial}</div>
+      <div>
+        <div style="font-weight:800;color:#e8eaf2;font-size:0.95rem">${key||'Contacto'}</div>
+        <div style="font-size:0.62rem;color:#4ade80;font-weight:600;margin-top:2px">● Conectado</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
+      <div style="background:#252836;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:10px 8px;text-align:center">
+        <div style="font-size:1.1rem;margin-bottom:3px">🏠</div>
+        <div style="font-size:1.1rem;font-weight:800;color:#e8eaf2">${sharedCount}</div>
+        <div style="font-size:0.58rem;color:#94a3b8;font-weight:600;margin-top:2px;line-height:1.3">Espacios<br>compartidos</div>
+      </div>
+      <div style="background:#252836;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:10px 8px;text-align:center">
+        <div style="font-size:1.1rem;margin-bottom:3px">💸</div>
+        <div style="font-size:0.9rem;font-weight:800;color:${totalOwedByThem>0?'#4ade80':'#5c6480'}">${totalOwedByThem>0?fmt(totalOwedByThem):'—'}</div>
+        <div style="font-size:0.58rem;color:#94a3b8;font-weight:600;margin-top:2px;line-height:1.3">Me<br>debe</div>
+      </div>
+      <div style="background:#252836;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:10px 8px;text-align:center">
+        <div style="font-size:1.1rem;margin-bottom:3px">🤑</div>
+        <div style="font-size:0.9rem;font-weight:800;color:${totalIOweThem>0?'#f87171':'#5c6480'}">${totalIOweThem>0?fmt(totalIOweThem):'—'}</div>
+        <div style="font-size:0.58rem;color:#94a3b8;font-weight:600;margin-top:2px;line-height:1.3">Le<br>debo</div>
+      </div>
+    </div>
+    <div style="background:#252836;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:10px 12px;margin-bottom:12px">
+      <div style="font-size:0.6rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Próximos 14 días</div>
+      ${pay14Html}
+    </div>
+    <div style="display:flex;justify-content:center;gap:7px;padding-bottom:2px">${emojiBtns}</div>`;
   }
 
   else if(type==='homeUpcomingDetail') {
@@ -6673,6 +6751,34 @@ function openModal(type, id, extra) {
       <button onclick="toggleHousePlan('${plan.id}')" class="flex-1 ${plan.completed?'bg-slate-100 text-slate-500':'bg-green-50 text-green-700'} font-semibold py-3 rounded-xl text-sm">${plan.completed?'Reabrir':'Completar'}</button>
       <button onclick="openModal('editHousePlan','${plan.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl text-sm">Editar</button>
       <button onclick="deleteHousePlan('${plan.id}')" class="bg-red-50 text-red-500 font-semibold px-4 rounded-xl text-sm">Borrar</button>
+    </div>`;
+  }
+
+  else if(type==='spaceAddChoice') {
+    html=`<div style="text-align:center;padding:4px 0 18px">
+      <div style="font-size:2rem;margin-bottom:8px">🏠</div>
+      <h3 style="font-size:1.05rem;font-weight:800;color:#e8eaf2;margin-bottom:4px">Agregar espacio</h3>
+      <p style="font-size:0.78rem;color:#94a3b8">Crea uno nuevo o únete con un código</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button onclick="closeModal();setTimeout(()=>openModal('createSpace'),180)" style="display:flex;align-items:center;gap:12px;background:#6c63c7;border:none;color:#fff;font-weight:700;font-size:0.9rem;padding:16px 18px;border-radius:14px;cursor:pointer;width:100%;text-align:left">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+        </div>
+        <div>
+          <div>Crear espacio</div>
+          <div style="font-size:0.72rem;font-weight:500;opacity:0.8;margin-top:2px">Dale un nombre e invita personas</div>
+        </div>
+      </button>
+      <button onclick="closeModal();setTimeout(()=>openModal('joinSpace'),180)" style="display:flex;align-items:center;gap:12px;background:#252836;border:1px solid rgba(255,255,255,0.08);color:#e8eaf2;font-weight:700;font-size:0.9rem;padding:16px 18px;border-radius:14px;cursor:pointer;width:100%;text-align:left">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(124,111,218,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="18" height="18" fill="none" stroke="#8b7fd4" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+        </div>
+        <div>
+          <div>Unirse con código</div>
+          <div style="font-size:0.72rem;font-weight:500;color:#94a3b8;margin-top:2px">Escribe el código que te compartieron</div>
+        </div>
+      </button>
     </div>`;
   }
 
@@ -9152,11 +9258,11 @@ function openAppMenu() {
     </button>`;
   }).join('')+
 
-  /* ── Divider ── */
-  `<div style="height:1px;background:rgba(255,255,255,0.05);margin:10px 0 12px"></div>`+
+  ``;
 
-  /* ── Configuración (purple highlight) ── */
-  `<button onclick="closeAppMenu();showView('config')" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;background:linear-gradient(135deg,rgba(124,111,218,0.2),rgba(108,99,199,0.12));border:1px solid rgba(124,111,218,0.3);text-align:left;cursor:pointer;margin-bottom:4px">
+  document.getElementById('sideMenuBottom').innerHTML=
+  /* ── Configuración ── */
+  `<button onclick="closeAppMenu();showView('config')" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;background:linear-gradient(135deg,rgba(124,111,218,0.2),rgba(108,99,199,0.12));border:1px solid rgba(124,111,218,0.3);text-align:left;cursor:pointer">
     <div style="width:34px;height:34px;border-radius:10px;background:rgba(124,111,218,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#a5b4fc">${configGearSVG}</div>
     <div style="flex:1;min-width:0">
       <div style="font-weight:700;color:#c4b5fd;font-size:0.8rem">Configuración</div>
@@ -9164,9 +9270,8 @@ function openAppMenu() {
     </div>
     <svg width="12" height="12" fill="none" stroke="#7c6fda" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
   </button>`+
-
   /* ── Cerrar sesión ── */
-  `<button onclick="closeAppMenu();logoutUser()" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);text-align:left;cursor:pointer;margin-bottom:12px">
+  `<button onclick="closeAppMenu();logoutUser()" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);text-align:left;cursor:pointer">
     <div style="width:34px;height:34px;border-radius:10px;background:rgba(239,68,68,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#ef4444">
       <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
     </div>
@@ -9174,9 +9279,7 @@ function openAppMenu() {
       <div style="font-weight:700;color:#ef4444;font-size:0.8rem">Cerrar sesión</div>
       <div style="font-size:0.6rem;color:#7a3535;margin-top:1px">Salir de tu cuenta</div>
     </div>
-  </button>`+
-
-  ``;
+  </button>`;
   const overlay=document.getElementById('sideMenuOverlay');
   overlay.classList.remove('hidden');
   requestAnimationFrame(()=>overlay.classList.add('open'));

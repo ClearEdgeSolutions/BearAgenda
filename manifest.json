@@ -8,19 +8,19 @@
   "icons": [
     {
       "src": "logo sin texto.png",
-      "sizes": "180x180",
+      "sizes": "any",
       "type": "image/png",
       "purpose": "any"
     },
     {
       "src": "logo sin texto.png",
-      "sizes": "192x192",
+      "sizes": "any",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
       "src": "logo sin texto.png",
-      "sizes": "512x512",
+      "sizes": "any",
       "type": "image/png",
       "purpose": "any maskable"
     }
