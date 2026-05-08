@@ -5774,11 +5774,14 @@ function openModal(type, id, extra) {
     loansByMe.forEach(l=>(l.payments||[]).filter(p=>!p.paid&&p.date&&p.date>=todayStr&&p.date<=end14Str).forEach(p=>upPay.push({date:p.date,amount:p.amount,dir:'receive',name:l.loanName||'Préstamo'})));
     loansFromThem.forEach(l=>borrowedInstallments(l).filter(p=>!p.paid&&p.date&&p.date>=todayStr&&p.date<=end14Str).forEach(p=>upPay.push({date:p.date,amount:p.amount,dir:'pay',name:l.loanName||l.description||'Préstamo'})));
     upPay.sort((a,b)=>a.date<b.date?-1:1);
-    // Botones de emoji
+    // Botones de emoji — igual que personaDetail (sendReaction vía Supabase)
     const _emojis=['❤️','😄','🙏','👏','🤝','💰'];
+    const _btnStyle='width:42px;height:42px;border-radius:50%;background:#252836;border:1px solid rgba(255,255,255,0.08);font-size:1.3rem;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1;text-decoration:none';
+    const _safeName=key.replace(/'/g,"\\'");
     const emojiBtns=_emojis.map(em=>{
-      const oc=waBase?`window.open('${waBase}?text=${encodeURIComponent(em)}','_blank')`:`showToast('${em}')`;
-      return `<button onclick="${oc}" style="width:42px;height:42px;border-radius:50%;background:#252836;border:1px solid rgba(255,255,255,0.08);font-size:1.3rem;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1">${em}</button>`;
+      if(c.linkedUserId) return `<button onclick="sendReaction('${c.linkedUserId}','${_safeName}','${em}')" style="${_btnStyle}">${em}</button>`;
+      if(waBase) return `<a href="${waBase}?text=${encodeURIComponent(em)}" target="_blank" rel="noopener" style="${_btnStyle}">${em}</a>`;
+      return `<button onclick="showToast('${em}')" style="${_btnStyle}">${em}</button>`;
     }).join('');
     const pay14Html=upPay.length
       ?upPay.map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
