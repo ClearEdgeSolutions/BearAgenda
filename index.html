@@ -1910,21 +1910,33 @@ function adjustBalance(amount) {
 function adjustSource(source, amount) {
   amount=parseFloat(amount)||0;
   if(!source||source.type==='balance') adjustBalance(amount);
+  else if(source.type==='account') adjustAccountBalance(source.id, amount);
   else {
     const p=S.pockets.find(x=>x.id===source.id);
-    if(p) p.saved=Math.max(0,(p.saved||0)+amount);
+    if(p) {
+      p.saved=Math.max(0,(p.saved||0)+amount);
+      if(p.sourceAccountId) adjustAccountBalance(p.sourceAccountId, amount);
+      else adjustBalance(amount);
+    }
   }
 }
 function paymentSourceOptions() {
+  const accs=activeAccounts();
+  let opts='';
+  if(accs.length) {
+    opts=accs.map(a=>`<option value="account:${a.id}">${a.name} (${fmt(accountAvailable(a.id))})</option>`).join('');
+  } else {
+    opts=`<option value="balance">Balance general (${fmt(freeBalance())})</option>`;
+  }
+  opts+=(S.pockets||[]).map(p=>`<option value="pocket:${p.id}">${p.name} (${fmt(p.saved||0)})</option>`).join('');
   return `<div><label class="text-xs font-bold text-slate-500 uppercase">De dónde sale el dinero</label>
-  <select id="mSource" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
-    <option value="balance">Balance general (${fmt(freeBalance())})</option>
-    ${S.pockets.map(p=>`<option value="pocket:${p.id}">${p.name} (${fmt(p.saved||0)})</option>`).join('')}
-  </select></div>`;
+  <select id="mSource" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">${opts}</select></div>`;
 }
 function readPaymentSource() {
   const raw=document.getElementById('mSource')?.value||'balance';
-  return raw.startsWith('pocket:')?{type:'pocket',id:raw.split(':')[1]}:{type:'balance',id:null};
+  if(raw.startsWith('pocket:')) return {type:'pocket',id:raw.split(':')[1]};
+  if(raw.startsWith('account:')) return {type:'account',id:raw.split(':')[1]};
+  return {type:'balance',id:null};
 }
 function sourceLabel(source) {
   if(!source||source.type==='balance') return 'Balance libre';
@@ -2196,7 +2208,8 @@ function homeActionIcon(onclick, kind, label) {
   const path=yes
     ? '<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>'
     : '<path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18"/>';
-  return `<button onclick="event.stopPropagation();${onclick}" title="${label}" aria-label="${label}" class="inline-flex items-center justify-center w-9 h-9 shrink-0 rounded-xl border ${cls}" style="box-shadow:0 4px 12px rgba(15,23,42,.04)"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.6" viewBox="0 0 24 24">${path}</svg></button>`;
+  const svgStroke=yes?'currentColor':'#ef4444';
+  return `<button onclick="event.stopPropagation();${onclick}" title="${label}" aria-label="${label}" class="inline-flex items-center justify-center w-9 h-9 shrink-0 rounded-xl border ${cls}" style="box-shadow:0 4px 12px rgba(15,23,42,.04)"><svg class="w-4 h-4" fill="none" stroke="${svgStroke}" stroke-width="2.6" viewBox="0 0 24 24">${path}</svg></button>`;
 }
 
 function setHomeUpcomingFilter(filter) {
@@ -4573,6 +4586,54 @@ function openModal(type, id, extra) {
       const plan=(S.plans||[]).find(x=>x.id===pid);
       if(plan) { title=plan.label; subtitle=`Plan · ${fmtDate(plan.date)}`; icon='receipt'; amount=plan.amount||0; rows=[['Items',`${(plan.items||[]).length}`],['Estado',plan.completed?'Completado':'Pendiente'],['Nota',plan.note||'Sin nota']]; }
     }
+    let payActionHtml='';
+    if(kind==='bill'){
+      const b=(S.bills||[]).find(x=>x.id===pid);
+      if(b&&!isBillPaid(pid,dateKey)){
+        const due=Math.max(0,(b.amount||0)-billPaidAmount(pid,dateKey));
+        payActionHtml=`<div class="space-y-3 mt-3 pt-3 border-t border-slate-100">
+          <div class="text-[10px] font-bold text-indigo-400 uppercase tracking-wide">Registrar pago</div>
+          <div><label class="text-xs font-bold text-slate-500 uppercase">Monto ($)</label><input type="number" id="mAmt" value="${due||b.amount}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold text-lg"></div>
+          ${paymentSourceOptions()}
+          <button onclick="confirmedBillPaid('${pid}','${dateKey}',document.getElementById('mAmt').value,'${isoToday()}')" class="w-full btn-primary py-3">Confirmar pago ✓</button>
+        </div>`;
+      }
+    } else if(kind==='onetime'){
+      const o=(S.oneTimePayments||[]).find(x=>x.id===pid);
+      if(o&&!isOneTimePaid(o,dateKey)){
+        const left=Math.max(0,(o.amount||0)-oneTimePaidAmount(o,dateKey));
+        payActionHtml=`<div class="space-y-3 mt-3 pt-3 border-t border-slate-100">
+          <div class="text-[10px] font-bold text-indigo-400 uppercase tracking-wide">Registrar pago</div>
+          <div><label class="text-xs font-bold text-slate-500 uppercase">Monto ($)</label><input type="number" id="mAmt" value="${left||o.amount}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold text-lg"></div>
+          ${paymentSourceOptions()}
+          <button onclick="confirmedPayOnce('${pid}',document.getElementById('mAmt').value,'${isoToday()}','${dateKey}')" class="w-full btn-primary py-3">Confirmar pago ✓</button>
+        </div>`;
+      }
+    } else if(kind==='expense'){
+      const e=(S.expenses||[]).find(x=>x.id===pid);
+      if(e&&!e.paid){
+        payActionHtml=`<div class="space-y-3 mt-3 pt-3 border-t border-slate-100">
+          <div class="text-[10px] font-bold text-indigo-400 uppercase tracking-wide">Registrar pago</div>
+          <div><label class="text-xs font-bold text-slate-500 uppercase">Monto ($)</label><input type="number" id="mAmt" value="${e.amount}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold text-lg"></div>
+          ${paymentSourceOptions()}
+          <button onclick="markExpensePaid('${pid}');closeModal()" class="w-full btn-primary py-3">Confirmar pago ✓</button>
+        </div>`;
+      }
+    } else if(kind==='borrowed'){
+      const l=(S.borrowedLoans||[]).find(x=>x.id===pid);
+      if(l){
+        normalizeBorrowedLoan(l);
+        const inst=borrowedInstallments(l);
+        const p=paymentId?(inst.find(x=>x.id===paymentId)||inst.find(x=>!x.paid)):inst.find(x=>!x.paid);
+        if(p&&!p.paid){
+          payActionHtml=`<div class="space-y-3 mt-3 pt-3 border-t border-slate-100">
+            <div class="text-[10px] font-bold text-indigo-400 uppercase tracking-wide">Registrar pago · ${fmt(p.amount)}</div>
+            ${paymentSourceOptions()}
+            <button onclick="markBorrowedPaid('${pid}','${p.id}');closeModal()" class="w-full btn-primary py-3">Confirmar pago ✓</button>
+          </div>`;
+        }
+      }
+    }
     html=`<h3 class="text-lg font-bold text-slate-800 mb-1">${title}</h3>
     <p class="text-sm text-slate-500 mb-4">${subtitle}</p>
     <div class="flex items-center gap-3 card p-3 mb-3">
@@ -4581,7 +4642,8 @@ function openModal(type, id, extra) {
     </div>
     ${rows.length?`<div class="card p-3 space-y-2 text-sm">
       ${rows.map(([label,value])=>`<div class="flex justify-between gap-3"><span class="text-slate-400">${label}</span><span class="font-semibold text-slate-700 text-right">${value||'—'}</span></div>`).join('')}
-    </div>`:''}`
+    </div>`:''}
+    ${payActionHtml}`
     ;
   }
 
@@ -4754,11 +4816,12 @@ function openModal(type, id, extra) {
       </div>
       <div class="bg-indigo-50 rounded-xl p-3">
         <div class="flex items-center justify-between">
-          <div><label class="text-xs font-bold text-indigo-700 uppercase">Ya se pago</label><div class="text-xs text-indigo-400"><span class="font-bold">Sí</span> = restar ahora · <span class="font-bold">No</span> = pendiente</div></div>
-          <label class="toggle"><input type="checkbox" id="mPaid" ${q.paid===false?'':'checked'} onchange="document.getElementById('expenseDueWrap').classList.toggle('hidden', this.checked)"><span class="slider"></span></label>
+          <div><label class="text-xs font-bold text-indigo-700 uppercase">Ya se pagó</label><div class="text-xs text-indigo-400"><span class="font-bold">Sí</span> = restar ahora · <span class="font-bold">No</span> = pendiente</div></div>
+          <label class="toggle"><input type="checkbox" id="mPaid" ${q.paid===false?'':'checked'} onchange="document.getElementById('expenseDueWrap').classList.toggle('hidden',this.checked);document.getElementById('expenseSourceWrap').classList.toggle('hidden',!this.checked)"><span class="slider"></span></label>
         </div>
         <div id="expenseDueWrap" class="${q.paid===false?'':'hidden'} mt-3"><label class="text-xs text-indigo-600">Fecha esperada de pago</label>
         <input type="date" id="mDueDate" value="${q.dueDate||q.date||isoToday()}" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"></div>
+        <div id="expenseSourceWrap" class="${q.paid===false?'hidden':''} mt-3">${paymentSourceOptions()}</div>
       </div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
       <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
@@ -5311,14 +5374,12 @@ function openModal(type, id, extra) {
     }
     const contact=(S.personContacts||[]).find(c=>c.displayName===name)||null;
     const connStatus=contact?contact.connectionStatus:'manual_only';
-    const todayReactions = (S._reactionsSent||{})[isoToday()]||0;
-    const reactionsLeft = Math.max(0, 3 - todayReactions);
     const reactionEmojis = ['🎉','❤️','🔥','👏','😂','🙏','💪','🤝','✨','😎'];
     const reactionPanelHtml = connStatus==='connected' && contact?.linkedUserId ? `
       <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-3 mb-3">
-        <div class="text-[10px] font-bold text-indigo-400 uppercase tracking-wide mb-2">Enviar saludo · ${reactionsLeft} restante${reactionsLeft!==1?'s':''} hoy</div>
+        <div class="text-[10px] font-bold text-indigo-400 uppercase tracking-wide mb-2">Enviar saludo</div>
         <div class="flex flex-wrap gap-2 justify-center">
-          ${reactionEmojis.map(e=>`<button onclick="sendReaction('${contact.linkedUserId}','${name.replace(/'/g,"\\'")}','${e}')" ${reactionsLeft===0?'disabled':''} class="text-2xl w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-indigo-100 active:scale-75 transition ${reactionsLeft===0?'opacity-40':''}">${e}</button>`).join('')}
+          ${reactionEmojis.map(e=>`<button onclick="sendReaction('${contact.linkedUserId}','${name.replace(/'/g,"\\'")}','${e}')" class="text-2xl w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-indigo-100 active:scale-75 transition">${e}</button>`).join('')}
         </div>
       </div>` : '';
     const connBannerHtml={
@@ -6005,17 +6066,19 @@ function saveExpense(id=null) {
   if(!name||!amount){showToast('❌ Completa los campos');return;}
   const paid=document.getElementById('mPaid')?document.getElementById('mPaid').checked:true;
   const dueDate=document.getElementById('mDueDate')?document.getElementById('mDueDate').value:(date||isoToday());
+  const src=readPaymentSource();
   if(id) {
     const e=S.expenses.find(x=>x.id===id);
     if(e) {
       const oldPaid=e.paid?e.amount||0:0;
       const newPaid=paid?amount:0;
-      adjustBalance(oldPaid-newPaid);
+      const netDiff=oldPaid-newPaid;
+      if(netDiff!==0) adjustSource(src, netDiff);
       Object.assign(e,{name,amount,date:date||isoToday(),category,paid,dueDate:paid?(date||isoToday()):dueDate,paidDate:paid?(date||isoToday()):null,paidAt:paid?(e.paidAt||new Date().toISOString()):null,updatedAt:new Date().toISOString()});
     }
   } else {
     S.expenses.unshift({id:uid(),name,amount,date:date||isoToday(),category,paid,dueDate:paid?(date||isoToday()):dueDate,paidDate:paid?(date||isoToday()):null,paidAt:paid?new Date().toISOString():null,createdAt:new Date().toISOString()});
-    if(paid) adjustBalance(-amount);
+    if(paid) adjustSource(src, -amount);
   }
   setLastAction(); closeModal(); renderCurrentView(); showToast('✅ Gasto registrado');
 }
@@ -6913,16 +6976,13 @@ function triggerReactionAnimation(emoji, senderName) {
 async function sendReaction(receiverUserId, receiverName, emoji) {
   if(!supabase || !CURRENT_USER) { showToast('Sin conexión'); return; }
   const today = isoToday();
-  if(!S._reactionsSent) S._reactionsSent = {};
-  const sent = S._reactionsSent[today] || 0;
-  if(sent >= 3) { showToast('Ya enviaste 3 reacciones hoy 😊 Vuelve mañana'); return; }
   try {
     const senderName = S.profileName || CURRENT_USER.email || 'Alguien';
     const contact = (S.personContacts||[]).find(c=>c.linkedUserId===receiverUserId);
     const {error} = await supabase.from('persona_transaction_requests').insert({
       sender_user_id: CURRENT_USER.id,
       receiver_user_id: receiverUserId,
-      sender_person_id: contact?.id || ('nocontact_' + receiverUserId),
+      sender_person_id: contact?.id || null,
       type: 'reaction',
       amount: 0.01,
       description: emoji,
@@ -6931,7 +6991,6 @@ async function sendReaction(receiverUserId, receiverName, emoji) {
       status: 'pending'
     });
     if(error) throw error;
-    S._reactionsSent[today] = sent + 1;
     save();
     showToast(`${emoji} ¡Saludo enviado a ${receiverName}!`);
     closeModal();
@@ -6971,6 +7030,7 @@ async function pollReactions() {
       setTimeout(() => triggerReactionAnimation(emoji, senderName), idx * 600);
     });
     save(); updateNotificationBadge();
+    if(document.getElementById('notificationsContent')) loadNotificationsContent();
   } catch(e) { console.warn('pollReactions:', e); }
 }
 
@@ -7453,7 +7513,8 @@ function _pullArrow() { return document.getElementById('pullRefreshArrow'); }
 function _pullLabel() { return document.getElementById('pullRefreshLabel'); }
 
 document.addEventListener('touchstart', e => {
-  if(!pullBusy && window.scrollY === 0) pullStartY = e.touches[0].clientY;
+  const modalOpen = !document.getElementById('modalOverlay').classList.contains('hidden');
+  if(!pullBusy && !modalOpen && window.scrollY === 0) pullStartY = e.touches[0].clientY;
 }, {passive:true});
 
 document.addEventListener('touchmove', e => {
@@ -7493,6 +7554,39 @@ document.addEventListener('touchend', async () => {
     pullStartY = null; pullDiff = 0;
   }
 }, {passive:true});
+
+// Modal swipe-to-close
+let _mSwipeY0=0, _mSwipeDY=0, _mSwipeOn=false;
+(function(){
+  const sheet=document.getElementById('modalSheet');
+  sheet.addEventListener('touchstart', e=>{
+    _mSwipeY0=e.touches[0].clientY; _mSwipeDY=0; _mSwipeOn=false;
+  },{passive:true});
+  sheet.addEventListener('touchmove', e=>{
+    const dy=e.touches[0].clientY-_mSwipeY0;
+    if(!_mSwipeOn){
+      if(sheet.scrollTop>5||dy<=10) return;
+      _mSwipeOn=true;
+    }
+    e.preventDefault();
+    _mSwipeDY=dy;
+    sheet.style.transition='none';
+    sheet.style.transform=`translateY(${Math.max(0,dy)}px)`;
+  },{passive:false});
+  sheet.addEventListener('touchend', ()=>{
+    if(!_mSwipeOn) return;
+    if(_mSwipeDY>80){
+      sheet.style.transition='transform 0.2s ease';
+      sheet.style.transform='translateY(100%)';
+      setTimeout(()=>{ closeModal(); sheet.style.transform=''; sheet.style.transition=''; },220);
+    } else {
+      sheet.style.transition='transform 0.2s ease';
+      sheet.style.transform='';
+      setTimeout(()=>{ sheet.style.transition=''; },220);
+    }
+    _mSwipeOn=false; _mSwipeDY=0;
+  },{passive:true});
+})();
 
 // ═══════════════════════════════════════
 // INIT
