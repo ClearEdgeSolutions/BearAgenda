@@ -538,35 +538,18 @@
   <div id="view-config" class="view">
     <div class="px-4 py-5" style="display:flex;flex-direction:column;gap:12px">
 
-      <!-- PIN card -->
-      <div class="card p-4" style="border:1px solid rgba(124,111,218,0.25)">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <!-- Acceso al perfil -->
+      <div class="card p-4" style="border:1px solid rgba(124,111,218,0.2);display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:10px">
           <div style="width:36px;height:36px;border-radius:10px;background:#252836;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <svg width="16" height="16" fill="none" stroke="#7c6fda" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+            <svg width="16" height="16" fill="none" stroke="#7c6fda" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
           </div>
           <div>
-            <div style="font-weight:700;color:#fff;font-size:0.875rem">Tu PIN de conexión</div>
-            <div style="font-size:0.65rem;color:#5c6480;margin-top:1px">Compártelo para conectarte con contactos</div>
+            <div style="font-weight:700;color:#fff;font-size:0.875rem">Perfil y código</div>
+            <div style="font-size:0.65rem;color:#5c6480;margin-top:1px">Nombre, moneda y PIN de conexión</div>
           </div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-          <div id="pinDisplay" style="flex:1;text-align:center;font-size:2rem;font-weight:800;color:#7c6fda;letter-spacing:0.15em;font-family:monospace;background:#252836;border-radius:12px;padding:12px 0;border:1px solid rgba(124,111,218,0.2)">——</div>
-          <button onclick="copyUserPin()" style="background:rgba(124,111,218,0.15);color:#7c6fda;font-weight:700;padding:10px 14px;border-radius:12px;border:1px solid rgba(124,111,218,0.25);display:flex;align-items:center;gap:6px;font-size:0.75rem">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-            Copiar
-          </button>
-        </div>
-        <div style="font-size:0.6rem;color:#5c6480;text-align:center">Tu PIN es único y permanente.</div>
-      </div>
-
-      <!-- Perfil -->
-      <div style="color:#7c6fda;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;padding-left:2px">Perfil</div>
-      <div class="card p-4">
-        <label style="font-size:0.6rem;font-weight:700;color:#5c6480;text-transform:uppercase;display:block;margin-bottom:6px">Tu nombre</label>
-        <input type="text" id="profileNameInput" placeholder="Escribe tu nombre"
-          style="width:100%;background:#252836;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px 12px;color:#fff;font-weight:600;font-size:0.875rem"
-          onchange="updateProfileName(this.value)">
-        <div style="font-size:0.62rem;color:#5c6480;margin-top:6px">Este nombre aparece en los movimientos y espacios compartidos.</div>
+        <button onclick="showView('profile')" style="background:rgba(124,111,218,0.12);color:#7c6fda;font-weight:700;padding:8px 14px;border-radius:10px;border:1px solid rgba(124,111,218,0.22);font-size:0.78rem">Abrir →</button>
       </div>
 
       <!-- Apariencia -->
@@ -587,16 +570,40 @@
       <!-- Recordatorios -->
       <div style="color:#7c6fda;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;padding-left:2px">Recordatorios</div>
       <div class="card p-4" style="display:flex;flex-direction:column;gap:12px">
-        <div style="font-size:0.65rem;color:#5c6480">Requiere app instalada como PWA y permisos del sistema activados.</div>
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <span style="font-size:0.82rem;color:#e8eaf2">Próximos pagos</span>
-          <label class="toggle"><input type="checkbox" id="notifPayments" onchange="saveNotificationSettings()"><span class="slider"></span></label>
+        <div id="notifStatusBadge" style="display:flex;align-items:center;gap:8px;background:#1a1d2e;border-radius:10px;padding:8px 12px">
+          <div id="notifStatusDot" style="width:8px;height:8px;border-radius:50%;background:#5c6480;flex-shrink:0"></div>
+          <div id="notifStatusText" style="font-size:0.68rem;color:#5c6480;font-weight:600">Verificando permisos…</div>
         </div>
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <span style="font-size:0.82rem;color:#e8eaf2">Interacciones y asignaciones</span>
-          <label class="toggle"><input type="checkbox" id="notifInteractions" onchange="saveNotificationSettings()"><span class="slider"></span></label>
+        <div style="font-size:0.63rem;color:#5c6480;line-height:1.5;padding:0 2px">
+          Los recordatorios se activan mientras la app está abierta. En iOS requiere instalarla como PWA (Compartir → Añadir a inicio) y iOS 16.4+. En Android Chrome funciona sin pasos extra.
         </div>
-        <button onclick="requestNotificationPermission()" style="width:100%;background:rgba(124,111,218,0.12);color:#7c6fda;font-weight:700;padding:10px 0;border-radius:11px;border:1px solid rgba(124,111,218,0.2);font-size:0.82rem">Activar recordatorios</button>
+        <div style="display:flex;flex-direction:column;gap:10px;padding-top:2px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div><div style="font-size:0.82rem;color:#e8eaf2">Próximos pagos</div><div style="font-size:0.62rem;color:#5c6480">Facturas y gastos en los próximos días</div></div>
+            <label class="toggle"><input type="checkbox" id="notifPayments" onchange="saveNotificationSettings()"><span class="slider"></span></label>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div><div style="font-size:0.82rem;color:#e8eaf2">Préstamos e interacciones</div><div style="font-size:0.62rem;color:#5c6480">Aprobaciones y actividad compartida</div></div>
+            <label class="toggle"><input type="checkbox" id="notifInteractions" onchange="saveNotificationSettings()"><span class="slider"></span></label>
+          </div>
+        </div>
+        <button onclick="requestNotificationPermission()" style="width:100%;background:rgba(124,111,218,0.12);color:#7c6fda;font-weight:700;padding:10px 0;border-radius:11px;border:1px solid rgba(124,111,218,0.2);font-size:0.82rem">Activar / solicitar permisos</button>
+      </div>
+
+      <!-- TRM / Tasa de cambio -->
+      <div style="color:#7c6fda;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;padding-left:2px">Tasa de cambio (TRM)</div>
+      <div class="card p-4" style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="color:#fff;font-weight:700;font-size:1rem" id="trmDisplay">—</div>
+            <div style="color:#5c6480;font-size:0.65rem;margin-top:2px" id="trmDateDisplay">Cargando…</div>
+          </div>
+          <button onclick="refreshTRM()" style="background:rgba(124,111,218,0.12);color:#8b7fd4;font-weight:700;padding:8px 14px;border-radius:10px;border:1px solid rgba(124,111,218,0.22);font-size:0.78rem">Actualizar</button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="number" id="manualTRMInput" placeholder="ej. 4100" step="1" min="1000" max="9999" style="flex:1;background:#252836;color:#fff;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:8px 12px;font-size:0.85rem">
+          <button onclick="setManualTRM()" style="background:#252836;color:#94a3b8;font-weight:600;padding:8px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);font-size:0.78rem">Fijar manual</button>
+        </div>
       </div>
 
       <!-- Acciones -->
@@ -604,6 +611,9 @@
       <div class="card p-4" style="display:flex;flex-direction:column;gap:8px">
         <button onclick="exportData()" style="width:100%;background:#252836;color:#94a3b8;font-weight:600;padding:10px 0;border-radius:11px;border:1px solid rgba(255,255,255,0.06);font-size:0.82rem;display:flex;align-items:center;justify-content:center;gap:7px">
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>Exportar datos
+        </button>
+        <button onclick="repairLoanApprovalNotifications(true)" style="width:100%;background:rgba(124,111,218,0.10);color:#8b7fd4;font-weight:600;padding:10px 0;border-radius:11px;border:1px solid rgba(124,111,218,0.22);font-size:0.82rem;display:flex;align-items:center;justify-content:center;gap:7px">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Reparar aprobaciones fantasma
         </button>
         <button onclick="confirmFormatProfile()" style="width:100%;background:rgba(245,158,11,0.08);color:#f59e0b;font-weight:600;padding:10px 0;border-radius:11px;border:1px solid rgba(245,158,11,0.2);font-size:0.82rem">Limpiar este perfil</button>
         <button onclick="confirmClearHouse()" style="width:100%;background:rgba(249,115,22,0.08);color:#f97316;font-weight:600;padding:10px 0;border-radius:11px;border:1px solid rgba(249,115,22,0.2);font-size:0.82rem">Limpiar espacio actual</button>
@@ -943,6 +953,26 @@ let showMileageCarForm = false;
 let showMileageTripForm = false;
 
 function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
+
+function compressImage(file, maxPx=400, quality=0.72) {
+  return new Promise(resolve=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const scale=Math.min(1,maxPx/Math.max(img.width,img.height));
+        const w=Math.round(img.width*scale), h=Math.round(img.height*scale);
+        const c=document.createElement('canvas'); c.width=w; c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        resolve(c.toDataURL('image/jpeg',quality));
+      };
+      img.onerror=()=>resolve(String(e.target.result||''));
+      img.src=String(e.target.result||'');
+    };
+    r.onerror=()=>resolve('');
+    r.readAsDataURL(file);
+  });
+}
 
 function migrateShoppingList() {
   S.shoppingLists = Array.isArray(S.shoppingLists) ? S.shoppingLists : [];
@@ -1350,7 +1380,8 @@ async function save() {
     S.userId=CURRENT_USER.id;
     S.userEmail=CURRENT_USER.email||S.userEmail||'';
   }
-  localStorage.setItem(userLocalKey(), JSON.stringify(S));
+  try { localStorage.setItem(userLocalKey(), JSON.stringify(S)); }
+  catch(e) { console.warn('save localStorage:', e); }
   if (!supabase || !CURRENT_USER) return;
   try {
     await supabase.from('app_data').upsert(
@@ -2099,8 +2130,36 @@ function setLastAction() { S.lastActionTime = new Date().toISOString(); save(); 
 // ═══════════════════════════════════════
 // UTILS
 // ═══════════════════════════════════════
-const fmt = a => '$' + Math.abs(a||0).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2});
+function fmtCur(a, currency) {
+  const cur = currency || S.baseCurrency || 'USD';
+  const abs = Math.abs(a || 0);
+  if (cur === 'COP') return '$' + abs.toLocaleString('es-CO', {minimumFractionDigits:0, maximumFractionDigits:0});
+  return '$' + abs.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2});
+}
+const fmt = a => fmtCur(a, S.baseCurrency || 'USD');
 const fmtSigned = a => (a<0?'-':'') + fmt(a);
+function maskMoneyInput(el) {
+  const val=parseFloat(el.value);
+  let hint=el.parentNode&&el.parentNode.querySelector('.money-hint');
+  if(isNaN(val)||val<=0){if(hint)hint.remove();return;}
+  const cur=document.getElementById('mCurrency')?.value||S.baseCurrency||'USD';
+  const base=S.baseCurrency||'USD';
+  if(!hint){
+    hint=document.createElement('div');
+    hint.className='money-hint';
+    hint.style.cssText='font-size:0.68rem;font-weight:700;margin-top:3px;padding-left:4px;opacity:0.9';
+    el.parentNode.insertBefore(hint,el.nextSibling);
+  }
+  if(cur===base){
+    hint.style.color='#5c6480';
+    hint.textContent='Se cargará como '+fmtCur(val,base)+' '+base;
+  } else {
+    const converted=toBaseCurrency(val,cur);
+    const trm=currentTRM();
+    hint.style.color='#7c6fda';
+    hint.textContent=fmtCur(val,cur)+' '+cur+' ≈ '+fmtCur(converted,base)+' '+base+' · TRM '+trm.toLocaleString('es-CO');
+  }
+}
 const uid = () => 'x' + (++S.nextId);
 const cloudUid = () => (window.crypto&&crypto.randomUUID) ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);return v.toString(16);});
 const today = () => { const n=new Date(); return new Date(n.getFullYear(),n.getMonth(),n.getDate()); };
@@ -2155,7 +2214,12 @@ function oneTimePaidAmount(o,dateKey=null){
 }
 function isOneTimePaid(o,dateKey=null){ return oneTimePaidAmount(o,dateKey) >= ((o&&o.amount)||0); }
 function expensePaidAmount(e){return e?(e.paidAmount||(e.paid?e.amount:0)||0):0;}
-function totalPockets() { return S.pockets.reduce((s,p)=>s+(p.saved||0),0); }
+function totalPockets() {
+  return S.pockets.reduce((s,p)=>{
+    const cur=p.currency||(p.sourceAccountId?accountById(p.sourceAccountId)?.currency:null)||S.baseCurrency||'USD';
+    return s+toBaseCurrency(p.saved||0,cur);
+  },0);
+}
 function loanPaid(loan) { return (loan.payments||[]).reduce((s,p)=>s+p.amount,0); }
 const PAYMENT_CATEGORIES=['comida','servicios publicos','telefono','internet','gasolina','seguro','alquiler','entretenimiento','salud','supermercado','suscripciones','ayuda','deuda','prestamos','tarjetas de credito','mascotas','hierba','transporte','personal','inversion','ahorro'];
 function catLabel(c) { return {trabajo:'Trabajo',deuda:'Deuda',persona:'Persona',otro:'Otro','servicios publicos':'Servicios publicos',prestamos:'Prestamos','tarjetas de credito':'Tarjetas de credito',suscripciones:'Suscripciones',ayuda:'Ayuda',mascotas:'Mascotas',hierba:'Hierba'}[c]||c; }
@@ -2355,6 +2419,81 @@ function sourceCurrency(source) {
   }
   return S.baseCurrency||'USD';
 }
+function currentTRM() {
+  return (S.dailyTRM&&S.dailyTRM.rate)||S.lastTRM||4000;
+}
+function toBaseCurrency(amount, fromCurrency) {
+  const base=S.baseCurrency||'USD';
+  if(!fromCurrency||fromCurrency===base) return amount||0;
+  const rate=currentTRM();
+  if(base==='USD'&&fromCurrency==='COP') return (amount||0)/rate;
+  if(base==='COP'&&fromCurrency==='USD') return (amount||0)*rate;
+  return amount||0;
+}
+function updateTRMDisplay() {
+  const rate=currentTRM();
+  const d=document.getElementById('trmDisplay');
+  const dl=document.getElementById('trmDateDisplay');
+  const inp=document.getElementById('manualTRMInput');
+  if(d) d.textContent=fmtCur(rate,'COP')+' / USD';
+  if(dl) dl.textContent=S.dailyTRM?`Actualizada ${S.dailyTRM.date} · ${S.dailyTRM.source||'auto'}`:'Sin datos automáticos — usando tasa guardada';
+  if(inp&&!inp.value) inp.placeholder=String(rate);
+}
+function refreshTRM() {
+  const btn=event&&event.target;
+  if(btn) btn.textContent='Actualizando…';
+  S.dailyTRM=null;
+  fetchDailyTRM().then(rate=>{
+    updateHeaderBalance();
+    const d=document.getElementById('trmDisplay');
+    const dl=document.getElementById('trmDateDisplay');
+    if(d) d.textContent=fmtCur(rate,'COP')+' / USD';
+    if(dl) dl.textContent=S.dailyTRM?`Actualizada ${S.dailyTRM.date} · ${S.dailyTRM.source||'auto'}`:'Fuente no disponible, usando tasa guardada';
+    if(btn) btn.textContent='Actualizar';
+    showToast(`TRM actualizada: ${fmtCur(rate,'COP')} por 1 USD`);
+  });
+}
+function setManualTRM() {
+  const val=parseFloat(document.getElementById('manualTRMInput')?.value);
+  if(!val||val<1000){showToast('Escribe una tasa válida (ej. 4100)');return;}
+  S.dailyTRM={rate:Math.round(val),date:isoToday(),source:'manual',fetchedAt:new Date().toISOString()};
+  S.lastTRM=S.dailyTRM.rate;
+  save();
+  updateHeaderBalance();
+  const d=document.getElementById('trmDisplay');
+  const dl=document.getElementById('trmDateDisplay');
+  if(d) d.textContent=fmtCur(S.dailyTRM.rate,'COP')+' / USD';
+  if(dl) dl.textContent=`Actualizada ${S.dailyTRM.date} · manual`;
+  showToast(`TRM fijada en ${fmtCur(val,'COP')} por 1 USD`);
+}
+async function fetchDailyTRM() {
+  const todayKey=isoToday();
+  if(S.dailyTRM&&S.dailyTRM.date===todayKey&&S.dailyTRM.rate) return S.dailyTRM.rate;
+  // Primary: datos.gov.co (TRM oficial Colombia)
+  try {
+    const res=await fetch('https://www.datos.gov.co/resource/32sa-8pi3.json?$limit=1&$order=vigenciadesde+DESC',{signal:AbortSignal.timeout(5000)});
+    if(res.ok){
+      const data=await res.json();
+      const rate=data&&data[0]&&parseFloat(data[0].valor);
+      if(rate&&rate>100){
+        S.dailyTRM={rate:Math.round(rate),date:todayKey,source:'datos.gov.co',fetchedAt:new Date().toISOString()};
+        S.lastTRM=S.dailyTRM.rate; save(); return S.dailyTRM.rate;
+      }
+    }
+  } catch(e) {}
+  // Fallback: frankfurter.app
+  try {
+    const res=await fetch('https://api.frankfurter.app/latest?from=USD&to=COP',{signal:AbortSignal.timeout(6000)});
+    if(!res.ok) throw new Error('http');
+    const data=await res.json();
+    const rate=data.rates&&data.rates.COP;
+    if(rate&&rate>100){
+      S.dailyTRM={rate:Math.round(rate),date:todayKey,source:'frankfurter.app',fetchedAt:new Date().toISOString()};
+      S.lastTRM=S.dailyTRM.rate; save(); return S.dailyTRM.rate;
+    }
+  } catch(e) {}
+  return currentTRM();
+}
 function paymentCurrencyFields(selected='USD') {
   return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
     <div><label class="text-xs font-bold text-slate-500 uppercase">Moneda del pago</label>
@@ -2362,7 +2501,7 @@ function paymentCurrencyFields(selected='USD') {
       ${['USD','COP'].map(c=>`<option value="${c}" ${selected===c?'selected':''}>${c}</option>`).join('')}
     </select></div>
     <div id="mTrmWrap"><label class="text-xs font-bold text-slate-500 uppercase">TRM usada</label>
-    <input type="number" id="mTRM" value="${S.lastTRM||4000}" step="0.01" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+    <input type="number" id="mTRM" value="${currentTRM()}" step="1" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
   </div>`;
 }
 function updateTrmVisibility() {
@@ -2374,7 +2513,7 @@ function updateTrmVisibility() {
 function readCurrencyConversion(source, originalAmount) {
   const originalCurrency=document.getElementById('mCurrency')?.value||sourceCurrency(source);
   const convertedCurrency=sourceCurrency(source);
-  const trm=parseFloat(document.getElementById('mTRM')?.value)||S.lastTRM||4000;
+  const trm=parseFloat(document.getElementById('mTRM')?.value)||currentTRM();
   let convertedAmount=parseFloat(originalAmount)||0;
   if(originalCurrency!==convertedCurrency) {
     if(originalCurrency==='COP'&&convertedCurrency==='USD') convertedAmount=convertedAmount/trm;
@@ -2418,7 +2557,7 @@ function getMonthPayments(month=finMonth) {
       const dk=row.date;
       const paidAmount=billPaidAmount(b.id,dk), left=Math.max(0,(b.amount||0)-paidAmount);
       const paidRow=(S.paidBills||[]).find(p=>p.billId===b.id&&p.dateKey===dk);
-      items.push({kind:'bill',id:b.id,date:dk,name:b.name,amount:left||b.amount,originalAmount:b.amount,paidAmount,source:paidRow?.source,sourceLabel:paidRow?.source?sourceLabel(paidRow.source):'',emoji:b.emoji||'card',paid:left<=0,category:b.category,frequency:b.frequency,termType:b.termType,totalPayments:b.totalPayments});
+      items.push({kind:'bill',id:b.id,date:dk,paidDate:paidRow?.paidDate||null,name:b.name,amount:left||b.amount,originalAmount:b.amount,paidAmount,source:paidRow?.source,sourceLabel:paidRow?.source?sourceLabel(paidRow.source):'',emoji:b.emoji||'card',paid:left<=0,category:b.category,frequency:b.frequency,termType:b.termType,totalPayments:b.totalPayments,currency:b.currency||S.baseCurrency||'USD'});
     });
   });
   S.oneTimePayments.forEach(o=>{
@@ -2430,22 +2569,22 @@ function getMonthPayments(month=finMonth) {
       if(monthKey(parseDate(row.date))!==month) return;
       const paidAmount=oneTimePaidAmount(o,row.date), left=Math.max(0,(o.amount||0)-paidAmount);
       const paidRow=(o.payments||[]).find(p=>(p.dateKey||o.dueDate)===row.date);
-      items.push({kind:'onetime',id:o.id,date:row.date,name:o.name,amount:left||o.amount,originalAmount:o.amount,paidAmount,source:paidRow?.source||o.source,sourceLabel:(paidRow?.source||o.source)?sourceLabel(paidRow?.source||o.source):'',emoji:o.emoji||'pin',paid:left<=0,category:o.category||'único',frequency:freq,termType:o.termType,totalPayments:o.totalPayments});
+      items.push({kind:'onetime',id:o.id,date:row.date,paidDate:paidRow?.paidDate||null,name:o.name,amount:left||o.amount,originalAmount:o.amount,paidAmount,source:paidRow?.source||o.source,sourceLabel:(paidRow?.source||o.source)?sourceLabel(paidRow?.source||o.source):'',emoji:o.emoji||'pin',paid:left<=0,category:o.category||'único',frequency:freq,termType:o.termType,totalPayments:o.totalPayments,currency:o.currency||S.baseCurrency||'USD'});
     });
   });
   S.expenses.forEach(e=>{
     const d=e.paid ? (e.paidDate||e.date) : (e.dueDate||e.date);
     const paidAmount=expensePaidAmount(e), left=Math.max(0,(e.amount||0)-paidAmount);
-    if(d&&monthKey(parseDate(d))===month) items.push({kind:'expense',id:e.id,date:d,name:e.name,amount:left||e.amount,originalAmount:e.amount,paidAmount,source:e.source,sourceLabel:e.source?sourceLabel(e.source):'',emoji:catEmoji(e.category),paid:left<=0,category:e.category||'otros'});
+    if(d&&monthKey(parseDate(d))===month) items.push({kind:'expense',id:e.id,date:d,name:e.name,amount:left||e.amount,originalAmount:e.amount,paidAmount,source:e.source,sourceLabel:e.source?sourceLabel(e.source):'',emoji:catEmoji(e.category),paid:left<=0,category:e.category||'otros',currency:e.currency||S.baseCurrency||'USD'});
   });
   S.loans.forEach(l=>{
     if(l.recurring&&l.recurring.nextDate&&monthKey(parseDate(l.recurring.nextDate))===month) {
-      items.push({kind:'loan',id:l.id,date:l.recurring.nextDate,name:`Cobrar a ${l.personName}`,amount:l.recurring.amount,emoji:l.emoji||'brief',paid:false,category:'préstamo'});
+      items.push({kind:'loan',id:l.id,date:l.recurring.nextDate,name:`Cobrar a ${l.personName}`,amount:l.recurring.amount,emoji:l.emoji||'brief',paid:false,category:'préstamo',currency:l.currency||S.baseCurrency||'USD'});
     }
   });
   S.borrowedLoans.forEach(l=>{
     borrowedInstallments(l).forEach(p=>{
-      if(monthKey(parseDate(p.date))===month) items.push({kind:'borrowed',id:l.id,paymentId:p.id,date:p.date,name:`Pagar préstamo a ${l.personName} (${p.number}/${l.paymentsCount||1})`,amount:p.amount,source:p.source,sourceLabel:p.source?sourceLabel(p.source):'',installmentLabel:`Cuota ${p.number}/${l.paymentsCount||1}`,emoji:l.emoji||'bank',paid:p.paid,category:l.category||'deuda'});
+      if(monthKey(parseDate(p.date))===month) items.push({kind:'borrowed',id:l.id,paymentId:p.id,date:(p.paid&&p.paidDate)?p.paidDate:p.date,name:`Pagar préstamo a ${l.personName} (${p.number}/${l.paymentsCount||1})`,amount:p.amount,source:p.source,sourceLabel:p.source?sourceLabel(p.source):'',installmentLabel:`Cuota ${p.number}/${l.paymentsCount||1}`,emoji:l.emoji||'bank',paid:p.paid,category:l.category||'deuda',currency:l.currency||S.baseCurrency||'USD'});
     });
   });
   // Incluir ítems de TODOS los espacios del usuario (no solo el activo)
@@ -2485,7 +2624,7 @@ function getMonthPayments(month=finMonth) {
       if(seen.has(key)) return false;
       seen.add(key); return true;
     })
-    .sort((a,b)=>parseDate(a.date)-parseDate(b.date));
+    .sort((a,b)=>parseDate(b.date)-parseDate(a.date));
 }
 function getTransactions(limit=8) {
   const tx=[];
@@ -2542,11 +2681,11 @@ function freeBalance() { return totalAccountsBalance() - totalPockets(); }
 function activeAccounts() { return (S.accounts||[]).filter(a=>a.active!==false); }
 function totalAccountsBalance() {
   const acc=activeAccounts();
-  return acc.length ? acc.reduce((s,a)=>s+(a.balance||0),0) : (S.bankBalance||0);
+  return acc.length ? acc.reduce((s,a)=>s+toBaseCurrency(a.balance||0,a.currency),0) : toBaseCurrency(S.bankBalance||0,'USD');
 }
-function totalBankBalance() { return (S.accounts||[]).filter(a=>a.active!==false&&a.type==='bank').reduce((s,a)=>s+(a.balance||0),0); }
-function totalCashBalance() { return (S.accounts||[]).filter(a=>a.active!==false&&a.type==='cash').reduce((s,a)=>s+(a.balance||0),0); }
-function totalCashSavings() { return (S.accounts||[]).filter(a=>a.active!==false&&a.type==='savings').reduce((s,a)=>s+(a.balance||0),0); }
+function totalBankBalance() { return (S.accounts||[]).filter(a=>a.active!==false&&a.type==='bank').reduce((s,a)=>s+toBaseCurrency(a.balance||0,a.currency),0); }
+function totalCashBalance() { return (S.accounts||[]).filter(a=>a.active!==false&&a.type==='cash').reduce((s,a)=>s+toBaseCurrency(a.balance||0,a.currency),0); }
+function totalCashSavings() { return (S.accounts||[]).filter(a=>a.active!==false&&a.type==='savings').reduce((s,a)=>s+toBaseCurrency(a.balance||0,a.currency),0); }
 function accountReservedAmount(accountId) { return (S.pockets||[]).filter(p=>p.sourceAccountId===accountId).reduce((s,p)=>s+(p.saved||0),0); }
 function accountAvailable(accountId) { const a=(S.accounts||[]).find(x=>x.id===accountId); return (a?a.balance:0)-accountReservedAmount(accountId); }
 function accountById(id) { return (S.accounts||[]).find(a=>a.id===id)||null; }
@@ -2568,7 +2707,7 @@ function getWidgetSummaryData() {
   const upcoming=getUpcomingItems(7);
   const proximoPago=upcoming.filter(x=>['bill','onetime','expense','borrowed'].includes(x.type)).sort((a,b)=>parseDate(a.date)-parseDate(b.date))[0]||null;
   const proximoIngreso=(S.paychecks||[]).filter(p=>!p.received&&!p.inactive).sort((a,b)=>parseDate(a.date)-parseDate(b.date))[0]||null;
-  const porRecibir=(S.paychecks||[]).filter(p=>!p.received&&!p.inactive).reduce((s,p)=>s+(p.amount||0),0);
+  const porRecibir=(S.paychecks||[]).filter(p=>!p.received&&!p.inactive).reduce((s,p)=>s+toBaseCurrency(p.amount||0,p.currency||S.baseCurrency),0);
   return {disponible, totalBanco, totalEfectivo, totalBolsillos, proximoPago, proximoIngreso, porRecibir};
 }
 
@@ -2727,8 +2866,16 @@ function updateHeaderBalance() {
   const lbl = document.getElementById('headerBalanceLabel');
   if(wrap) wrap.classList.toggle('hidden', currentView==='home');
   if(el) { el.textContent=(bal<0?'-':'')+fmt(Math.abs(bal)); el.className=`text-lg font-bold leading-none ${bal>=0?'text-indigo-600':'text-red-500'}`; }
-  if(lbl) lbl.textContent = 'Balance libre';
+  if(lbl) {
+    const base=S.baseCurrency||'USD';
+    const hasMixed=(S.accounts||[]).some(a=>a.active!==false&&a.currency&&a.currency!==base);
+    const trmTxt=hasMixed?` · TRM ${fmtCur(currentTRM(),'COP').replace('$','')}`:' ';
+    lbl.textContent=base+trmTxt;
+    lbl.className='text-[9px] font-bold text-slate-400 uppercase tracking-wide';
+    lbl.classList.remove('hidden');
+  }
   updateNotificationBadge();
+  updateTRMDisplay();
 }
 
 // ═══════════════════════════════════════
@@ -2938,13 +3085,13 @@ function renderHome() {
       <div style="font-size:0.88rem;font-weight:800;color:#4ade80;line-height:1">${fmt(nextIncomeAmt)}</div>
       <div style="font-size:0.56rem;color:#5c6480;margin-top:2px">${nextIncomeCount} ingreso${nextIncomeCount!==1?'s':''}</div>
     </div>
-    <div class="card" style="padding:10px 6px;cursor:pointer;text-align:center" onclick="showView('cal')">
-      <div style="width:26px;height:26px;border-radius:8px;background:rgba(167,139,250,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 5px">
-        <svg style="width:13px;height:13px;color:#a78bfa" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+    <div class="card" style="padding:10px 6px;cursor:pointer;text-align:center" onclick="showView('config')">
+      <div style="width:26px;height:26px;border-radius:8px;background:rgba(20,184,166,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 5px">
+        <svg style="width:13px;height:13px;color:#14b8a6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
-      <div style="font-size:0.5rem;color:#a78bfa;font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px">Tareas</div>
-      <div style="font-size:0.88rem;font-weight:800;color:#fff;line-height:1">${pendingTasks}</div>
-      <div style="font-size:0.56rem;color:#5c6480;margin-top:2px">Pendientes</div>
+      <div style="font-size:0.5rem;color:#14b8a6;font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px">TRM Hoy</div>
+      <div style="font-size:0.75rem;font-weight:800;color:#fff;line-height:1">${(currentTRM()||0).toLocaleString('es-CO')}</div>
+      <div style="font-size:0.56rem;color:#5c6480;margin-top:2px">USD → COP</div>
     </div>
   </div>
 
@@ -3898,11 +4045,12 @@ function renderBills() {
             <div style="margin-bottom:4px">${urgencyBadge}</div>
             <div style="display:flex;align-items:center;gap:4px;color:#5c6480;font-size:0.7rem">
               <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              ${fmtDate(item.date)} · ${item.category||'pago'}${item.splitBoth?` · Total: ${fmt(item.fullAmount)}`:''}
+              ${item.paid&&item.paidDate&&item.paidDate!==item.date?`Pagado ${fmtDate(item.paidDate)} <span style="opacity:0.5">· Prog. ${fmtDate(item.date)}</span>`:fmtDate(item.date)} · ${item.category||'pago'}${item.splitBoth?` · Total: ${fmt(item.fullAmount)}`:''}
             </div>
           </div>
           <div style="text-align:right;flex-shrink:0">
-            <div style="font-weight:700;color:${amtColor};font-size:0.9rem">${amtPrefix}${fmt(item.amount)}</div>
+            <div style="font-weight:700;color:${amtColor};font-size:0.9rem">${amtPrefix}${fmtCur(item.amount,item.currency||S.baseCurrency)}</div>
+            ${(item.currency&&item.currency!==(S.baseCurrency||'USD'))?`<div style="color:#7c6fda;font-size:0.58rem">≈ ${fmt(toBaseCurrency(item.amount,item.currency))} ${S.baseCurrency||'USD'}</div>`:''}
             <div style="background:rgba(255,255,255,0.06);border-radius:99px;height:3px;width:60px;overflow:hidden;margin-top:6px">
               <div style="background:${item.paid?'#4ade80':'#7c6fda'};height:3px;border-radius:99px;width:${item.paid?'100':'0'}%"></div>
             </div>
@@ -3925,8 +4073,8 @@ function renderBills() {
 
   else if(currentTab==='gastos') {
     const historyItems=getMonthPayments(finMonth).filter(item=>item.kind!=='loan').sort((a,b)=>parseDate(b.date)-parseDate(a.date));
-    const paidTotal=historyItems.filter(item=>item.paid).reduce((s,item)=>s+((item.paidAmount||0)||(item.originalAmount||item.amount||0)),0);
-    const totalBudget=historyItems.reduce((s,item)=>s+(item.originalAmount||item.amount||0),0);
+    const paidTotal=historyItems.filter(item=>item.paid).reduce((s,item)=>s+toBaseCurrency((item.paidAmount||0)||(item.originalAmount||item.amount||0),item.currency||S.baseCurrency),0);
+    const totalBudget=historyItems.reduce((s,item)=>s+toBaseCurrency(item.originalAmount||item.amount||0,item.currency||S.baseCurrency),0);
     const pendingTotal=Math.max(0,totalBudget-paidTotal);
     html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
       <div class="card p-3"><div style="color:#5c6480;font-size:0.62rem;font-weight:700;text-transform:uppercase;margin-bottom:4px">Pagado</div><div style="font-weight:700;color:#ef4444;font-size:1.1rem">${fmt(paidTotal)}</div></div>
@@ -3941,7 +4089,7 @@ function renderBills() {
           <div style="width:40px;height:40px;border-radius:10px;background:rgba(74,222,128,0.1);color:#4ade80;display:flex;align-items:center;justify-content:center;flex-shrink:0">${renderStoredIcon(item.emoji,item.kind,item.category)}</div>
           <div style="flex:1;min-width:0">
             <div style="font-weight:600;color:#e8eaf2;font-size:0.875rem">${item.name}</div>
-            <div style="color:#5c6480;font-size:0.7rem;margin-top:2px">${fmtDate(item.date)}${item.installmentLabel?' · '+item.installmentLabel:''}${item.sourceLabel?' · '+item.sourceLabel:''} · ${item.category||'pago'}</div>
+            <div style="color:#5c6480;font-size:0.7rem;margin-top:2px">${item.paidDate&&item.paidDate!==item.date?`${fmtDate(item.paidDate)} <span style="opacity:0.55">· Prog. ${fmtDate(item.date)}</span>`:fmtDate(item.date)}${item.installmentLabel?' · '+item.installmentLabel:''}${item.sourceLabel?' · '+item.sourceLabel:''} · ${item.category||'pago'}</div>
           </div>
           <div style="text-align:right">
             <div style="font-weight:700;color:#ef4444;font-size:0.875rem">-${fmt(paidValue)}</div>
@@ -4666,9 +4814,9 @@ function monthTitle(key) {
 
 function spendByCategory(month) {
   const rows={};
-  const add=(cat,amount)=>{ rows[cat]=(rows[cat]||0)+(amount||0); };
-  getMonthPayments(month).filter(p=>p.kind!=='loan').forEach(p=>add(p.category||p.kind||'pagos',p.originalAmount||p.amount||0));
-  (S.loans||[]).filter(l=>l.createdAt&&monthKey(parseDate(l.createdAt.slice(0,10)))===month).forEach(l=>add(l.category||'personal',l.totalAmount||0));
+  const add=(cat,amount,currency)=>{ rows[cat]=(rows[cat]||0)+toBaseCurrency(amount||0,currency||S.baseCurrency); };
+  getMonthPayments(month).filter(p=>p.kind!=='loan').forEach(p=>add(p.category||p.kind||'pagos',p.originalAmount||p.amount||0,p.currency));
+  (S.loans||[]).filter(l=>l.createdAt&&monthKey(parseDate(l.createdAt.slice(0,10)))===month).forEach(l=>add(l.category||'personal',l.totalAmount||0,l.currency));
   return Object.entries(rows).map(([name,amount])=>({name,amount})).sort((a,b)=>b.amount-a.amount);
 }
 
@@ -4681,12 +4829,12 @@ function analysisCategoryItems(category, month=analysisMonth, kind='egresos') {
     return list
       .filter(p=>(catLabel(p.category)||'Ingresos')===category)
       .map(p=>({kind:'income',id:p.id,date:p.receivedDate||p.date,name:paycheckSourceLabel(p),amount:p.amount||0,originalAmount:p.amount||0,emoji:p.emoji||'brief',paid:!!p.received,category:p.category||'',sign:'+'}))
-      .sort((a,b)=>parseDate(a.date)-parseDate(b.date));
+      .sort((a,b)=>parseDate(b.date)-parseDate(a.date));
   }
   const loanRows=(S.loans||[]).filter(l=>l.createdAt&&monthKey(parseDate(l.createdAt.slice(0,10)))===month).map(l=>({kind:'loanout',id:l.id,date:l.createdAt.slice(0,10),name:`Prestamo a ${l.personName}`,amount:l.totalAmount||0,originalAmount:l.totalAmount||0,emoji:l.emoji||'brief',paid:true,category:l.category||'personal'}));
   return [...getMonthPayments(month).filter(p=>p.kind!=='loan'),...loanRows]
     .filter(p=>(p.category||p.kind||'pagos')===category)
-    .sort((a,b)=>parseDate(a.date)-parseDate(b.date));
+    .sort((a,b)=>parseDate(b.date)-parseDate(a.date));
 }
 
 function pieChart(rows, total) {
@@ -6394,11 +6542,12 @@ function openModal(type, id, extra) {
       const item=getMonthPayments(monthKey(parseDate(dateKey||isoToday()))).find(p=>p.kind==='bill'&&p.id===pid&&(!dateKey||p.date===dateKey));
       const bill=(S.bills||[]).find(b=>b.id===pid);
       if(item) {
-        title=item.name; subtitle=`Factura · ${fmtDate(item.date)} · ${item.paid?'Pagada':'Pendiente'}`; icon=item.emoji||'pin'; amount=item.amount||0;
+        title=item.name; subtitle=`Factura · ${item.paid&&item.paidDate?fmtDate(item.paidDate):fmtDate(item.date)} · ${item.paid?'Pagada':'Pendiente'}`; icon=item.emoji||'pin'; amount=item.amount||0;
         rows=[
           ['Nombre', item.name],
           ['Monto', fmt(item.amount||0)],
-          ['Fecha', fmtDate(item.date)],
+          ['Fecha programada', fmtDate(item.date)],
+          ...(item.paid&&item.paidDate&&item.paidDate!==item.date?[['Fecha de pago', fmtDate(item.paidDate)]]:item.paid&&item.paidDate?[['Fecha de pago', fmtDate(item.paidDate)]]:item.paid?[['Fecha de pago', fmtDate(item.date)]]:[]),
           ['Frecuencia', bill?freqLabel(bill.frequency||bill.recurrenceFreq||'monthly'):'Recurrente'],
           ['Categoría', catLabel(item.category||'pago')],
           ['Estado', item.paid?'Pagada ✓':'Pendiente']
@@ -6408,11 +6557,12 @@ function openModal(type, id, extra) {
       const item=getMonthPayments(monthKey(parseDate(dateKey||isoToday()))).find(p=>p.kind==='onetime'&&p.id===pid&&(!dateKey||p.date===dateKey));
       if(item) {
         const oneTimeLabel=item.frequency&&item.frequency!=='once'?'Pago agendado':'Pago único';
-        title=item.name; subtitle=`${oneTimeLabel} · ${fmtDate(item.date)} · ${item.paid?'Pagado':'Pendiente'}`; icon=item.emoji||'pin'; amount=item.amount||0;
+        title=item.name; subtitle=`${oneTimeLabel} · ${item.paid&&item.paidDate?fmtDate(item.paidDate):fmtDate(item.date)} · ${item.paid?'Pagado':'Pendiente'}`; icon=item.emoji||'pin'; amount=item.amount||0;
         rows=[
           ['Nombre', item.name],
           ['Monto', fmt(item.amount||0)],
-          ['Fecha', fmtDate(item.date)],
+          ['Fecha programada', fmtDate(item.date)],
+          ...(item.paid&&item.paidDate&&item.paidDate!==item.date?[['Fecha de pago', fmtDate(item.paidDate)]]:item.paid&&item.paidDate?[['Fecha de pago', fmtDate(item.paidDate)]]:item.paid?[['Fecha de pago', fmtDate(item.date)]]:[]),
           ['Frecuencia', item.frequency&&item.frequency!=='once'?freqLabel(item.frequency):'Único'],
           ['Categoría', catLabel(item.category||'pago')],
           ['Estado', item.paid?'Pagado ✓':'Pendiente']
@@ -6582,8 +6732,12 @@ function openModal(type, id, extra) {
 
   else if(type==='addLoanChoice') {
     const _lcn=(extra&&extra.contactName)||'';
-    const _lcnExtra=_lcn?`,{contactName:'${_lcn}'}`:'';
-    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">Registrar préstamo</h3>
+    const _backTo=(extra&&extra.backTo)||'';
+    const _backId=(extra&&extra.backId)||'';
+    const _extraParts=[_lcn?`contactName:'${_lcn}'`:'',_backTo?`backTo:'addLoanChoice'`:'',_backId?`backId:'${_backId}'`:''].filter(Boolean);
+    const _lcnExtra=_extraParts.length?`,{${_extraParts.join(',')}}`:'';
+    const _lcBackBtn=_backTo?`<button onclick="openModal('${_backTo}','${_backId}')" class="flex items-center gap-1.5 text-indigo-600 text-sm font-bold mb-3"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Volver</button>`:'';
+    html=`${_lcBackBtn}<h3 class="text-lg font-bold text-slate-800 mb-4">Registrar préstamo</h3>
     <div class="space-y-2">
       <button onclick="openModal('addBorrowedLoan',null${_lcnExtra})" class="w-full card p-4 text-left"><div class="font-bold text-indigo-700">Prestamo recibido</div><div class="text-xs text-slate-400">Dinero que alguien te prestó y debes pagar por cuotas.</div></button>
       <button onclick="openModal('addLoan',null${_lcnExtra})" class="w-full card p-4 text-left"><div class="font-bold text-purple-700">Prestamo realizado</div><div class="text-xs text-slate-400">Dinero que prestaste y te van a abonar.</div></button>
@@ -6638,47 +6792,54 @@ function openModal(type, id, extra) {
     const paycheckIcon=normalizeIcon(p?p.emoji:'brief','income');
     const _pcBackBtn=(extra&&extra.backTo)?`<button onclick="openModal('${extra.backTo}','${extra.backId||''}')" class="flex items-center gap-1.5 text-indigo-600 text-sm font-bold mb-3"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Volver</button>`:'';
     html=`${_pcBackBtn}<h3 class="text-lg font-bold text-slate-800 mb-1">${p?'Editar ingreso':'Nuevo ingreso'}</h3>
-    <p class="text-sm text-slate-500 mb-4">${p?'Editar los datos del ingreso':'Registra un ingreso programado o recurrente'}</p>
     <div class="space-y-3">
-      <div class="flex gap-3">
-        <div class="w-20">${iconPicker('income',paycheckIcon,true)}</div>
-        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Fecha</label>
-        <input type="date" id="mDate" value="${p?p.date:(extra&&extra.date)||''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div class="flex gap-3 items-end">
+        <div class="w-20 flex-shrink-0">${iconPicker('income',paycheckIcon,true)}</div>
+        <div class="flex-1 min-w-0">
+          <div id="workWrap" class="${!p||p.category==='trabajo'?'':'hidden'}"><label class="text-xs font-bold text-slate-500 uppercase">Trabajo</label>
+          <input id="mWorkName" value="${p&&p.category==='trabajo'&&p.sourceName?p.sourceName:''}" placeholder="Nombre del trabajo" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+          <div id="personWrap" class="${p&&p.category==='persona'?'':'hidden'} space-y-2">
+            <label class="text-xs font-bold text-slate-500 uppercase">Persona</label>
+            <select id="mPersonSelect" onchange="updatePaycheckPersonFields()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5">
+              ${peopleNames().map(name=>`<option value="${name}" ${p&&p.personName===name?'selected':''}>${name}</option>`).join('')}
+              <option value="new" ${p&&p.personName&&!peopleNames().includes(p.personName)?'selected':''}>Agregar persona</option>
+            </select>
+            <input id="mPersonNew" value="${p&&p.personName&&!peopleNames().includes(p.personName)?p.personName:''}" placeholder="Nombre de la persona" class="${p&&p.personName&&!peopleNames().includes(p.personName)?'':'hidden'} w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5">
+          </div>
+          <div id="otherWrap" class="${p&&p.category==='otro'?'':'hidden'}"><label class="text-xs font-bold text-slate-500 uppercase">Otro ingreso</label>
+          <input id="mOtherName" value="${p&&p.category==='otro'&&p.sourceName?p.sourceName:''}" placeholder="Describe el ingreso" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+        </div>
       </div>
-      <div><label class="text-xs font-bold text-slate-500 uppercase">Monto neto ($)</label>
-      <input type="number" id="mAmount" value="${p?p.amount:0}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div class="flex gap-3">
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Monto</label>
+        <input type="number" id="mAmount" value="${p?p.amount:0}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Moneda</label>
+        <select id="mIncomeCurrency" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"><option value="USD" ${(!p||!p.currency||p.currency==='USD')?'selected':''}>USD</option><option value="COP" ${p&&p.currency==='COP'?'selected':''}>COP</option></select></div>
+      </div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
       <select id="mCat" onchange="updatePaycheckPersonFields()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
         ${['trabajo','persona','otro'].map(c=>`<option value="${c}" ${(!p&&c==='trabajo')||p&&p.category===c?'selected':''}>${catLabel(c)}</option>`).join('')}
       </select></div>
-      <div id="workWrap" class="${!p||p.category==='trabajo'?'':'hidden'}"><label class="text-xs font-bold text-slate-500 uppercase">Trabajo</label>
-      <input id="mWorkName" value="${p&&p.category==='trabajo'&&p.sourceName?p.sourceName:''}" placeholder="Nombre del trabajo" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
-      <div id="personWrap" class="${p&&p.category==='persona'?'':'hidden'} space-y-2">
-        <label class="text-xs font-bold text-slate-500 uppercase">Persona</label>
-        <select id="mPersonSelect" onchange="updatePaycheckPersonFields()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5">
-          ${peopleNames().map(name=>`<option value="${name}" ${p&&p.personName===name?'selected':''}>${name}</option>`).join('')}
-          <option value="new" ${p&&p.personName&&!peopleNames().includes(p.personName)?'selected':''}>Agregar persona</option>
-        </select>
-        <input id="mPersonNew" value="${p&&p.personName&&!peopleNames().includes(p.personName)?p.personName:''}" placeholder="Nombre de la persona" class="${p&&p.personName&&!peopleNames().includes(p.personName)?'':'hidden'} w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5">
-      </div>
-      <div id="otherWrap" class="${p&&p.category==='otro'?'':'hidden'}"><label class="text-xs font-bold text-slate-500 uppercase">Otro ingreso</label>
-      <input id="mOtherName" value="${p&&p.category==='otro'&&p.sourceName?p.sourceName:''}" placeholder="Describe el ingreso" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       <div class="flex gap-3">
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Tipo</label><select id="mPayType" onchange="updatePaycheckRecurringFields()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"><option value="recurrente" ${!p||p.paymentType==='recurrente'?'selected':''}>Recurrente</option><option value="unico" ${p&&p.paymentType==='unico'?'selected':''}>Único</option></select></div>
-        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Método del ingreso</label><select id="mMethod" onchange="updateIncomeMethodFields()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"><option value="efectivo" ${p&&p.method==='efectivo'?'selected':''}>Efectivo</option><option value="deposito" ${!p||p.method!=='efectivo'?'selected':''}>Depósito</option></select></div>
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Método de ingreso</label><select id="mMethod" onchange="updateIncomeMethodFields()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"><option value="efectivo" ${p&&p.method==='efectivo'?'selected':''}>Efectivo</option><option value="deposito" ${!p||p.method!=='efectivo'?'selected':''}>Depósito</option></select></div>
       </div>
-      <div id="incomeAccountWrap" class="${p&&p.method==='efectivo'?'hidden':''}"><label class="text-xs font-bold text-slate-500 uppercase">Seleccionar cuenta bancaria</label>
+      <div id="incomeAccountWrap" class="${p&&p.method==='efectivo'?'hidden':''}"><label class="text-xs font-bold text-slate-500 uppercase">Seleccionar cuenta</label>
       <select id="mTargetAccount" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">${incomeAccountOptions(p&&p.targetAccountId?p.targetAccountId:defaultIncomeAccountId())}</select>
       <p class="text-[10px] text-slate-400 mt-1">El saldo se suma a esta cuenta cuando marques el ingreso como recibido.</p></div>
-      <div id="recWrap" class="${p&&p.paymentType==='unico'?'hidden':''} bg-indigo-50 border border-indigo-100 rounded-xl p-3 space-y-2">
-        <div class="flex gap-2">
-          <div class="flex-1"><label class="text-xs text-indigo-500 font-bold uppercase">Cada cuánto</label><select id="mRecFreq" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"><option value="weekly" ${p&&p.recurrenceFreq==='weekly'?'selected':''}>Semanal</option><option value="every_two_weeks" ${!p||!p.recurrenceFreq||p.recurrenceFreq==='biweekly'||p.recurrenceFreq==='every_two_weeks'?'selected':''}>Cada 2 semanas</option><option value="semimonthly" ${p&&(p.recurrenceFreq==='semimonthly'||p.recurrenceFreq==='quincenal')?'selected':''}>Quincenal</option><option value="monthly" ${p&&p.recurrenceFreq==='monthly'?'selected':''}>Mensual</option></select></div>
-          <div class="flex-1"><label class="text-xs text-indigo-500 font-bold uppercase">Duración</label><select id="mRecTerm" onchange="updatePaycheckRecurringFields()" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"><option value="indefinite" ${!p||p.recurrenceTerm!=='term'?'selected':''}>Indefinido</option><option value="term" ${p&&p.recurrenceTerm==='term'?'selected':''}>Con término</option></select></div>
+      <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3 space-y-2">
+        <div><label class="text-xs text-indigo-500 font-bold uppercase">Fecha</label>
+        <input type="date" id="mDate" value="${p?p.date:(extra&&extra.date)||''}" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"></div>
+        <div id="recWrap" class="${p&&p.paymentType==='unico'?'hidden':''} space-y-2">
+          <div class="flex gap-2">
+            <div class="flex-1"><label class="text-xs text-indigo-500 font-bold uppercase">Frecuencia</label><select id="mRecFreq" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"><option value="weekly" ${p&&p.recurrenceFreq==='weekly'?'selected':''}>Semanal</option><option value="every_two_weeks" ${!p||!p.recurrenceFreq||p.recurrenceFreq==='biweekly'||p.recurrenceFreq==='every_two_weeks'?'selected':''}>Cada 2 semanas</option><option value="semimonthly" ${p&&(p.recurrenceFreq==='semimonthly'||p.recurrenceFreq==='quincenal')?'selected':''}>Quincenal</option><option value="monthly" ${p&&p.recurrenceFreq==='monthly'?'selected':''}>Mensual</option></select></div>
+            <div class="flex-1"><label class="text-xs text-indigo-500 font-bold uppercase">Duración</label><select id="mRecTerm" onchange="updatePaycheckRecurringFields()" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"><option value="indefinite" ${!p||p.recurrenceTerm!=='term'?'selected':''}>Indefinido</option><option value="term" ${p&&p.recurrenceTerm==='term'?'selected':''}>Con término</option></select></div>
+          </div>
+          <div id="recCountWrap" class="${p&&p.recurrenceTerm==='term'?'':'hidden'}"><label class="text-xs text-indigo-500 font-bold uppercase">Cantidad de pagos</label><input type="number" id="mRecCount" min="1" value="${p&&p.recurrenceCount?p.recurrenceCount:1}" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"></div>
         </div>
-        <div id="recCountWrap" class="${p&&p.recurrenceTerm==='term'?'':'hidden'}"><label class="text-xs text-indigo-500 font-bold uppercase">Cantidad de pagos</label><input type="number" id="mRecCount" min="1" value="${p&&p.recurrenceCount?p.recurrenceCount:1}" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm"></div>
       </div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Nota (opcional)</label>
-      <input type="text" id="mNote" value="${p?p.note:''}" placeholder="ej. 🟢 TERCER CHEQUE" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <input type="text" id="mNote" value="${p?p.note:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       <button onclick="savePaycheck(${p?`'${id}'`:'null'})" class="w-full btn-primary py-3">${p?'Guardar':'Agregar'}</button>
     </div>`;
   }
@@ -6688,12 +6849,11 @@ function openModal(type, id, extra) {
     const oneTimeIcon=normalizeIcon(o?o.emoji:'pin','finance');
     const _otBackBtn=(extra&&extra.backTo)?`<button onclick="openModal('${extra.backTo}','${extra.backId||''}')" class="flex items-center gap-1.5 text-indigo-600 text-sm font-bold mb-3"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Volver</button>`:'';
     const _otIsOnce=!o||!o.frequency||o.frequency==='once';
-    html=`${_otBackBtn}<h3 class="text-lg font-bold text-slate-800 mb-1">${o?'Editar pago':'Registrar nuevo pago'}</h3>
-    <p class="text-sm text-slate-500 mb-4">${o?'Editar los datos del pago':'Programa un pago para el futuro'}</p>
+    html=`${_otBackBtn}<h3 class="text-lg font-bold text-slate-800 mb-1">${o?'Editar pago':'Registrar un nuevo pago programado'}</h3>
     <div class="space-y-3">
       <div class="flex gap-3">
         <div class="w-20">${iconPicker('finance',oneTimeIcon,true)}</div>
-        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Descripción</label>
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Descripción del pago</label>
         <input type="text" id="mName" value="${o?o.name:''}" placeholder="ej. Reparación carro" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       </div>
       <div class="flex gap-3">
@@ -6705,11 +6865,11 @@ function openModal(type, id, extra) {
       <div class="flex gap-3">
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Fecha</label>
         <input type="date" id="mDate" value="${o?o.dueDate:(extra&&extra.date)||''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
+        <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+          ${paymentCategoryOptions(o&&o.category?o.category:'personal')}
+        </select></div>
       </div>
-      <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
-      <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
-        ${paymentCategoryOptions(o&&o.category?o.category:'personal')}
-      </select></div>
       <div class="bg-indigo-50 rounded-xl p-3">
         <label class="text-xs font-bold text-indigo-700 uppercase">Frecuencia</label>
         <select id="mFreq" onchange="(function(v){const h=v==='once';document.getElementById('oneTimeDurWrap').classList.toggle('hidden',h);})(this.value)" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm">
@@ -6733,19 +6893,23 @@ function openModal(type, id, extra) {
     const q=type==='editExpense'?(S.expenses.find(x=>x.id===id)||{}):(extra||{});
     const _expBackBtn=(extra&&extra.backTo)?`<button onclick="openModal('${extra.backTo}','${extra.backId||''}')" class="flex items-center gap-1.5 text-indigo-600 text-sm font-bold mb-3"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Volver</button>`:'';
     html=`${_expBackBtn}<h3 class="text-lg font-bold text-slate-800 mb-1">${type==='editExpense'?'Editar gasto':'Registrar pago realizado'}</h3>
-    <p class="text-sm text-slate-500 mb-4">${type==='editExpense'?'Editar los datos del gasto':'Registra un pago que ya hiciste'}</p>
     <div class="space-y-3">
       <div><label class="text-xs font-bold text-slate-500 uppercase">Descripción</label>
       <input type="text" id="mName" value="${q.name||''}" placeholder="ej. Gasolina, supermercado…" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       <div class="flex gap-3">
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Monto ($)</label>
         <input type="number" id="mAmount" value="${q.amount||''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Moneda</label>
+        <select id="mCurrency" onchange="updateTrmVisibility()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">${['USD','COP'].map(c=>`<option value="${c}" ${(q.currency||q.currencyConversion?.originalCurrency||'USD')===c?'selected':''}>${c}</option>`).join('')}</select></div>
+      </div>
+      <div id="mTrmWrap"><label class="text-xs font-bold text-slate-500 uppercase">TRM usada</label>
+      <input type="number" id="mTRM" value="${currentTRM()}" step="1" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div class="flex gap-3">
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">¿De dónde salió el dinero?</label>
+        <div class="mt-1">${paymentSourceOptions(q.sourceAccountId)}</div></div>
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Fecha</label>
         <input type="date" id="mDate" value="${q.date||isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       </div>
-      <div><label class="text-xs font-bold text-slate-500 uppercase">¿De dónde salió el dinero?</label>
-      <div class="mt-1">${paymentSourceOptions(q.sourceAccountId)}</div></div>
-      ${paymentCurrencyFields(q.currency||q.currencyConversion?.originalCurrency||'USD')}
       <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
       <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
         ${paymentCategoryOptions(q.category||'personal')}
@@ -6810,7 +6974,8 @@ function openModal(type, id, extra) {
     const l=type==='editLoan'?S.loans.find(x=>x.id===id):null;
     const hasRec=l&&l.recurring&&l.recurring.freq!=='once';
     const loanIcon=normalizeIcon(l?l.emoji:'brief','loan');
-    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">${l?'Editar':'Nuevo'} préstamo</h3>
+    const _alBackBtn=(extra&&extra.backTo)?`<button onclick="openModal('${extra.backTo}','${extra.backId||''}')" class="flex items-center gap-1.5 text-indigo-600 text-sm font-bold mb-3"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Volver</button>`:'';
+    html=`${_alBackBtn}<h3 class="text-lg font-bold text-slate-800 mb-4">${l?'Editar':'Nuevo'} préstamo</h3>
     <div class="space-y-3">
       <div class="flex gap-3 items-end">
         <div style="width:52px;flex-shrink:0">${iconPicker('loan',loanIcon,true)}</div>
@@ -6866,7 +7031,7 @@ function openModal(type, id, extra) {
     const borrowedIcon=normalizeIcon(l?l.emoji:'bank','borrowed');
     const isSingle=l&&(l.frequency==='once'||(l.paymentsCount||1)===1);
     const _blBackBtn=(extra&&extra.backTo)?`<button onclick="openModal('${extra.backTo}','${extra.backId||''}')" class="flex items-center gap-1.5 text-indigo-600 text-sm font-bold mb-3"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Volver</button>`:'';
-    html=`${_blBackBtn}<h3 class="text-lg font-bold text-slate-800 mb-4">${l?'Editar':'Prestamo recibido'}</h3>
+    html=`${_blBackBtn}<h3 class="text-lg font-bold text-slate-800 mb-4">${l?'Editar préstamo':'Nuevo préstamo recibido'}</h3>
     <div class="space-y-3">
       <div class="flex gap-3 items-end">
         <div style="width:52px;flex-shrink:0">${iconPicker('borrowed',borrowedIcon,true)}</div>
@@ -6874,27 +7039,38 @@ function openModal(type, id, extra) {
         <input type="text" id="mLoanName" value="${l?l.loanName||'':''}" placeholder="ej. Deuda tarjeta, Arriendo…"
           class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold"></div>
       </div>
-      ${personNameInput(l?l.personName:((extra&&extra.contactName)?decodeURIComponent(extra.contactName):''),'mName')}
+      <div class="flex gap-3 items-end">
+        <div class="flex-1 min-w-0">${personNameInput(l?l.personName:((extra&&extra.contactName)?decodeURIComponent(extra.contactName):''),'mName')}</div>
+        <div style="width:140px;flex-shrink:0"><label class="text-xs font-bold text-slate-500 uppercase">Fecha</label>
+        <input type="date" id="mDate" value="${l?l.startDate||l.dueDate:(extra&&extra.date)||isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      </div>
       <div style="display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:8px">
-        <div><label class="text-xs font-bold text-slate-500 uppercase">Monto total</label><input type="number" id="mAmount" value="${l?l.totalAmount||l.amount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1" oninput="calcBorrowedPmt()"></div>
+        <div><label class="text-xs font-bold text-slate-500 uppercase">Monto prestado</label><input type="number" id="mAmount" value="${l?l.totalAmount||l.amount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1" oninput="calcBorrowedPmt()"></div>
         <div><label class="text-xs font-bold text-slate-500 uppercase">Moneda</label>
           <select id="mLoanCurrency" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">${['USD','COP'].map(c=>`<option value="${c}" ${(l&&l.currency||S.baseCurrency||'USD')===c?'selected':''}>${c}</option>`).join('')}</select>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px">
-        <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
+        <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría del préstamo</label>
           <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
             ${paymentCategoryOptions(l&&l.category?l.category:'deuda')}
           </select>
         </div>
-        <div><label class="text-xs font-bold text-slate-500 uppercase">Fecha de primer pago</label><input type="date" id="mDate" value="${l?l.startDate||l.dueDate:(extra&&extra.date)||isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+        <div><label class="text-xs font-bold text-slate-500 uppercase">De dónde salió</label>
+          <select id="mDeWhere" onchange="onBorrowedDeWhere()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+            <option value="">— Ya fue usado —</option>
+            ${(S.accounts||[]).filter(a=>a.active!==false).map(a=>`<option value="${a.id}" ${l&&l.receivedAccountId===a.id?'selected':''}>${a.emoji||'💵'} ${a.name}</option>`).join('')}
+          </select>
+        </div>
       </div>
-      <div><label class="text-xs font-bold text-slate-500 uppercase">Tipo de pago</label>
-        <select id="mBorrowedType" onchange="updateBorrowedTypeFields();calcBorrowedPmt()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
-          <option value="installments" ${!isSingle?'selected':''}>Cuotas</option>
-          <option value="once" ${isSingle?'selected':''}>Único</option>
-        </select>
+      <div class="flex items-center justify-between py-1">
+        <label class="text-xs font-bold text-slate-500 uppercase">Pagos recurrentes</label>
+        <button type="button" id="blRecurringToggle" onclick="toggleBorrowedRecurring()"
+          class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${!isSingle?'bg-indigo-500':'bg-slate-200'}">
+          <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${!isSingle?'translate-x-5':'translate-x-1'}"></span>
+        </button>
       </div>
+      <input type="hidden" id="mBorrowedType" value="${isSingle?'once':'installments'}">
       <div id="borrowedRecurringWrap" class="${isSingle?'hidden':''} space-y-2">
         <div class="bg-indigo-50 rounded-xl p-3 space-y-2">
           <label class="text-xs font-bold text-indigo-700 uppercase">Calcular cuotas por</label>
@@ -6926,34 +7102,10 @@ function openModal(type, id, extra) {
         </div>
       </div>
       <div id="borrowedPmtPreview" class="hidden bg-indigo-50 rounded-xl px-3 py-2.5 text-sm text-indigo-700 font-semibold text-center"></div>
-      <div><label class="text-xs font-bold text-slate-500 uppercase">Descripción opcional</label><input id="mDesc" value="${l?l.description||'':''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
-      <div class="border-2 border-amber-200 bg-amber-50 rounded-2xl p-4 space-y-3">
-        <div class="font-extrabold text-amber-700 text-sm flex items-center gap-2">
-          <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
-          Paso requerido: ¿Todavía tienes este dinero?
-        </div>
-        <input type="hidden" id="mAlreadySpent" value="${l?(l.alreadySpent!==false?'yes':'no'):''}">
-        <input type="hidden" id="mStillHave" value="${l?(l.addsToLiquidity?'yes':'no'):''}">
-        <div class="grid grid-cols-1 gap-2">
-          <button type="button" id="mLiqCardNo" onclick="selectBorrowedLiq('no')"
-            class="rounded-xl px-4 py-3 border-2 text-left transition ${l&&l.alreadySpent!==false?'border-indigo-400 bg-indigo-50':'border-slate-100 bg-white'}">
-            <div class="font-bold text-slate-800 text-sm">❌ No, ya fue usado</div>
-            <div class="text-xs text-slate-500 mt-0.5">El préstamo fue para cubrir algo que ya pagué. Solo lo registro como deuda.</div>
-          </button>
-          <button type="button" id="mLiqCardYes" onclick="selectBorrowedLiq('yes')"
-            class="rounded-xl px-4 py-3 border-2 text-left transition ${l&&l.addsToLiquidity?'border-indigo-400 bg-indigo-50':'border-slate-100 bg-white'}">
-            <div class="font-bold text-slate-800 text-sm">✅ Sí, todavía lo tengo</div>
-            <div class="text-xs text-slate-500 mt-0.5">El dinero está disponible y quiero que cuente en mis cuentas.</div>
-          </button>
-        </div>
-        <div id="borrowedAccountWrap" class="${l&&l.addsToLiquidity?'':'hidden'} pt-1">
-          <label class="text-xs font-bold text-slate-500 uppercase">¿En qué cuenta lo recibiste?</label>
-          <select id="mReceivedAccount" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2.5 mt-1">
-            ${(S.accounts||[]).filter(a=>a.active!==false).map(a=>`<option value="${a.id}" ${l&&l.receivedAccountId===a.id?'selected':''}>${a.emoji||'💵'} ${a.name}</option>`).join('')}
-          </select>
-        </div>
-      </div>
-      <button id="mSaveBorrowedBtn" onclick="saveBorrowedLoan(${l?`'${id}'`:'null'})" class="w-full btn-primary py-3 ${l?'':'opacity-40 cursor-not-allowed'}" ${l?'':'disabled'}>Guardar préstamo</button>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Notas (opcional)</label><input id="mDesc" value="${l?l.description||'':''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <input type="hidden" id="mAlreadySpent" value="${l?(l.alreadySpent!==false?'yes':'no'):(l&&l.addsToLiquidity?'no':'yes')}">
+      <input type="hidden" id="mStillHave" value="${l?(l.addsToLiquidity?'yes':'no'):'no'}">
+      <button id="mSaveBorrowedBtn" onclick="saveBorrowedLoan(${l?`'${id}'`:'null'})" class="w-full btn-primary py-3">Guardar préstamo</button>
     </div>`;
   }
 
@@ -7643,11 +7795,26 @@ function openModal(type, id, extra) {
     </div>`;
   }
   else if(type==='petAddType') {
-    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">Agregar mascota</h3>
-    <p class="text-sm text-slate-500 mb-4">Selecciona el tipo para crear el perfil.</p>
-    <div class="grid grid-cols-2 gap-2">
-      <button onclick="window._mPetVaccines=[];window._mPetProducts=[];window._mPetVaccinesYes=false;window._mPetPhoto='';window._mPetFit='cover';window._mPetLoadedFromEdit=false;window._mPetDraft=null;window._mPetSharedHome=false;window._mPetSpecificProduct=false;window._mPetSharedWith='';openModal('petFormModal','Perro')" class="btn-primary py-3">Nuevo perro</button>
-      <button onclick="window._mPetVaccines=[];window._mPetProducts=[];window._mPetVaccinesYes=false;window._mPetPhoto='';window._mPetFit='cover';window._mPetLoadedFromEdit=false;window._mPetDraft=null;window._mPetSharedHome=false;window._mPetSpecificProduct=false;window._mPetSharedWith='';openModal('petFormModal','Gato')" class="btn-primary py-3">Nuevo gato</button>
+    const _initPet=`window._mPetVaccines=[];window._mPetProducts=[];window._mPetVaccinesYes=false;window._mPetPhoto='';window._mPetFit='cover';window._mPetLoadedFromEdit=false;window._mPetDraft=null;window._mPetSharedHome=false;window._mPetSpecificProduct=false;window._mPetSharedWith='';`;
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-4">Agregar mascota</h3>
+    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Nueva mascota</div>
+    <div class="grid grid-cols-2 gap-2 mb-5">
+      <button onclick="${_initPet}openModal('petFormModal','Perro')" class="btn-primary py-3">🐶 Perro</button>
+      <button onclick="${_initPet}openModal('petFormModal','Gato')" class="btn-primary py-3">🐱 Gato</button>
+      <button onclick="${_initPet}openModal('petFormModal','Pájaro')" class="btn-primary py-3">🐦 Pájaro</button>
+      <button onclick="${_initPet}openModal('petFormModal','Conejo')" class="btn-primary py-3">🐰 Conejo</button>
+      <button onclick="${_initPet}openModal('petFormModal','Pez')" class="btn-primary py-3">🐟 Pez</button>
+      <button onclick="${_initPet}openModal('petFormModal','Otro')" class="btn-primary py-3">🐾 Otro</button>
+    </div>
+    <div style="border-top:1px solid #e2e8f0;padding-top:16px">
+      <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Tengo un código</div>
+      <p class="text-sm text-slate-500 mb-3">Si alguien compartió el código de su mascota contigo, ingrésalo aquí para vincularla.</p>
+      <div style="display:flex;gap:8px">
+        <input id="petShareCodeInput" placeholder="Ej. AB12CD" maxlength="8"
+          style="flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:0.875rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#334155"
+          oninput="this.value=this.value.toUpperCase()">
+        <button onclick="joinPetByCode()" style="background:#6c63c7;color:#fff;font-weight:700;padding:10px 16px;border-radius:10px;font-size:0.82rem;white-space:nowrap">Buscar</button>
+      </div>
     </div>`;
   }
   else if(type==='petFormModal') {
@@ -8620,6 +8787,28 @@ function updateBorrowedTypeFields() {
   const wrap=document.getElementById('borrowedRecurringWrap');
   if(wrap) wrap.classList.toggle('hidden', isOnce);
 }
+function toggleBorrowedRecurring() {
+  const inp=document.getElementById('mBorrowedType');
+  if(!inp) return;
+  const nowRecurring=inp.value==='once';
+  inp.value=nowRecurring?'installments':'once';
+  updateBorrowedTypeFields();
+  calcBorrowedPmt();
+  const toggle=document.getElementById('blRecurringToggle');
+  if(toggle) {
+    toggle.classList.toggle('bg-indigo-500',nowRecurring);
+    toggle.classList.toggle('bg-slate-200',!nowRecurring);
+    const thumb=toggle.querySelector('span');
+    if(thumb){thumb.classList.toggle('translate-x-5',nowRecurring);thumb.classList.toggle('translate-x-1',!nowRecurring);}
+  }
+}
+function onBorrowedDeWhere() {
+  const val=document.getElementById('mDeWhere')?.value||'';
+  const sh=document.getElementById('mStillHave');
+  const as=document.getElementById('mAlreadySpent');
+  if(sh) sh.value=val?'yes':'no';
+  if(as) as.value=val?'no':'yes';
+}
 function updateBorrowedLiquidityUI() {
   const isHave=document.getElementById('mStillHave')?.checked;
   const wrap=document.getElementById('borrowedAccountWrap');
@@ -8674,11 +8863,10 @@ function saveBorrowedLoan(id=null) {
   const perPayment=amount/paymentsCount;
   if(!personName||!amount||!dueDate){showToast('Completa persona, monto y fecha');return;}
   ensureDirectoryPerson(personName,emoji);
-  const stillHaveVal=document.getElementById('mStillHave')?.value;
-  if(!stillHaveVal&&!id){showToast('Selecciona si todavía tienes el dinero');return;}
-  const addsToLiquidity=stillHaveVal==='yes';
+  const deWhereVal=document.getElementById('mDeWhere')?.value||'';
+  const addsToLiquidity=!!deWhereVal;
   const alreadySpent=!addsToLiquidity;
-  const receivedAccountId=addsToLiquidity?(document.getElementById('mReceivedAccount')?.value||null):null;
+  const receivedAccountId=deWhereVal||null;
   const existing=id?S.borrowedLoans.find(x=>x.id===id):null;
   const prevLiquidity=existing?existing.addsToLiquidity:false;
   const prevAccountId=existing?existing.receivedAccountId:null;
@@ -8991,11 +9179,12 @@ function renderAccounts() {
               <span style="font-weight:700;color:#fff;font-size:0.875rem">${a.name}</span>
               <span style="background:rgba(124,111,218,0.12);color:#a5b4fc;font-size:0.56rem;font-weight:700;padding:2px 7px;border-radius:99px;border:1px solid rgba(124,111,218,0.2)">${typeLabel[a.type]||a.type}</span>
             </div>
-            <div style="color:#5c6480;font-size:0.65rem;margin-top:2px">${a.currency||'USD'} · ${pockets.length} bolsillo${pockets.length!==1?'s':''} · Reservado ${fmt(reserved)}</div>
+            <div style="color:#5c6480;font-size:0.65rem;margin-top:2px">${a.currency||'USD'} · ${pockets.length} bolsillo${pockets.length!==1?'s':''} · Reservado ${fmtCur(reserved,a.currency||'USD')}</div>
           </div>
           <div style="text-align:right;flex-shrink:0">
-            <div style="font-weight:800;color:${(a.balance||0)<0?'#ef4444':'#fff'};font-size:1rem">${fmtSigned(a.balance||0)}</div>
-            <div style="color:#4ade80;font-size:0.62rem;font-weight:600">Disp. ${fmt(avail)}</div>
+            <div style="font-weight:800;color:${(a.balance||0)<0?'#ef4444':'#fff'};font-size:1rem">${(a.balance||0)<0?'-':''}${fmtCur(Math.abs(a.balance||0),a.currency||'USD')}</div>
+            ${(a.currency&&a.currency!==(S.baseCurrency||'USD'))?`<div style="color:#7c6fda;font-size:0.58rem;font-weight:600">≈ ${fmt(toBaseCurrency(a.balance||0,a.currency))} ${S.baseCurrency||'USD'}</div>`:''}
+            <div style="color:#4ade80;font-size:0.62rem;font-weight:600">Disp. ${fmtCur(avail,a.currency||'USD')}</div>
           </div>
           <svg style="width:14px;height:14px;color:#5c6480;flex-shrink:0;transform:rotate(${expanded?'180':'0'}deg);transition:transform .2s" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
@@ -9854,24 +10043,93 @@ function pendingLoanMatchesSettledTransaction(loan, row, isBorrowed) {
   return labels.some(label=>label===txDesc||label.includes(txDesc)||txDesc.includes(label));
 }
 
+function archiveSentRequestNotification(requestId, status='accepted') {
+  if(!requestId) return false;
+  let changed=false;
+  const evId='nev_req_'+requestId;
+  if(!S.notificationArchived) S.notificationArchived={};
+  if(!S.notificationArchived[evId]) {
+    S.notificationArchived[evId]=new Date().toISOString();
+    changed=true;
+  }
+  const ev=(S.notificationEvents||[]).find(n=>n&&n.id===evId);
+  if(ev) {
+    const label=status==='accepted'?'Aceptada':status==='rejected'?'Rechazada':'Cerrada';
+    if(ev.status!=='read'||ev.actionLabel!==label||!ev.settledAt) {
+      ev.status='read';
+      ev.actionLabel=label;
+      ev.settledAt=new Date().toISOString();
+      changed=true;
+    }
+  }
+  return changed;
+}
+
+function localSentRequestIdsWaitingForCleanup() {
+  const archived=S.notificationArchived||{};
+  return [...new Set((S.notificationEvents||[])
+    .filter(n=>n&&n.id&&String(n.id).startsWith('nev_req_')&&!archived[n.id])
+    .map(n=>String(n.id).replace('nev_req_',''))
+    .filter(Boolean))];
+}
+
+function localSettledRequestRowsFromProfile() {
+  const rows=[];
+  (S.notificationEvents||[]).forEach(n=>{
+    if(!n||!n.id) return;
+    if(String(n.id).startsWith('nev_tx_')) {
+      const status=String(n.type||'').includes('rejected')?'rejected':'accepted';
+      rows.push({id:String(n.id).replace('nev_tx_',''),status,type:n.type,amount:(n.items&&n.items[0]&&n.items[0].amount)||0,description:n.description||'',updated_at:n.createdAt});
+    }
+  });
+  (S.sharedActivity||[]).forEach(a=>{
+    if(!a||!a.sharedId||!['accepted','rejected'].includes(a.action)) return;
+    rows.push({id:String(a.sharedId).replace('stx_',''),status:a.action,type:a.type,amount:a.amount||0,description:a.note||'',updated_at:a.at});
+  });
+  const map={};
+  rows.forEach(r=>{ if(r.id) map[r.id]=r; });
+  return Object.values(map);
+}
+
 function clearSettledPendingLoans(rows) {
   const settled=(rows||[]).filter(row=>row&&['accepted','rejected'].includes(row.status));
   if(!settled.length) return false;
   let changed=false;
-  const clearPending=(loan)=>{
-    if(loan&&loan.pendingTxId){ loan.pendingTxId=null; changed=true; }
+  const clearPending=(loan,row)=>{
+    if(!loan) return;
+    const status=row&&row.status?row.status:'accepted';
+    if(loan.pendingTxId){ loan.pendingTxId=null; changed=true; }
+    if(row&&row.shared_transaction_id&&!loan.sharedTransactionId){ loan.sharedTransactionId=row.shared_transaction_id; changed=true; }
+    if(loan.approvalStatus!==status){ loan.approvalStatus=status; changed=true; }
+    const respondedAt=(row&&(row.responded_at||row.updated_at||row.created_at))||new Date().toISOString();
+    if(loan.approvalRespondedAt!==respondedAt){ loan.approvalRespondedAt=respondedAt; changed=true; }
+    if(row&&row.id&&archiveSentRequestNotification(row.id,status)) changed=true;
   };
-  const clearByExactId=(loan)=>{
-    if(loan&&loan.pendingTxId&&settled.some(row=>row.id===loan.pendingTxId)) clearPending(loan);
-  };
-  (S.loans||[]).forEach(clearByExactId);
-  (S.borrowedLoans||[]).forEach(clearByExactId);
+  const findExact=(loan)=>loan&&loan.pendingTxId?settled.find(row=>row.id===loan.pendingTxId):null;
+  (S.loans||[]).forEach(loan=>{ const row=findExact(loan); if(row) clearPending(loan,row); });
+  (S.borrowedLoans||[]).forEach(loan=>{ const row=findExact(loan); if(row) clearPending(loan,row); });
   (S.loans||[]).filter(loan=>loan.pendingTxId).forEach(loan=>{
-    if(settled.some(row=>pendingLoanMatchesSettledTransaction(loan,row,false))) clearPending(loan);
+    const row=settled.find(r=>pendingLoanMatchesSettledTransaction(loan,r,false));
+    if(row) clearPending(loan,row);
   });
   (S.borrowedLoans||[]).filter(loan=>loan.pendingTxId).forEach(loan=>{
-    if(settled.some(row=>pendingLoanMatchesSettledTransaction(loan,row,true))) clearPending(loan);
+    const row=settled.find(r=>pendingLoanMatchesSettledTransaction(loan,r,true));
+    if(row) clearPending(loan,row);
   });
+  settled.forEach(row=>{ if(row&&row.id&&archiveSentRequestNotification(row.id,row.status)) changed=true; });
+  return changed;
+}
+
+async function repairLoanApprovalNotifications(showResult=false) {
+  const beforePending=(S.loans||[]).filter(l=>l.pendingTxId).length+(S.borrowedLoans||[]).filter(l=>l.pendingTxId).length;
+  let changed=false;
+  if(supabase&&CURRENT_USER) {
+    await checkSentTransactionUpdates();
+  }
+  if(clearSettledPendingLoans(localSettledRequestRowsFromProfile())) changed=true;
+  const afterPending=(S.loans||[]).filter(l=>l.pendingTxId).length+(S.borrowedLoans||[]).filter(l=>l.pendingTxId).length;
+  if(changed){ save(); updateNotificationBadge(); renderCurrentView(); }
+  if(showResult) showToast(afterPending<beforePending||changed?'Aprobaciones fantasma reparadas':'No encontré aprobaciones fantasma pendientes');
   return changed;
 }
 
@@ -9881,29 +10139,30 @@ async function checkSentTransactionUpdates() {
     const pendingIds=[...(S.loans||[]),...(S.borrowedLoans||[])]
       .map(loan=>loan&&loan.pendingTxId)
       .filter(Boolean);
+    const trackedIds=[...new Set([...pendingIds,...localSentRequestIdsWaitingForCleanup()])];
     const sentQuery=supabase.from('persona_transaction_requests')
-      .select('id,type,amount,description,status,updated_at')
+      .select('*')
       .eq('sender_user_id',CURRENT_USER.id)
       .in('status',['accepted','rejected']);
-    const pendingQuery=pendingIds.length
+    const pendingQuery=trackedIds.length
       ? supabase.from('persona_transaction_requests')
-        .select('id,type,amount,description,status,updated_at')
-        .in('id',pendingIds)
+        .select('*')
+        .in('id',trackedIds)
         .in('status',['accepted','rejected'])
       : Promise.resolve({data:[]});
     const [sentRes,pendingRes]=await Promise.all([sentQuery,pendingQuery]);
+    if(sentRes.error) console.warn('checkSentTransactionUpdates sent:',sentRes.error);
+    if(pendingRes.error) console.warn('checkSentTransactionUpdates pending:',pendingRes.error);
     const byId={};
     [...(sentRes.data||[]),...(pendingRes.data||[])].forEach(row=>{ if(row&&row.id) byId[row.id]=row; });
     const data=Object.values(byId);
-    if(!data.length) return;
+    let changed=false;
+    if(data.length&&clearSettledPendingLoans(data)) changed=true;
+    if(clearSettledPendingLoans(localSettledRequestRowsFromProfile())) changed=true;
+    if(!data.length&&!changed) return;
     if(!S.notificationEvents) S.notificationEvents=[];
     if(!S._notifiedSentTxIds) S._notifiedSentTxIds={};
-    let changed=false;
-    if(clearSettledPendingLoans(data)) changed=true;
     data.forEach(row=>{
-      // Clear pendingTxId from any loan/borrowedLoan waiting on this tx
-      const allLoans=[...(S.loans||[]),...(S.borrowedLoans||[])];
-      allLoans.forEach(l=>{ if(l.pendingTxId===row.id){l.pendingTxId=null;changed=true;} });
       const evId='nev_tx_'+row.id;
       if(S._notifiedSentTxIds[evId]) return;
       S._notifiedSentTxIds[evId]=true;
@@ -9912,7 +10171,7 @@ async function checkSentTransactionUpdates() {
       const typeLabel=typeLabels[row.type]||'transacción';
       S.notificationEvents.unshift({
         id:evId,type:'tx_'+row.status,priority:3,
-        createdAt:row.updated_at||new Date().toISOString(),
+        createdAt:row.responded_at||row.updated_at||new Date().toISOString(),
         title:accepted?'Transacción aceptada':'Transacción rechazada',
         description:`Tu ${typeLabel} de ${fmt(row.amount)}${row.description?' ('+row.description+')':''} fue ${accepted?'aceptada':'rechazada'}.`,
         status:accepted?'unread':'action_required',items:[],actionLabel:accepted?'':'Revisar'
@@ -9920,7 +10179,7 @@ async function checkSentTransactionUpdates() {
       sendNativeNotification(accepted?'Transacción aceptada':'Transacción rechazada',`Tu ${typeLabel} de ${fmt(row.amount)} fue ${accepted?'aceptada':'rechazada'}.`,'interactions');
       changed=true;
     });
-    if(changed){ save(); updateNotificationBadge(); if(currentView==='home') renderHome(); }
+    if(changed){ save(); updateNotificationBadge(); renderCurrentView(); }
   } catch(e){ console.warn('checkSentTransactionUpdates:',e); }
 }
 
@@ -10267,7 +10526,7 @@ function openAppMenu() {
   const profileInitials=(profileName.trim().split(/\s+/).map(w=>w[0]||'').join('').slice(0,2)||'?').toUpperCase();
   const activeSpace=(S.spaces||[]).find(sp=>sp.id===currentSpaceId);
   const spaceLabel=activeSpace?activeSpace.name:profileName;
-  const spaceSubLabel=activeSpace?`Código: ${activeSpace.code||'—'}`:S.userEmail||'Espacio personal';
+  const spaceSubLabel=activeSpace?`Código: ${activeSpace.code||'—'}`:S.userEmail||'Perfil propio';
 
   const configGearSVG=`<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>`;
 
@@ -10432,9 +10691,7 @@ function pickProfileEmoji(v){
 }
 function onProfilePhotoSelected(evt){
   const f=evt.target.files&&evt.target.files[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload=()=>{ if(!profileDraft) initProfileDraft(); profileDraft.photo=String(r.result||''); profileDraftDirty=true; renderProfileView(); };
-  r.readAsDataURL(f);
+  compressImage(f,400,0.72).then(data=>{ if(!profileDraft) initProfileDraft(); profileDraft.photo=data; profileDraftDirty=true; renderProfileView(); });
 }
 function removeProfilePhoto(){
   if(!profileDraft) initProfileDraft();
@@ -10485,9 +10742,12 @@ function renderProfileView() {
     <div class="card p-4">
       <div style="font-size:0.62rem;color:#7c6fda;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Código y moneda</div>
       <div style="display:grid;grid-template-columns:1.1fr .9fr;gap:10px;align-items:end">
-        <div style="background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;min-height:72px;display:flex;flex-direction:column;justify-content:center">
-          <div style="font-size:0.58rem;color:#5c6480;font-weight:700;text-transform:uppercase">Código</div>
-          <div style="font-size:1rem;color:#7c6fda;font-family:monospace;font-weight:900;letter-spacing:.08em">${S.userPin||'----'}</div>
+        <div style="background:var(--card2);border:1px solid rgba(124,111,218,0.25);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:0.58rem;color:#5c6480;font-weight:700;text-transform:uppercase">Tu PIN de conexión</div>
+          <div style="font-size:1.4rem;color:#7c6fda;font-family:monospace;font-weight:900;letter-spacing:.12em;line-height:1">${S.userPin||'----'}</div>
+          <button onclick="copyUserPin()" style="display:flex;align-items:center;gap:5px;background:rgba(124,111,218,0.12);border:1px solid rgba(124,111,218,0.22);color:#7c6fda;font-size:0.65rem;font-weight:700;padding:5px 10px;border-radius:8px;width:fit-content">
+            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>Copiar
+          </button>
         </div>
         <div><label style="font-size:0.58rem;color:#5c6480;font-weight:800;text-transform:uppercase">Moneda base</label><select onchange="updateProfileDraftCurrency(this.value)" style="width:100%;margin-top:5px;background:#252836;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px;color:#fff;font-weight:700;min-height:44px">
           <option value="USD" ${profileDraft.baseCurrency==='USD'?'selected':''}>USD</option>
@@ -10497,16 +10757,43 @@ function renderProfileView() {
     </div>
     <div class="card p-4">
       <div style="font-size:0.62rem;color:#7c6fda;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Resumen</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
-        <div style="text-align:center"><div style="color:#fff;font-size:1rem;font-weight:900">${fmt(total)}</div><div style="color:#5c6480;font-size:.58rem;font-weight:700;text-transform:uppercase">Cuentas</div></div>
-        <div style="text-align:center"><div style="color:#fff;font-size:1rem;font-weight:900">${fmt(pockets)}</div><div style="color:#5c6480;font-size:.58rem;font-weight:700;text-transform:uppercase">Bolsillos</div></div>
-        <div style="text-align:center"><div style="color:#fff;font-size:1rem;font-weight:900">${pending}</div><div style="color:#5c6480;font-size:.58rem;font-weight:700;text-transform:uppercase">Pendientes</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:#1a1d2e;border-radius:10px;padding:10px">
+          <div style="font-size:0.57rem;color:#5c6480;font-weight:700;text-transform:uppercase;margin-bottom:4px">Balance total</div>
+          <div style="color:#fff;font-size:0.88rem;font-weight:900">${fmt(total)}</div>
+          <div style="font-size:0.58rem;color:#5c6480;margin-top:2px">${accounts.length} cuenta${accounts.length!==1?'s':''} · ${S.baseCurrency||'USD'}</div>
+        </div>
+        <div style="background:#1a1d2e;border-radius:10px;padding:10px">
+          <div style="font-size:0.57rem;color:#5c6480;font-weight:700;text-transform:uppercase;margin-bottom:4px">Bolsillos</div>
+          <div style="color:#fff;font-size:0.88rem;font-weight:900">${fmt(pockets)}</div>
+          <div style="font-size:0.58rem;color:#5c6480;margin-top:2px">${(S.pockets||[]).length} bolsillo${(S.pockets||[]).length!==1?'s':''}</div>
+        </div>
+        <div style="background:#1a1d2e;border-radius:10px;padding:10px">
+          <div style="font-size:0.57rem;color:#5c6480;font-weight:700;text-transform:uppercase;margin-bottom:4px">Ingresos</div>
+          <div style="color:#4ade80;font-size:0.88rem;font-weight:900">${(S.paychecks||[]).filter(p=>p.active!==false).length}</div>
+          <div style="font-size:0.58rem;color:#5c6480;margin-top:2px">fuentes activas</div>
+        </div>
+        <div style="background:#1a1d2e;border-radius:10px;padding:10px">
+          <div style="font-size:0.57rem;color:#5c6480;font-weight:700;text-transform:uppercase;margin-bottom:4px">Préstamos</div>
+          <div style="color:#f59e0b;font-size:0.88rem;font-weight:900">${(S.loans||[]).filter(l=>!l.paid).length+(S.borrowedLoans||[]).filter(l=>!l.paid).length}</div>
+          <div style="font-size:0.58rem;color:#5c6480;margin-top:2px">${(S.loans||[]).filter(l=>!l.paid).length} dados · ${(S.borrowedLoans||[]).filter(l=>!l.paid).length} recibidos</div>
+        </div>
+        <div style="background:#1a1d2e;border-radius:10px;padding:10px">
+          <div style="font-size:0.57rem;color:#5c6480;font-weight:700;text-transform:uppercase;margin-bottom:4px">Próximos pagos</div>
+          <div style="color:#f87171;font-size:0.88rem;font-weight:900">${pending}</div>
+          <div style="font-size:0.58rem;color:#5c6480;margin-top:2px">en 14 días</div>
+        </div>
+        <div style="background:#1a1d2e;border-radius:10px;padding:10px">
+          <div style="font-size:0.57rem;color:#5c6480;font-weight:700;text-transform:uppercase;margin-bottom:4px">Mascotas</div>
+          <div style="color:#fbbf24;font-size:0.88rem;font-weight:900">${(S.pets||[]).length}</div>
+          <div style="font-size:0.58rem;color:#5c6480;margin-top:2px">${(S.spaces||[]).length} espacio${(S.spaces||[]).length!==1?'s':''} compartidos</div>
+        </div>
       </div>
     </div>
     <div class="card p-4">
       <div style="font-size:0.62rem;color:#7c6fda;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Espacio activo</div>
-      <div style="font-weight:800;color:#fff">${activeSpace?activeSpace.name:'Espacio personal'}</div>
-      <div style="font-size:0.65rem;color:#5c6480;margin-top:2px">${activeSpace?`Código: ${activeSpace.code||'—'}`:'Sin espacio compartido seleccionado'}</div>
+      <div style="font-weight:800;color:#fff">${activeSpace?activeSpace.name:'Sin espacio activo'}</div>
+      <div style="font-size:0.65rem;color:#5c6480;margin-top:2px">${activeSpace?`Código: ${activeSpace.code||'—'}`:'Estás usando tu perfil personal'}</div>
       <button onclick="showView('casa')" style="width:100%;margin-top:12px;background:rgba(124,111,218,.12);border:1px solid rgba(124,111,218,.22);color:#7c6fda;font-weight:800;border-radius:12px;padding:10px">Cambiar espacio</button>
     </div>
     ${profileDraftDirty?`<div style="position:sticky;bottom:10px;z-index:20;display:flex;gap:8px;margin-top:8px">
@@ -10520,8 +10807,14 @@ function renderMascotas(){
   const pets=(S.pets||[]).slice().sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
   const normalizeProduct=(p)=>typeof p==='string'?{name:p,brand:'',value:0,scope:'specific',sharedWith:''}:p;
   if(currentPetId){
-    const p=pets.find(x=>x.id===currentPetId);
+    let p=pets.find(x=>x.id===currentPetId);
     if(!p){ currentPetId=null; return renderMascotas(); }
+    if(!p.shareCode){
+      p.shareCode=Math.random().toString(36).substring(2,8).toUpperCase();
+      const pi=(S.pets||[]).findIndex(x=>x.id===p.id);
+      if(pi>=0) S.pets[pi]=p;
+      save();
+    }
     const products=(p.products||[]).map(normalizeProduct);
     const productsValue=products.reduce((sum,pr)=>sum+(Number(pr.value||0)||0),0);
     const ageLabel=p.birthDate?fmtDate(p.birthDate):'Sin fecha';
@@ -10546,6 +10839,10 @@ function renderMascotas(){
         <div class="card2 p-3"><div style="font-size:.6rem;color:#5c6480">Productos</div><div style="font-weight:900;color:#fff">${products.length}</div></div>
         <div class="card2 p-3"><div style="font-size:.6rem;color:#5c6480">Valor</div><div style="font-weight:900;color:#fff">${fmt(productsValue)}</div></div>
       </div>
+      ${p.shareCode?`<div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;background:rgba(124,111,218,0.08);border:1px solid rgba(124,111,218,0.2);border-radius:10px;padding:10px 12px">
+        <div><div style="font-size:0.58rem;color:#5c6480;font-weight:700;text-transform:uppercase">Código para compartir</div><div style="font-size:1rem;color:#7c6fda;font-family:monospace;font-weight:900;letter-spacing:.12em;margin-top:2px">${p.shareCode}</div></div>
+        <button onclick="navigator.clipboard.writeText('${p.shareCode}').then(()=>showToast('Código copiado'))" style="background:rgba(124,111,218,0.15);border:1px solid rgba(124,111,218,0.25);color:#7c6fda;font-size:0.7rem;font-weight:700;padding:6px 12px;border-radius:8px">Copiar</button>
+      </div>`:''}
     </div>
     <div class="card p-3 mb-2">
       <div style="font-size:.72rem;color:#94a3b8;font-weight:800;margin-bottom:8px">Información</div>
@@ -10623,9 +10920,7 @@ function startPetForm(type){
 }
 function onPetPhotoSelected(evt){
   const f=evt.target.files&&evt.target.files[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload=()=>{ window._petPhotoDraft=String(r.result||''); renderMascotas(); };
-  r.readAsDataURL(f);
+  compressImage(f,400,0.72).then(data=>{ window._petPhotoDraft=data; renderMascotas(); });
 }
 function setPetPhotoFit(mode){ window._petPhotoFitDraft=(mode==='contain'?'contain':'cover'); renderMascotas(); }
 function setPetVaccines(v){ window._petVaccinesYesDraft=!!v; if(!v) window._petVaccinesDraft=[]; renderMascotas(); }
@@ -10657,6 +10952,8 @@ function savePet(){
     if(typeof pr==='string') return {name:pr,brand:'',value:0,scope:'specific',sharedWith:'',ownerPetId:payload.id};
     return {...pr,ownerPetId:payload.id};
   });
+  const existing=(S.pets||[]).find(x=>x.id===payload.id);
+  payload.shareCode=existing?.shareCode||Math.random().toString(36).substring(2,8).toUpperCase();
   const idx=(S.pets||[]).findIndex(x=>x.id===payload.id);
   if(idx>=0) S.pets[idx]=payload; else S.pets.unshift(payload);
   save(); resetPetForm(); showToast('Mascota guardada');
@@ -10668,16 +10965,27 @@ function prefillPet(id){
   openModal('petFormModal',`${p.type||'Perro'}|${p.id}`);
 }
 function deletePet(id){ if(!confirm('¿Borrar mascota?')) return; S.pets=(S.pets||[]).filter(x=>x.id!==id); save(); renderMascotas(); }
+function joinPetByCode(){
+  const code=(document.getElementById('petShareCodeInput')?.value||'').trim().toUpperCase();
+  if(!code||code.length<4){showToast('Ingresa un código válido');return;}
+  const pet=(S.pets||[]).find(p=>p.shareCode===code);
+  if(pet){
+    closeModal();
+    currentPetId=pet.id;
+    renderMascotas();
+    showToast('¡Mascota encontrada!');
+  } else {
+    showToast('Código no encontrado en este perfil');
+  }
+}
 
 function onModalPetPhotoSelected(evt){
   const f=evt.target.files&&evt.target.files[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload=()=>{
-    window._mPetPhoto=String(r.result||'');
+  compressImage(f,400,0.72).then(data=>{
+    window._mPetPhoto=data;
     const token=(document.getElementById('mPetEditId')?.value||'') ? `${window._mPetType||'Perro'}|${document.getElementById('mPetEditId').value}` : (window._mPetType||'Perro');
     openModal('petFormModal',token);
-  };
-  r.readAsDataURL(f);
+  });
 }
 function cacheModalPetDraft(){
   window._mPetDraft={
@@ -10772,6 +11080,8 @@ function savePetFromModal(type){
     if(typeof pr==='string') return {name:pr,brand:'',value:0,scope:'specific',sharedWith:'',ownerPetId:payload.id};
     return {...pr,ownerPetId:payload.id};
   });
+  const existingPetM=(S.pets||[]).find(x=>x.id===payload.id);
+  payload.shareCode=existingPetM?.shareCode||Math.random().toString(36).substring(2,8).toUpperCase();
   const idx=(S.pets||[]).findIndex(x=>x.id===payload.id);
   if(idx>=0) S.pets[idx]=payload; else S.pets.unshift(payload);
   save();
@@ -11076,11 +11386,14 @@ function renderCurrentView() {
     const ns=S.notificationSettings||{};
     const notifP=document.getElementById('notifPayments'); if(notifP) notifP.checked=!!ns.upcomingPayments;
     const notifI=document.getElementById('notifInteractions'); if(notifI) notifI.checked=!!ns.interactions;
-    // Render PIN (async: generate if needed)
-    const pinEl=document.getElementById('pinDisplay');
-    if(pinEl) {
-      if(S.userPin) { pinEl.textContent=S.userPin; }
-      else { pinEl.textContent='——'; ensureUserPin().then(()=>{ const pe=document.getElementById('pinDisplay'); if(pe)pe.textContent=S.userPin||'——'; }); }
+    // Update notification status badge
+    const dot=document.getElementById('notifStatusDot');
+    const txt=document.getElementById('notifStatusText');
+    if(dot&&txt){
+      if(!('Notification' in window)){dot.style.background='#5c6480';txt.textContent='No disponible en este navegador';}
+      else if(Notification.permission==='granted'){dot.style.background='#4ade80';txt.textContent='Permisos concedidos · activos mientras la app está abierta';}
+      else if(Notification.permission==='denied'){dot.style.background='#f87171';txt.textContent='Permisos denegados — actívalos en Configuración del sistema';}
+      else{dot.style.background='#f59e0b';txt.textContent='Permisos no solicitados aún';}
     }
   }
 }
@@ -11114,14 +11427,20 @@ async function requestNotificationPermission() {
   }
   try {
     const permission=await Notification.requestPermission();
+    const dot=document.getElementById('notifStatusDot');
+    const txt=document.getElementById('notifStatusText');
     if(permission==='granted') {
       if(!S.notificationSettings) S.notificationSettings={enabled:false,upcomingPayments:false,interactions:false};
       S.notificationSettings.enabled=true;
       save();
       showToast('Notificaciones activadas');
+      if(dot) dot.style.background='#4ade80';
+      if(txt) txt.textContent='Permisos concedidos · activos mientras la app está abierta';
       new Notification('BearAgenda', {body:'Recordatorios activados correctamente.', icon:'./apple-touch-icon.png'});
       startNotificationScheduler();
     } else {
+      if(dot) dot.style.background='#f87171';
+      if(txt) txt.textContent='Permisos denegados — actívalos en Configuración del sistema';
       showToast('Permiso denegado. Actívalos en Configuración del dispositivo.');
     }
   } catch(e) {
@@ -11307,6 +11626,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   load();
   loadDarkMode();
   startNotificationScheduler();
+  fetchDailyTRM().then(()=>updateHeaderBalance()).catch(()=>{});
+
+  document.addEventListener('input',function(e){
+    const moneyIds=['mAmount','mAccBalance','mSaved','mTarget'];
+    if(e.target&&e.target.type==='number'&&moneyIds.includes(e.target.id)) maskMoneyInput(e.target);
+  });
+  document.addEventListener('change',function(e){
+    if(e.target&&e.target.id==='mCurrency'){
+      const amtEl=document.getElementById('mAmount');
+      if(amtEl&&amtEl.value) maskMoneyInput(amtEl);
+    }
+  });
 
   if (!supabase) {
     updateHeaderBalance();
