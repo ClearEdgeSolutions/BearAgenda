@@ -456,7 +456,7 @@
       </div>
       <div class="tabs-scroll mb-4 hidden">
         <button class="pill-tab active text-xs font-bold px-4 py-1.5 rounded-full whitespace-nowrap" onclick="switchTab('monthly',this)">Pagos</button>
-        <button class="pill-tab text-xs font-bold px-4 py-1.5 rounded-full whitespace-nowrap" onclick="switchTab('prestamos',this)">Préstamos</button>
+        <button class="pill-tab text-xs font-bold px-4 py-1.5 rounded-full whitespace-nowrap" onclick="switchTab('prestamos',this)">Prestamos</button>
         <button class="pill-tab text-xs font-bold px-4 py-1.5 rounded-full whitespace-nowrap" onclick="switchTab('gastos',this)">Historial gastos</button>
       </div>
       <div id="billsContent"></div>
@@ -589,16 +589,12 @@
       <div class="card p-4" style="display:flex;flex-direction:column;gap:12px">
         <div style="font-size:0.65rem;color:#5c6480">Requiere app instalada como PWA y permisos del sistema activados.</div>
         <div style="display:flex;align-items:center;justify-content:space-between">
-          <span style="font-size:0.82rem;color:#e8eaf2">Pagos próximos</span>
+          <span style="font-size:0.82rem;color:#e8eaf2">Próximos pagos</span>
           <label class="toggle"><input type="checkbox" id="notifPayments" onchange="saveNotificationSettings()"><span class="slider"></span></label>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between">
-          <span style="font-size:0.82rem;color:#e8eaf2">Ingresos por recibir</span>
-          <label class="toggle"><input type="checkbox" id="notifIncome" onchange="saveNotificationSettings()"><span class="slider"></span></label>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <span style="font-size:0.82rem;color:#e8eaf2">Balance bajo</span>
-          <label class="toggle"><input type="checkbox" id="notifLowBalance" onchange="saveNotificationSettings()"><span class="slider"></span></label>
+          <span style="font-size:0.82rem;color:#e8eaf2">Interacciones y asignaciones</span>
+          <label class="toggle"><input type="checkbox" id="notifInteractions" onchange="saveNotificationSettings()"><span class="slider"></span></label>
         </div>
         <button onclick="requestNotificationPermission()" style="width:100%;background:rgba(124,111,218,0.12);color:#7c6fda;font-weight:700;padding:10px 0;border-radius:11px;border:1px solid rgba(124,111,218,0.2);font-size:0.82rem">Activar recordatorios</button>
       </div>
@@ -627,7 +623,7 @@
           <button onclick="formatModule('Bolsillos personales')" style="background:#252836;color:#94a3b8;font-weight:600;padding:9px 0;border-radius:10px;border:1px solid rgba(255,255,255,0.06);font-size:0.72rem">Bolsillos</button>
           <button onclick="formatModule('Casa')" style="background:#252836;color:#94a3b8;font-weight:600;padding:9px 0;border-radius:10px;border:1px solid rgba(255,255,255,0.06);font-size:0.72rem">Espacios</button>
           <button onclick="formatModule('Calendario')" style="background:#252836;color:#94a3b8;font-weight:600;padding:9px 0;border-radius:10px;border:1px solid rgba(255,255,255,0.06);font-size:0.72rem">Calendario</button>
-          <button onclick="formatModule('Préstamos')" style="background:#252836;color:#94a3b8;font-weight:600;padding:9px 0;border-radius:10px;border:1px solid rgba(255,255,255,0.06);font-size:0.72rem">Préstamos</button>
+          <button onclick="formatModule('Prestamos')" style="background:#252836;color:#94a3b8;font-weight:600;padding:9px 0;border-radius:10px;border:1px solid rgba(255,255,255,0.06);font-size:0.72rem">Prestamos</button>
         </div>
       </div>
 
@@ -717,7 +713,7 @@ try {
 let CURRENT_USER = null;
 const INIT = {
   profileName: '',
-  profileAvatarMode: 'emoji', // 'emoji' | 'initial'
+  profileAvatarMode: 'initial',
   profileAvatarColor: '#6c63c7',
   profileFormatted: false,
   showDefaultPlans: true,
@@ -752,7 +748,7 @@ const INIT = {
   pocketTransactions: [],
   loans: [],     // {id,personName,totalAmount,note,source,payments:[{id,amount,date,note}],recurring:{freq,amount,nextDate,totalPayments}|null}
   borrowedLoans: [], // {id,personName,amount,dueDate,description,paid}
-  incomeCategories: ['Trabajo','Préstamo','Otro'],
+  incomeCategories: ['Trabajo','Prestamo','Otro'],
   plans: null,
   customPlans: [],// {id,label,date,color,items:[{name,amount,type}],note,living,completed}
   calendarNotes: {}, // {'YYYY-MM-DD':[{id,text,done}]}
@@ -764,21 +760,22 @@ const INIT = {
   accountTransactions: [], // [{id,accountId,amount,type:'deposit'|'withdrawal',label,date,createdAt}]
   personaProfiles: [], // [{personName,emoji,createdAt,updatedAt}]
   personContacts: [], // [{id,displayName,matchName,phone,email,notes,linkedUserId,linkedDisplayName,connectionStatus,connectionId,createdAt,updatedAt}]
-  linkedProfiles: {}, // { [userId]: {displayName, avatarMode, avatarValue, avatarColor, updatedAt} }
+  linkedProfiles: {}, // { [userId]: {displayName, avatarMode, avatarValue, avatarColor, profilePhoto, updatedAt} }
   pets: [], // [{id,name,type,age,vaccines,weight,photo,foodBrand,products,notes,updatedAt}]
   cars: [], // [{id,name,plate,createdAt}]
   carMileageLogs: [], // [{id,carId,title,startMiles,endMiles,project,date,notes,totalMiles}]
   sharedActivity: [], // [{id,sharedId,type,action,by,at,note}]
   userPin: null,      // string|null — PIN único de 6 chars para que otros te encuentren
-  notificationSettings: {enabled:false,upcomingPayments:false,incomeDue:false,lowBalance:false},
+  notificationSettings: {enabled:false,upcomingPayments:false,interactions:false},
   notificationRead: {},
   notificationArchived: {},
 };
 
 const EMPTY_PROFILE = {
   profileName: '',
-  profileAvatarMode: 'emoji',
+  profileAvatarMode: 'initial',
   profileAvatarColor: '#6c63c7',
+  profilePhoto: '',
   profileFormatted: true,
   showDefaultPlans: false,
   bankBalance: 0,
@@ -791,7 +788,7 @@ const EMPTY_PROFILE = {
   pockets: [],
   loans: [],
   borrowedLoans: [],
-  incomeCategories: ['Trabajo','Préstamo','Otro'],
+  incomeCategories: ['Trabajo','Prestamo','Otro'],
   plans: [],
   customPlans: [],
   calendarNotes: {},
@@ -808,7 +805,7 @@ const EMPTY_PROFILE = {
   carMileageLogs: [],
   sharedActivity: [],
   userPin: null,
-  notificationSettings: {enabled:false,upcomingPayments:false,incomeDue:false,lowBalance:false},
+  notificationSettings: {enabled:false,upcomingPayments:false,interactions:false},
   notificationRead: {},
   notificationArchived: {},
 };
@@ -935,6 +932,9 @@ let lastUndoAction = null;
 let profileDraft = null;
 let profileDraftDirty = false;
 let currentMileageCarId = null;
+let currentMileageTab = 'miles';
+let vehicleMonth = null;
+let currentPetId = null;
 let petFormEditId = null;
 let showPetForm = false;
 let showPetTypeChoice = false;
@@ -1023,8 +1023,9 @@ function borrowedInstallments(l) {
 function normalizeState() {
   if (!S.profileName) S.profileName = '';
   if (!S.profileEmoji) S.profileEmoji = '';
-  if (!S.profileAvatarMode) S.profileAvatarMode = 'emoji';
+  if (!S.profileAvatarMode) S.profileAvatarMode = 'initial';
   if (!S.profileAvatarColor) S.profileAvatarColor = '#6c63c7';
+  if (S.profilePhoto === undefined) S.profilePhoto = '';
   if (S.profileFormatted === undefined) S.profileFormatted = false;
   if (S.showDefaultPlans === undefined) S.showDefaultPlans = true;
   if (!S.pockets) S.pockets = [];
@@ -1033,7 +1034,7 @@ function normalizeState() {
   if (!S.customPlans) S.customPlans = [];
   if (!S.calendarNotes) S.calendarNotes = {};
   if (!S.borrowedLoans) S.borrowedLoans = [];
-  if (!S.incomeCategories) S.incomeCategories = ['Trabajo','Préstamo','Otro'];
+  if (!S.incomeCategories) S.incomeCategories = ['Trabajo','Prestamo','Otro'];
   if (!S.lastActionTime) S.lastActionTime = null;
   if (!S.bills) S.bills = [];
   if (!S.paychecks) S.paychecks = [];
@@ -1114,7 +1115,7 @@ function normalizeState() {
   if (!S.carMileageLogs) S.carMileageLogs = [];
   if (!S.sharedActivity) S.sharedActivity = [];
   if (S.userPin === undefined) S.userPin = null;
-  if (!S.notificationSettings) S.notificationSettings = {enabled:false,upcomingPayments:false,incomeDue:false,lowBalance:false};
+  if (!S.notificationSettings) S.notificationSettings = {enabled:false,upcomingPayments:false,interactions:false};
   if (!S.notificationRead) S.notificationRead = {};
   if (!S.notificationArchived) S.notificationArchived = {};
   // Migration: ensure Cash account always exists (fixed, cannot be deleted)
@@ -1133,7 +1134,9 @@ function normalizeState() {
     if (!p.currency) p.currency = accountById(p.sourceAccountId)?.currency || S.baseCurrency || 'USD';
   });
   // Fase 3: Normalize borrowedLoans new fields
+  S.loans.forEach(l => { if(!l.currency) l.currency=S.baseCurrency||'USD'; });
   S.borrowedLoans.forEach(l => {
+    if (!l.currency) l.currency=S.baseCurrency||'USD';
     if (l.addsToLiquidity === undefined) l.addsToLiquidity = false;
     if (l.alreadySpent === undefined) l.alreadySpent = true;
     if (!l.receivedAccountId) l.receivedAccountId = null;
@@ -1320,6 +1323,7 @@ function load() {
   finMonth = monthKey(today());
   analysisMonth = finMonth;
   incomeMonth = finMonth;
+  vehicleMonth = finMonth;
   houseMonth = finMonth;
 }
 
@@ -2968,7 +2972,7 @@ function renderHome() {
   const pendingBorrowed=(S.borrowedLoans||[]).filter(l=>l.pendingTxId);
   if(pendingLoans.length||pendingBorrowed.length){
     html+=`<div class="card p-4" style="border-left:3px solid #f59e0b;margin-bottom:10px">
-      <div style="font-size:0.65rem;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Préstamos pendientes de aprobación</div>
+      <div style="font-size:0.65rem;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Prestamos pendientes de aprobación</div>
       ${[...pendingLoans.map(l=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-top:1px solid rgba(255,255,255,0.05)"><div style="font-size:0.8rem;font-weight:600;color:#e2e8f0">Presté a ${l.personName}<div style="font-size:0.68rem;color:#f59e0b">⏳ Esperando confirmación</div></div><div style="font-weight:700;color:#e2e8f0">${fmt(l.totalAmount||0)}</div></div>`),
       ...pendingBorrowed.map(l=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-top:1px solid rgba(255,255,255,0.05)"><div style="font-size:0.8rem;font-weight:600;color:#e2e8f0">${l.personName} me prestó<div style="font-size:0.68rem;color:#f59e0b">⏳ Esperando confirmación</div></div><div style="font-weight:700;color:#e2e8f0">${fmt(l.totalAmount||l.amount||0)}</div></div>`)].join('')}
     </div>`;
@@ -3769,7 +3773,7 @@ function renderBills() {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Pagos
     </button>
     <button class="mod-tab ${currentTab==='prestamos'?'active':''}" onclick="switchTab('prestamos',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Préstamos
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Prestamos
     </button>
     <button class="mod-tab ${currentTab==='gastos'?'active':''}" onclick="switchTab('gastos',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>Historial
@@ -4004,8 +4008,8 @@ function renderBills() {
       </div>
     </div>`;
 
-    // Préstamos que hice
-    html+=`<div style="color:#7c6fda;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Préstamos que hice</div>`;
+    // Prestamos que hice
+    html+=`<div style="color:#7c6fda;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Prestamos que hice</div>`;
     if(!activeLoans.length){
       html+=`<div class="card p-6 mb-4" style="text-align:center">
         <svg width="36" height="36" fill="none" stroke="#5c6480" stroke-width="1.5" viewBox="0 0 24 24" style="margin:0 auto 10px"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
@@ -4021,7 +4025,7 @@ function renderBills() {
             <div style="width:38px;height:38px;border-radius:11px;background:rgba(124,111,218,0.12);display:flex;align-items:center;justify-content:center;color:#7c6fda;flex-shrink:0">${renderStoredIcon(l.emoji||'brief','loan','')}</div>
             <div style="flex:1;min-width:0">
               <div style="font-weight:700;color:#fff;font-size:0.82rem">${l.loanName||l.personName}</div>
-              <div style="color:#5c6480;font-size:0.65rem;margin-top:1px">${l.loanName?`${l.personName} · `:''}${fmt(paid)} de ${fmt(l.totalAmount)}</div>
+              <div style="color:#5c6480;font-size:0.65rem;margin-top:1px">${l.currency||'USD'} · ${l.loanName?`${l.personName} · `:''}${fmt(paid)} de ${fmt(l.totalAmount)}</div>
               ${l.recurring?`<div style="color:#7c6fda;font-size:0.65rem;margin-top:1px">Próx. ${fmtDate(l.recurring.nextDate)}</div>`:''}
             </div>
             <div style="text-align:right;flex-shrink:0">
@@ -4041,8 +4045,8 @@ function renderBills() {
       });
     }
 
-    // Préstamos que debo
-    html+=`<div style="color:#7c6fda;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;margin-top:4px">Préstamos que debo</div>`;
+    // Prestamos que debo
+    html+=`<div style="color:#7c6fda;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;margin-top:4px">Prestamos que debo</div>`;
     if(!activeBorrowed.length) html+=`<div class="card p-6" style="text-align:center;color:#5c6480;font-size:0.875rem">Sin préstamos por pagar.</div>`;
     activeBorrowed.forEach(l=>{
       normalizeBorrowedLoan(l);
@@ -4055,7 +4059,7 @@ function renderBills() {
           <div style="width:38px;height:38px;border-radius:11px;background:rgba(124,111,218,0.12);display:flex;align-items:center;justify-content:center;color:#7c6fda;flex-shrink:0">${renderStoredIcon(l.emoji||'bank','borrowed','')}</div>
           <div style="flex:1;min-width:0">
             <div style="font-weight:700;color:#fff;font-size:0.82rem">${l.loanName||l.personName}</div>
-            <div style="color:#5c6480;font-size:0.65rem;margin-top:1px">${l.loanName?`${l.personName} · `:''}${freqLabel(l.frequency)}</div>
+            <div style="color:#5c6480;font-size:0.65rem;margin-top:1px">${l.currency||'USD'} · ${l.loanName?`${l.personName} · `:''}${freqLabel(l.frequency)}</div>
           </div>
           <div style="text-align:right;flex-shrink:0">
             <div style="font-weight:700;color:#fff;font-size:0.85rem">${fmt(pendingAmt)}</div>
@@ -4081,7 +4085,7 @@ function renderBills() {
       ...paidLoans.map(l=>({kind:'lent',id:l.id,name:l.loanName||l.personName,person:l.personName,amount:l.totalAmount||0,date:loanCompletedDate(l),emoji:l.emoji||'brief'})),
       ...paidBorrowed.map(l=>({kind:'borrowed',id:l.id,name:l.loanName||l.personName,person:l.personName,amount:l.totalAmount||l.amount||0,date:borrowedCompletedDate(l),emoji:l.emoji||'bank'}))
     ].sort((a,b)=>parseDate(b.date)-parseDate(a.date));
-    html+=`<div style="color:#4ade80;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;margin-top:16px">Préstamos pagados</div>`;
+    html+=`<div style="color:#4ade80;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;margin-top:16px">Prestamos pagados</div>`;
     if(!paidRows.length) html+=`<div class="card p-5" style="text-align:center;color:#5c6480;font-size:0.82rem">Sin préstamos completados en este mes.</div>`;
     paidRows.forEach(r=>{
       const modal=r.kind==='lent'?'loanDetail':'borrowedLoanDetail';
@@ -4679,7 +4683,7 @@ function analysisCategoryItems(category, month=analysisMonth, kind='egresos') {
       .map(p=>({kind:'income',id:p.id,date:p.receivedDate||p.date,name:paycheckSourceLabel(p),amount:p.amount||0,originalAmount:p.amount||0,emoji:p.emoji||'brief',paid:!!p.received,category:p.category||'',sign:'+'}))
       .sort((a,b)=>parseDate(a.date)-parseDate(b.date));
   }
-  const loanRows=(S.loans||[]).filter(l=>l.createdAt&&monthKey(parseDate(l.createdAt.slice(0,10)))===month).map(l=>({kind:'loanout',id:l.id,date:l.createdAt.slice(0,10),name:`Préstamo a ${l.personName}`,amount:l.totalAmount||0,originalAmount:l.totalAmount||0,emoji:l.emoji||'brief',paid:true,category:l.category||'personal'}));
+  const loanRows=(S.loans||[]).filter(l=>l.createdAt&&monthKey(parseDate(l.createdAt.slice(0,10)))===month).map(l=>({kind:'loanout',id:l.id,date:l.createdAt.slice(0,10),name:`Prestamo a ${l.personName}`,amount:l.totalAmount||0,originalAmount:l.totalAmount||0,emoji:l.emoji||'brief',paid:true,category:l.category||'personal'}));
   return [...getMonthPayments(month).filter(p=>p.kind!=='loan'),...loanRows]
     .filter(p=>(p.category||p.kind||'pagos')===category)
     .sort((a,b)=>parseDate(a.date)-parseDate(b.date));
@@ -5012,6 +5016,21 @@ function calendarItemsForDate(dateKey) {
   S.paychecks.forEach(p=>{ if(p.date===dateKey) items.push({kind:'income',name:'Cheque nómina',amount:p.amount,paid:p.received,emoji:p.emoji||'coin'}); });
   const allPlans=[...(S.plans||[])];
   allPlans.forEach(p=>{ if(p.date===dateKey) items.push({kind:'plan',name:p.label,amount:0,paid:p.completed,emoji:'receipt',note:p.note,items:p.items||[]}); });
+  (S.carMileageLogs||[]).forEach(l=>{
+    if((l.date||'')!==dateKey) return;
+    const car=(S.cars||[]).find(c=>c.id===l.carId);
+    items.push({kind:'vehicle_miles',name:`Trayecto · ${car?.name||'Vehículo'}`,amount:0,paid:true,emoji:'car',category:'vehículo',vehicleMeta:`${Number(l.totalMiles||0).toFixed(1)} mi · ${l.project||l.title||'Trayecto'}`});
+  });
+  (S.carServiceLogs||[]).forEach(s=>{
+    if((s.date||'')===dateKey){
+      const car=(S.cars||[]).find(c=>c.id===s.carId);
+      items.push({kind:s.kind==='oil'?'vehicle_oil':'vehicle_repair',name:`${s.kind==='oil'?'Aceite':'Reparación'} · ${car?.name||'Vehículo'}`,amount:s.cost||0,paid:true,emoji:'car',category:'vehículo',vehicleMeta:s.title||''});
+    }
+    if(s.kind==='oil'&&(s.nextDate||'')===dateKey){
+      const car=(S.cars||[]).find(c=>c.id===s.carId);
+      items.push({kind:'vehicle_oil_due',name:`Próximo aceite · ${car?.name||'Vehículo'}`,amount:0,paid:false,emoji:'car',category:'vehículo',vehicleMeta:s.nextMiles?`${s.nextMiles} mi`:''});
+    }
+  });
   return items;
 }
 
@@ -5119,6 +5138,18 @@ function renderCalendar() {
   }
 
   dayItems.forEach(item=>{
+    if(String(item.kind||'').startsWith('vehicle_')){
+      html+=`<div class="card mb-2" style="display:flex;align-items:center;gap:12px;padding:12px 14px;position:relative;overflow:hidden">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:#22d3ee;border-radius:4px 0 0 4px"></div>
+        <div style="width:40px;height:40px;border-radius:12px;background:rgba(34,211,238,0.1);color:#22d3ee;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem">🚘</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:0.82rem;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.name}</div>
+          <span style="background:rgba(34,211,238,0.1);color:#67e8f9;font-size:0.58rem;font-weight:700;padding:2px 8px;border-radius:99px;margin-top:4px;display:inline-block">${item.vehicleMeta||'Vehículo'}</span>
+        </div>
+        ${item.amount?`<div style="font-weight:700;font-size:0.82rem;flex-shrink:0;color:#22d3ee">${fmt(item.amount)}</div>`:''}
+      </div>`;
+      return;
+    }
     const isIncome=item.kind==='income'||item.kind==='loan';
     const accentColor=isIncome?'#4ade80':'#ef4444';
     const catLabel=item.category||item.kind||'general';
@@ -5376,15 +5407,14 @@ function renderPersonas() {
       const netLabel=netBalance>0?`Te debe ${fmt(netBalance)}`:netBalance<0?`Le debes ${fmt(Math.abs(netBalance))}`:'Sin deudas';
       const netColor=netBalance>0?'#4ade80':netBalance<0?'#ef4444':'#5c6480';
       const linkedP=(contact&&contact.linkedUserId&&(S.linkedProfiles||{})[contact.linkedUserId])||null;
-      const avatarInner=linkedP
-        ?((linkedP.avatarMode==='initial')?((linkedP.displayName||p.name||'?')[0]||'?').toUpperCase():(linkedP.avatarValue||personaInitials(p.name)))
-        :(prof.emoji&&ICON_DEFS[prof.emoji]?renderIcon(prof.emoji,'w-6 h-6'):personaInitials(p.name));
-      const avatarBg=linkedP?.avatarColor||personaColor(p.name);
+      const avatarHtml=linkedP?.profilePhoto
+        ? renderLinkedAvatar(linkedP,p.name,48)
+        : `<div style="width:48px;height:48px;border-radius:50%;background:${linkedP?.avatarColor||personaColor(p.name)};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:white;flex-shrink:0">${linkedP?(((linkedP.displayName||p.name||'?')[0]||'?').toUpperCase()):(prof.emoji&&ICON_DEFS[prof.emoji?prof.emoji:'']?renderIcon(prof.emoji,'w-6 h-6'):personaInitials(p.name))}</div>`;
       const subtitle=`${p.txs.length} movimiento${p.txs.length!==1?'s':''}${ultimoMov?' · Último '+fmtDate(ultimoMov):''}`;
       const darkBtn=`background:rgba(255,255,255,0.06);color:#94a3b8;font-size:0.72rem;font-weight:500;padding:7px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:5px;cursor:pointer`;
       html+=`<div onclick="openModal('personaDetail','${encodeURIComponent(p.name)}')" class="card p-4 mb-3" style="cursor:pointer">
         <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px">
-          <div style="width:48px;height:48px;border-radius:50%;background:${avatarBg};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:white;flex-shrink:0">${avatarInner}</div>
+          ${avatarHtml}
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px">
               <span style="font-weight:700;color:#fff;font-size:0.9rem">${p.name}</span>${connBadge}
@@ -5690,8 +5720,8 @@ function markBorrowedPaid(id,paymentId='') {
   p.paid=true; p.paidDate=isoToday(); p.paidAt=new Date().toISOString(); p.source=_bSrc; p.currencyConversion=conv;
   l.paid=(l.installments||[]).every(x=>x.paid); l.paidDate=l.paid?isoToday():null; l.paidAt=l.paid?new Date().toISOString():null;
   adjustSource(_bSrc,-conv.convertedAmount);
-  setUndoAction('Préstamo marcado como pagado','borrowed',[id,p.id]);
-  setLastAction(); renderCurrentView(); showToast('Préstamo pagado'); return true;
+  setUndoAction('Prestamo marcado como pagado','borrowed',[id,p.id]);
+  setLastAction(); renderCurrentView(); showToast('Prestamo pagado'); return true;
 }
 function unmarkBorrowedPaid(id,paymentId='') {
   const l=S.borrowedLoans.find(x=>x.id===id); if(!l) return;
@@ -6056,14 +6086,14 @@ function openModal(type, id, extra) {
       const l=S.borrowedLoans.find(x=>x.id===pid); if(!l) return;
       const inst=borrowedInstallments(l);
       const p=inst.find(x=>x.date===pdate)||inst.find(x=>!x.paid)||inst[0];
-      title=`Préstamo de ${l.personName}`; subtitle=`Cuota ${p?.number||1} de ${l.paymentsCount||1} · ${freqLabel(l.frequency)} · ${l.description||'Sin descripción'}`; amount=p?.amount||l.perPayment||l.amount;
+      title=`Prestamo de ${l.personName}`; subtitle=`Cuota ${p?.number||1} de ${l.paymentsCount||1} · ${freqLabel(l.frequency)} · ${l.description||'Sin descripción'}`; amount=p?.amount||l.perPayment||l.amount;
       rows=inst.filter(x=>x.paid).map(x=>`<div class="flex justify-between py-2 border-t border-slate-50"><span>${fmtDate(x.paidDate||x.date)} · cuota ${x.number}${x.source?` · ${sourceLabel(x.source)}`:''}</span><span class="font-bold text-red-500">${fmt(x.amount)}</span></div>`).join('');
       future=renderSchedulePreview(inst.filter(x=>!x.paid).map(x=>({date:x.date,amount:x.amount,label:`Cuota ${x.number}/${l.paymentsCount||1}`})),'paymentDetail',`${kind}:${pid}:${pdate}`,showCount);
       details=`<div class="card p-3 mb-3 space-y-2 text-sm"><div class="flex justify-between"><span class="text-slate-400">Frecuencia</span><span class="font-semibold text-slate-700">${freqLabel(l.frequency)}</span></div><div class="flex justify-between"><span class="text-slate-400">Duración</span><span class="font-semibold text-slate-700">${inst.filter(x=>x.paid).length} de ${l.paymentsCount||1} pagos</span></div><div class="flex justify-between"><span class="text-slate-400">Creado</span><span class="font-semibold text-slate-700">${l.createdAt?fmtDate(l.createdAt.slice(0,10)):'-'}</span></div></div>`;
       actions=p&&p.paid?`<button onclick="unmarkBorrowedPaid('${l.id}','${p.id}');closeModal()" class="flex-1 bg-slate-100 text-slate-600 font-semibold py-3 rounded-xl">Deshacer</button><button onclick="openModal('editBorrowedLoan','${l.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Editar</button>`:`<button onclick="openModal('confirmBorrowedPay','${l.id}','${p?p.id:''}')" class="flex-1 btn-primary py-3">Pagar cuota</button><button onclick="openModal('skipPayment','borrowed:${l.id}:${p?p.id:''}:${p?p.date:pdate}')" class="bg-amber-50 text-amber-700 font-semibold px-4 rounded-xl">No pagar</button><button onclick="openModal('editBorrowedLoan','${l.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Editar</button>`;
     } else if(kind==='loan') {
       const l=S.loans.find(x=>x.id===pid); if(!l) return;
-      title=l.loanName||`Cobrar a ${l.personName}`; subtitle=l.loanName?`${l.personName} · Préstamo por cobrar`:`Préstamo por cobrar`; amount=l.recurring&&l.recurring.amount?l.recurring.amount:l.totalAmount;
+      title=l.loanName||`Cobrar a ${l.personName}`; subtitle=l.loanName?`${l.personName} · Prestamo por cobrar`:`Prestamo por cobrar`; amount=l.recurring&&l.recurring.amount?l.recurring.amount:l.totalAmount;
       rows=(l.payments||[]).map(p=>`<div class="flex justify-between py-2 border-t border-slate-50"><span>${fmtDate(p.date)}${p.note?' · '+p.note:''}</span><span class="font-bold text-green-600">${fmt(p.amount)}</span></div>`).join('');
       future=l.recurring?renderSchedulePreview(scheduledRows(l.recurring.nextDate,l.recurring.freq,l.recurring.amount,{totalPayments:l.recurring.totalPayments,limit:24}),'paymentDetail',`${kind}:${pid}:${pdate}`,showCount):'';
       details=`<div class="card p-3 mb-3 space-y-2 text-sm"><div class="flex justify-between"><span class="text-slate-400">Persona</span><span class="font-semibold text-slate-700">${l.personName||'—'}</span></div>${l.loanName?`<div class="flex justify-between"><span class="text-slate-400">Nombre préstamo</span><span class="font-semibold text-slate-700">${l.loanName}</span></div>`:''}<div class="flex justify-between"><span class="text-slate-400">Frecuencia</span><span class="font-semibold text-slate-700">${l.recurring?freqLabel(l.recurring.freq):'No recurrente'}</span></div><div class="flex justify-between"><span class="text-slate-400">Duración</span><span class="font-semibold text-slate-700">${l.recurring?planDurationLabel({frequency:l.recurring.freq,totalPayments:l.recurring.totalPayments},(l.payments||[]).length):'Sin plan'}</span></div><div class="flex justify-between"><span class="text-slate-400">Creado</span><span class="font-semibold text-slate-700">${l.createdAt?fmtDate(l.createdAt.slice(0,10)):'-'}</span></div></div>`;
@@ -6219,7 +6249,7 @@ function openModal(type, id, extra) {
     <div class="grid grid-cols-2 gap-2">
       <button onclick="openModal('addPaycheck')" class="card p-4 text-left"><div class="w-9 h-9 rounded-xl bg-green-50 text-green-600 flex items-center justify-center mb-2">${renderIcon('coin','w-5 h-5')}</div><div class="font-bold text-green-700">Ingreso</div><div class="text-xs text-slate-400">Cheque o ingreso</div></button>
       <button onclick="openModal('addFinanceChoice')" class="card p-4 text-left"><div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2">${renderIcon('card','w-5 h-5')}</div><div class="font-bold text-indigo-700">Pago</div><div class="text-xs text-slate-400">Factura o pago único</div></button>
-      <button onclick="openModal('addLoanChoice')" class="card p-4 text-left"><div class="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-2">${renderIcon('bank','w-5 h-5')}</div><div class="font-bold text-purple-700">Préstamo</div><div class="text-xs text-slate-400">Recibido o realizado</div></button>
+      <button onclick="openModal('addLoanChoice')" class="card p-4 text-left"><div class="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-2">${renderIcon('bank','w-5 h-5')}</div><div class="font-bold text-purple-700">Prestamo</div><div class="text-xs text-slate-400">Recibido o realizado</div></button>
       <button onclick="openModal('addExpense',null,{paid:false})" class="card p-4 text-left"><div class="w-9 h-9 rounded-xl bg-red-50 text-red-500 flex items-center justify-center mb-2">${renderIcon('receipt','w-5 h-5')}</div><div class="font-bold text-red-600">Gasto</div><div class="text-xs text-slate-400">Registrar gasto</div></button>
       <button onclick="openModal('addCalendarNote','${isoToday()}')" class="card p-4 text-left col-span-2"><div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2">${noteTypeIcon('pendiente')}</div><div class="font-bold text-indigo-700">Nota</div><div class="text-xs text-slate-400">Tarea o recordatorio</div></button>
     </div>`;
@@ -6262,8 +6292,8 @@ function openModal(type, id, extra) {
     const end14=new Date(); end14.setDate(end14.getDate()+14);
     const end14Str=end14.toISOString().slice(0,10);
     const upPay=[];
-    loansByMe.forEach(l=>(l.payments||[]).filter(p=>!p.paid&&p.date&&p.date>=todayStr&&p.date<=end14Str).forEach(p=>upPay.push({date:p.date,amount:p.amount,dir:'receive',name:l.loanName||'Préstamo'})));
-    loansFromThem.forEach(l=>borrowedInstallments(l).filter(p=>!p.paid&&p.date&&p.date>=todayStr&&p.date<=end14Str).forEach(p=>upPay.push({date:p.date,amount:p.amount,dir:'pay',name:l.loanName||l.description||'Préstamo'})));
+    loansByMe.forEach(l=>(l.payments||[]).filter(p=>!p.paid&&p.date&&p.date>=todayStr&&p.date<=end14Str).forEach(p=>upPay.push({date:p.date,amount:p.amount,dir:'receive',name:l.loanName||'Prestamo'})));
+    loansFromThem.forEach(l=>borrowedInstallments(l).filter(p=>!p.paid&&p.date&&p.date>=todayStr&&p.date<=end14Str).forEach(p=>upPay.push({date:p.date,amount:p.amount,dir:'pay',name:l.loanName||l.description||'Prestamo'})));
     upPay.sort((a,b)=>a.date<b.date?-1:1);
     // Botones de emoji — igual que personaDetail (sendReaction vía Supabase)
     const _emojis=['❤️','😄','🙏','👏','🤝','💰'];
@@ -6346,7 +6376,7 @@ function openModal(type, id, extra) {
         const totalCount=inst.length||l.paymentsCount||1;
         const isSingle=(l.frequency==='once'||totalCount<=1);
         title=l.loanName||`Pagar a ${l.personName}`;
-        subtitle=`${l.personName} · Préstamo recibido`;
+        subtitle=`${l.personName} · Prestamo recibido`;
         icon=l.emoji||'bank';
         amount=pmt?pmt.amount:(l.amount||0);
         rows=[
@@ -6421,7 +6451,7 @@ function openModal(type, id, extra) {
         const totalCount=l.recurring&&l.recurring.totalPayments?l.recurring.totalPayments:null;
         const paidCount=(l.payments||[]).length;
         title=l.loanName||`Cobrar a ${l.personName}`;
-        subtitle=l.loanName?`${l.personName} · Préstamo por cobrar`:`Préstamo por cobrar`;
+        subtitle=l.loanName?`${l.personName} · Prestamo por cobrar`:`Prestamo por cobrar`;
         icon=l.emoji||'brief'; amount=l.recurring&&l.recurring.amount?l.recurring.amount:pend;
         rows=[
           ['Persona', l.personName||'—'],
@@ -6555,8 +6585,8 @@ function openModal(type, id, extra) {
     const _lcnExtra=_lcn?`,{contactName:'${_lcn}'}`:'';
     html=`<h3 class="text-lg font-bold text-slate-800 mb-4">Registrar préstamo</h3>
     <div class="space-y-2">
-      <button onclick="openModal('addBorrowedLoan',null${_lcnExtra})" class="w-full card p-4 text-left"><div class="font-bold text-indigo-700">Préstamo recibido</div><div class="text-xs text-slate-400">Dinero que alguien te prestó y debes pagar por cuotas.</div></button>
-      <button onclick="openModal('addLoan',null${_lcnExtra})" class="w-full card p-4 text-left"><div class="font-bold text-purple-700">Préstamo realizado</div><div class="text-xs text-slate-400">Dinero que prestaste y te van a abonar.</div></button>
+      <button onclick="openModal('addBorrowedLoan',null${_lcnExtra})" class="w-full card p-4 text-left"><div class="font-bold text-indigo-700">Prestamo recibido</div><div class="text-xs text-slate-400">Dinero que alguien te prestó y debes pagar por cuotas.</div></button>
+      <button onclick="openModal('addLoan',null${_lcnExtra})" class="w-full card p-4 text-left"><div class="font-bold text-purple-700">Prestamo realizado</div><div class="text-xs text-slate-400">Dinero que prestaste y te van a abonar.</div></button>
     </div>`;
   }
 
@@ -6787,10 +6817,12 @@ function openModal(type, id, extra) {
         <div class="flex-1 min-w-0">${personNameInput(l?l.personName:((extra&&extra.contactName)?decodeURIComponent(extra.contactName):''),'mName')}</div>
       </div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Nombre del préstamo</label>
-      <input type="text" id="mLoanName" value="${l?l.loanName||'':''}" placeholder="ej. Préstamo carro, Ayuda arriendo…"
+      <input type="text" id="mLoanName" value="${l?l.loanName||'':''}" placeholder="ej. Prestamo carro, Ayuda arriendo…"
         class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold"></div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Monto total prestado ($)</label>
       <input type="number" id="mAmount" value="${l?l.totalAmount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold text-lg"></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Moneda</label>
+      <select id="mLoanCurrency" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">${['USD','COP'].map(c=>`<option value="${c}" ${(l&&l.currency||S.baseCurrency||'USD')===c?'selected':''}>${c}</option>`).join('')}</select></div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría para análisis</label>
       <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
         ${paymentCategoryOptions(l&&l.category?l.category:'personal')}
@@ -6801,7 +6833,7 @@ function openModal(type, id, extra) {
         ${S.pockets.map(p=>`<option value="pocket:${p.id}" ${l&&l.source&&l.source.id===p.id?'selected':''}>${p.name} (${fmt(p.saved||0)})</option>`).join('')}
       </select></div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Notas</label>
-      <input type="text" id="mNote" value="${l?l.note:''}" placeholder="ej. Préstamo de tarjeta" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <input type="text" id="mNote" value="${l?l.note:''}" placeholder="ej. Prestamo de tarjeta" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       <div class="bg-purple-50 rounded-xl p-3">
         <div class="flex items-center justify-between mb-2">
           <label class="text-xs font-bold text-purple-700 uppercase">Pagos recurrentes</label>
@@ -6834,25 +6866,32 @@ function openModal(type, id, extra) {
     const borrowedIcon=normalizeIcon(l?l.emoji:'bank','borrowed');
     const isSingle=l&&(l.frequency==='once'||(l.paymentsCount||1)===1);
     const _blBackBtn=(extra&&extra.backTo)?`<button onclick="openModal('${extra.backTo}','${extra.backId||''}')" class="flex items-center gap-1.5 text-indigo-600 text-sm font-bold mb-3"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Volver</button>`:'';
-    html=`${_blBackBtn}<h3 class="text-lg font-bold text-slate-800 mb-4">${l?'Editar':'Préstamo recibido'}</h3>
+    html=`${_blBackBtn}<h3 class="text-lg font-bold text-slate-800 mb-4">${l?'Editar':'Prestamo recibido'}</h3>
     <div class="space-y-3">
       <div class="flex gap-3 items-end">
         <div style="width:52px;flex-shrink:0">${iconPicker('borrowed',borrowedIcon,true)}</div>
-        <div class="flex-1 min-w-0">${personNameInput(l?l.personName:((extra&&extra.contactName)?decodeURIComponent(extra.contactName):''),'mName')}</div>
+        <div class="flex-1 min-w-0"><label class="text-xs font-bold text-slate-500 uppercase">Nombre del préstamo</label>
+        <input type="text" id="mLoanName" value="${l?l.loanName||'':''}" placeholder="ej. Deuda tarjeta, Arriendo…"
+          class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold"></div>
       </div>
-      <div><label class="text-xs font-bold text-slate-500 uppercase">Nombre del préstamo</label>
-      <input type="text" id="mLoanName" value="${l?l.loanName||'':''}" placeholder="ej. Deuda tarjeta, Arriendo…"
-        class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-slate-800 font-semibold"></div>
-      <div><label class="text-xs font-bold text-slate-500 uppercase">Monto total ($)</label><input type="number" id="mAmount" value="${l?l.totalAmount||l.amount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1" oninput="calcBorrowedPmt()"></div>
-      <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría para análisis</label>
-        <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
-          ${paymentCategoryOptions(l&&l.category?l.category:'deuda')}
-        </select>
+      ${personNameInput(l?l.personName:((extra&&extra.contactName)?decodeURIComponent(extra.contactName):''),'mName')}
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:8px">
+        <div><label class="text-xs font-bold text-slate-500 uppercase">Monto total</label><input type="number" id="mAmount" value="${l?l.totalAmount||l.amount:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1" oninput="calcBorrowedPmt()"></div>
+        <div><label class="text-xs font-bold text-slate-500 uppercase">Moneda</label>
+          <select id="mLoanCurrency" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">${['USD','COP'].map(c=>`<option value="${c}" ${(l&&l.currency||S.baseCurrency||'USD')===c?'selected':''}>${c}</option>`).join('')}</select>
+        </div>
       </div>
-      <div><label class="text-xs font-bold text-slate-500 uppercase">Fecha de primer pago</label><input type="date" id="mDate" value="${l?l.startDate||l.dueDate:(extra&&extra.date)||isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px">
+        <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
+          <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+            ${paymentCategoryOptions(l&&l.category?l.category:'deuda')}
+          </select>
+        </div>
+        <div><label class="text-xs font-bold text-slate-500 uppercase">Fecha de primer pago</label><input type="date" id="mDate" value="${l?l.startDate||l.dueDate:(extra&&extra.date)||isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      </div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Tipo de pago</label>
         <select id="mBorrowedType" onchange="updateBorrowedTypeFields();calcBorrowedPmt()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
-          <option value="installments" ${!isSingle?'selected':''}>Pagos recurrentes / cuotas</option>
+          <option value="installments" ${!isSingle?'selected':''}>Cuotas</option>
           <option value="once" ${isSingle?'selected':''}>Único</option>
         </select>
       </div>
@@ -6893,11 +6932,11 @@ function openModal(type, id, extra) {
           <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
           Paso requerido: ¿Todavía tienes este dinero?
         </div>
-        <input type="hidden" id="mAlreadySpent" value="${!l||l.alreadySpent!==false?'yes':'no'}">
-        <input type="hidden" id="mStillHave" value="${l&&l.addsToLiquidity?'yes':'no'}">
+        <input type="hidden" id="mAlreadySpent" value="${l?(l.alreadySpent!==false?'yes':'no'):''}">
+        <input type="hidden" id="mStillHave" value="${l?(l.addsToLiquidity?'yes':'no'):''}">
         <div class="grid grid-cols-1 gap-2">
           <button type="button" id="mLiqCardNo" onclick="selectBorrowedLiq('no')"
-            class="rounded-xl px-4 py-3 border-2 text-left transition ${!l||l.alreadySpent!==false?'border-indigo-400 bg-indigo-50':'border-slate-100 bg-white'}">
+            class="rounded-xl px-4 py-3 border-2 text-left transition ${l&&l.alreadySpent!==false?'border-indigo-400 bg-indigo-50':'border-slate-100 bg-white'}">
             <div class="font-bold text-slate-800 text-sm">❌ No, ya fue usado</div>
             <div class="text-xs text-slate-500 mt-0.5">El préstamo fue para cubrir algo que ya pagué. Solo lo registro como deuda.</div>
           </button>
@@ -6985,7 +7024,7 @@ function openModal(type, id, extra) {
       {modal:'addOneTime',extra:{date:id,backTo:'calendarAddChoice',backId:id},icon:'💳',label:'Pago programado',desc:'Programa un pago para el futuro',color:'text-indigo-700'},
       {modal:'addPaycheck',extra:{date:id,backTo:'calendarAddChoice',backId:id},icon:'💰',label:'Ingreso',desc:'Cheque o ingreso esperado',color:'text-green-700'},
       {modal:'addExpense',extra:{date:id,backTo:'calendarAddChoice',backId:id},icon:'🧾',label:'Gasto ya hecho',desc:'Registra un pago inmediato',color:'text-red-600'},
-      {modal:'addLoanChoice',extra:{backTo:'calendarAddChoice',backId:id},icon:'🏦',label:'Préstamo',desc:'Recibido o realizado',color:'text-purple-700'},
+      {modal:'addLoanChoice',extra:{backTo:'calendarAddChoice',backId:id},icon:'🏦',label:'Prestamo',desc:'Recibido o realizado',color:'text-purple-700'},
       {modal:'addCalendarNote',extra:{backTo:'calendarAddChoice',backId:id},icon:'📝',label:'Nota / Lista',desc:'Recordatorio, cita o lista de compras',color:'text-slate-700'},
     ];
     html=`<h3 class="text-lg font-bold text-slate-800 mb-1">¿Qué quieres agregar?</h3>
@@ -7404,7 +7443,7 @@ function openModal(type, id, extra) {
           <div class="w-9 h-9 rounded-xl ${isLent?'bg-green-50':'bg-red-50'} flex items-center justify-center text-base flex-shrink-0">${isLent?'💸':'🏦'}</div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-1.5 flex-wrap">
-              <span class="font-semibold text-slate-800 text-sm">${tx.loanName||(isLent?'Préstamo prestado':'Préstamo recibido')}</span>
+              <span class="font-semibold text-slate-800 text-sm">${tx.loanName||(isLent?'Prestamo prestado':'Prestamo recibido')}</span>
               <span class="text-[9px] ${tx.done?'bg-green-100 text-green-700':'bg-amber-100 text-amber-700'} font-bold px-1.5 py-0.5 rounded-full">${tx.done?'✓ Saldado':'Activo'}</span>
             </div>
             <div class="text-xs text-slate-400 mt-0.5">${isLent?'Prestaste':'Te prestaron'} ${fmt(tx.amount)} · ${fmtDate(tx.date)} · ${cuotaInfo}</div>
@@ -7626,7 +7665,7 @@ function openModal(type, id, extra) {
     window._mPetSharedHome=!!window._mPetSharedHome;
     window._mPetSpecificProduct=!!window._mPetSpecificProduct;
     window._mPetSharedWith=window._mPetSharedWith||'';
-    if(petEditing && !window._mPetLoadedFromEdit){
+    if(petEditing && window._mPetLoadedEditId!==petEditId){
       window._mPetVaccines=[...(petEditing.vaccines||[])];
       window._mPetProducts=[...(petEditing.products||[])];
       window._mPetVaccinesYes=!!petEditing.vaccinesEnabled;
@@ -7636,6 +7675,7 @@ function openModal(type, id, extra) {
       window._mPetSpecificProduct=!!petEditing.specificProducts;
       window._mPetSharedWith=petEditing.sharedWithPetId||'';
       window._mPetLoadedFromEdit=true;
+      window._mPetLoadedEditId=petEditId;
     }
     const draftPet=window._mPetDraft||{};
     const petNameVal=draftPet.name ?? (petEditing?.name||'');
@@ -7699,6 +7739,7 @@ function openModal(type, id, extra) {
       <input id="mCarStartMiles" type="number" inputmode="decimal" placeholder="Millaje inicial" value="${carEditing?.startMiles||''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm">
       <input id="mCarPlate" placeholder="Placa" value="${carEditing?.plate||''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm">
       <button onclick="saveCarFromModal()" class="w-full btn-primary py-3">${carEditing?'Guardar cambios':'Guardar vehículo'}</button>
+      ${carEditing?`<button onclick="deleteCarFromEdit('${carEditing.id}')" class="w-full btn-red py-3">Borrar vehículo</button>`:''}
     </div>`;
   }
   else if(type==='carActionChoice') {
@@ -7726,13 +7767,16 @@ function openModal(type, id, extra) {
   }
   else if(type==='oilChangeFormModal') {
     const car=(S.cars||[]).find(c=>c.id===id);
+    const currentMiles=vehicleCurrentMiles(car);
     html=`<h3 class="text-lg font-bold text-slate-800 mb-1">Cambio aceite · ${car?car.name:''}</h3>
     <input id="mSvcCarId" value="${id||''}" class="hidden">
     <input id="mSvcKind" value="oil" class="hidden">
     <div class="space-y-2">
       <input id="mOilPlace" placeholder="Lugar / dónde se hizo" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm">
-      <input id="mOilCurrent" type="number" inputmode="decimal" placeholder="Millaje actual" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm">
+      <input id="mOilDate" type="date" value="${isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm">
+      <input id="mOilCurrent" type="number" inputmode="decimal" placeholder="Millaje actual" value="${currentMiles||''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm">
       <input id="mOilNext" type="number" inputmode="decimal" placeholder="Millaje siguiente cambio" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm">
+      <input id="mOilNextDate" type="date" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm">
       <input id="mOilCost" type="number" inputmode="decimal" placeholder="Costo" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm">
       <textarea id="mOilNotes" rows="2" placeholder="Notas" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm"></textarea>
       <button onclick="saveOilChangeFromModal()" class="w-full btn-primary py-3">Guardar</button>
@@ -7771,30 +7815,38 @@ function openModal(type, id, extra) {
     }
   }
   else if(type==='mileageFormModal') {
-    const carId=id||currentMileageCarId;
-    const car=(S.cars||[]).find(c=>c.id===carId);
+    const cars=S.cars||[];
+    const carId=id||currentMileageCarId||(cars[cars.length-1]?.id||cars[0]?.id||'');
+    const car=cars.find(c=>c.id===carId);
     const editId=String(extra||'');
     const editing=editId?(S.carMileageLogs||[]).find(l=>l.id===editId):null;
     const last=(S.carMileageLogs||[]).filter(l=>l.carId===carId).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0]||null;
-    const suggested=editing?Number(editing.startMiles||0):(last?Number(last.endMiles||0):null);
+    const suggested=editing?Number(editing.startMiles||0):vehicleCurrentMiles(car);
     const proj=editing?(editing.project||''):(last?(last.project||''):'');
-    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">${car?car.name:'Millas'}</h3>
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">${editing?'Editar trayecto':'Nuevo trayecto'}</h3>
+    <div class="space-y-2">
+      <label class="text-xs font-bold text-slate-500 uppercase">Vehículo</label>
+      <select id="mMileCarId" onchange="openModal('mileageFormModal',this.value)" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm">
+        ${cars.map(c=>`<option value="${c.id}" ${c.id===carId?'selected':''}>${c.name}${c.plate?` · ${c.plate}`:''}</option>`).join('')}
+      </select>
+    </div>
     <div class="card p-3 mb-3" style="border:1px solid rgba(124,111,218,0.3)">
       <div class="text-sm font-bold text-slate-800">Continuar con último millaje</div>
-      <div class="text-xs text-slate-500 mt-1">Último odómetro registrado: <strong>${suggested!==null?suggested:'—'} mi</strong></div>
+      <div class="text-xs text-slate-500 mt-1">Odómetro inicial desde millas actuales: <strong>${Number(suggested||0).toLocaleString('en-US')} mi</strong></div>
       <div class="text-xs text-indigo-500 mt-1">Último proyecto: ${proj||'—'}</div>
       <div class="grid grid-cols-2 gap-2 mt-2">
-        <button onclick="document.getElementById('mMileStart').value='${suggested!==null?suggested:''}';document.getElementById('mMileManual').value='0'" class="btn-primary py-2 text-sm">Continuar</button>
-        <button onclick="document.getElementById('mMileManual').value='1';document.getElementById('mMileStart').focus()" class="btn-dark py-2 text-sm">Editar manualmente</button>
+        <button onclick="setMileageContinueMode(true)" class="btn-primary py-2 text-sm">Continuar</button>
+        <button onclick="setMileageContinueMode(false);document.getElementById('mMileStart').focus()" class="btn-dark py-2 text-sm">Manual</button>
       </div>
     </div>
-    <input type="hidden" id="mMileCarId" value="${carId||''}">
     <input type="hidden" id="mMileEditId" value="${editing?.id||''}">
-    <input type="hidden" id="mMileManual" value="${suggested===null?'1':'0'}">
+    <input type="hidden" id="mMileManual" value="${editing?'1':'0'}">
+    <input type="hidden" id="mMileSuggestedStart" value="${Number(suggested||0)}">
     <div class="space-y-2">
-      <input id="mMileStart" type="number" placeholder="Odómetro inicial" value="${suggested!==null?suggested:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm">
+      <div id="mMileStartWrap" style="display:${editing?'block':'none'}"><input id="mMileStart" type="number" placeholder="Odómetro inicial" value="${Number(suggested||0)}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm"></div>
       <input id="mMileEnd" type="number" placeholder="Odómetro final" value="${editing?.endMiles??''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm">
-      <input id="mMileProject" placeholder="Proyecto / categoría" value="${proj||''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm">
+      <input id="mMileProject" placeholder="Proyecto / destino" value="${proj||''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm">
+      <input id="mMileDate" type="date" value="${editing?.date||isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm">
       <textarea id="mMileNotes" rows="2" placeholder="Notas (opcional)" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm">${editing?.notes||''}</textarea>
       <button onclick="saveMileageFromModal()" class="w-full btn-primary py-3">${editing?'Guardar cambios':'Guardar trayecto'}</button>
     </div>`;
@@ -7986,7 +8038,7 @@ function openModal(type, id, extra) {
     const paid=loanPaid(l), pend=Math.max(0,(l.totalAmount||0)-paid), pct=l.totalAmount?Math.min(100,Math.round(paid/l.totalAmount*100)):0;
     const _ldBack=(extra&&extra.backTo)?`<button onclick="openModal('${extra.backTo}','${extra.backId||''}')" class="flex items-center gap-1.5 text-indigo-600 text-sm font-bold mb-3"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Volver</button>`:'';
     html=`${_ldBack}<h3 class="text-lg font-bold text-slate-800 mb-1">${l.loanName||`Cobrar a ${l.personName}`}</h3>
-    <p class="text-sm text-slate-500 mb-4">${l.loanName?`${l.personName} · `:''}${l.note||'Préstamo por cobrar'} · ${sourceLabel(l.source)}</p>
+    <p class="text-sm text-slate-500 mb-4">${l.loanName?`${l.personName} · `:''}${l.note||'Prestamo por cobrar'} · ${sourceLabel(l.source)}</p>
     <div class="grid grid-cols-3 gap-2 mb-4">
       <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">Total</div><div class="font-bold text-slate-800">${fmt(l.totalAmount||0)}</div></div>
       <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">Cobrado</div><div class="font-bold text-green-600">${fmt(paid)}</div></div>
@@ -8015,8 +8067,8 @@ function openModal(type, id, extra) {
     const inst=borrowedInstallments(l);
     const paid=inst.filter(p=>p.paid), future=inst.filter(p=>!p.paid), next=future[0];
     const _bldBack=(extra&&extra.backTo)?`<button onclick="openModal('${extra.backTo}','${extra.backId||''}')" class="flex items-center gap-1.5 text-indigo-600 text-sm font-bold mb-3">← Volver</button>`:'';
-    html=`${_bldBack}<h3 class="text-lg font-bold text-slate-800 mb-1">${l.loanName||`Préstamo de ${l.personName}`}</h3>
-    <p class="text-sm text-slate-500 mb-4">${l.loanName?`${l.personName} · `:''}${l.description||'Préstamo recibido'} · ${freqLabel(l.frequency)}</p>
+    html=`${_bldBack}<h3 class="text-lg font-bold text-slate-800 mb-1">${l.loanName||`Prestamo de ${l.personName}`}</h3>
+    <p class="text-sm text-slate-500 mb-4">${l.loanName?`${l.personName} · `:''}${l.description||'Prestamo recibido'} · ${freqLabel(l.frequency)}</p>
     <div class="grid grid-cols-3 gap-2 mb-4">
       <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">Total</div><div class="font-bold text-slate-800">${fmt(l.totalAmount||l.amount||0)}</div></div>
       <div class="card p-3"><div class="text-[10px] text-slate-400 font-bold uppercase">Cuota</div><div class="font-bold text-indigo-600">${fmt(l.perPayment||0)}</div></div>
@@ -8220,10 +8272,10 @@ function openModal(type, id, extra) {
     <span class="text-slate-700 font-semibold text-sm">${p.emoji||'💼'} ${p.name}</span>
     <div class="flex items-center gap-1.5"><span class="font-bold text-indigo-600 text-sm">${fmt(p.saved||0)}</span><svg class="w-3 h-3 text-slate-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg></div>
   </div>`).join('')}</div>`:''}
-  ${accLoans.length?`<div class="text-[10px] font-bold text-amber-600 uppercase tracking-wide mb-1.5">🏦 Préstamos recibidos (${accLoans.length})</div>
+  ${accLoans.length?`<div class="text-[10px] font-bold text-amber-600 uppercase tracking-wide mb-1.5">🏦 Prestamos recibidos (${accLoans.length})</div>
   <div class="space-y-1 mb-4">${accLoans.map(l=>`<div class="flex justify-between items-center px-3 py-2 bg-amber-50 rounded-xl">
     <div class="min-w-0 flex-1">
-      <div class="text-slate-700 font-semibold text-sm truncate">${l.loanName||'Préstamo'}${l.personName?` — ${l.personName}`:''}</div>
+      <div class="text-slate-700 font-semibold text-sm truncate">${l.loanName||'Prestamo'}${l.personName?` — ${l.personName}`:''}</div>
       ${l.receivedDate?`<div class="text-[10px] text-slate-400">${fmtDate(l.receivedDate)}</div>`:''}
     </div>
     <span class="font-bold text-amber-600 text-sm ml-2">+${fmt(l.totalAmount||l.amount||0)}</span>
@@ -8488,6 +8540,7 @@ function saveLoan(id) {
   const note=document.getElementById('mNote').value.trim();
   const emoji=normalizeIcon(document.getElementById('mEmoji')?.value.trim()||'brief','loan');
   const category=document.getElementById('mCat')?.value||'personal';
+  const currency=document.getElementById('mLoanCurrency')?.value||S.baseCurrency||'USD';
   if(!personName||!totalAmount){showToast('❌ Completa los campos');return;}
   ensureDirectoryPerson(personName,emoji);
   const isRec=document.getElementById('mRecurring').checked;
@@ -8502,7 +8555,7 @@ function saveLoan(id) {
     if(!nextDate){showToast('Completa la fecha de cobro');return;}
     recurring={freq:'once',amount:totalAmount,nextDate,totalPayments:1};
   }
-  if(id){const l=S.loans.find(x=>x.id===id);if(l)Object.assign(l,{personName,loanName,totalAmount,note,emoji,category,recurring});}
+  if(id){const l=S.loans.find(x=>x.id===id);if(l)Object.assign(l,{personName,loanName,totalAmount,note,emoji,category,currency,recurring});}
   else {
     const raw=document.getElementById('mSource').value;
     const source=raw.startsWith('pocket:')?{type:'pocket',id:raw.split(':')[1]}:{type:'balance',id:null};
@@ -8510,13 +8563,13 @@ function saveLoan(id) {
     if(source.type==='pocket'){const p=S.pockets.find(x=>x.id===source.id); if(!p||totalAmount>(p.saved||0)){showToast('No hay suficiente dinero en ese bolsillo');return;}}
     adjustSource(source,-totalAmount);
     const newLoanId=uid();
-    S.loans.unshift({id:newLoanId,personName,loanName,totalAmount,note,emoji,category,source,payments:[],recurring,createdAt:new Date().toISOString()});
+    S.loans.unshift({id:newLoanId,personName,loanName,totalAmount,note,emoji,category,currency,source,payments:[],recurring,createdAt:new Date().toISOString()});
     // If this person is connected, send a transaction request
     const connContact=(S.personContacts||[]).find(c=>c.displayName===personName&&c.connectionStatus==='connected');
     if(connContact&&connContact.linkedUserId){
       save(); closeModal(); renderCurrentView();
-      showToast('✅ Préstamo guardado');
-      sendTransactionRequest(personName,'loan_given',totalAmount,loanName||`Préstamo a ${personName}`,{paymentsCount:recurring?.totalPayments||1}).then(txId=>{
+      showToast('✅ Prestamo guardado');
+      sendTransactionRequest(personName,'loan_given',totalAmount,loanName||`Prestamo a ${personName}`,{paymentsCount:recurring?.totalPayments||1}).then(txId=>{
         if(txId){
           const l=S.loans.find(x=>x.id===newLoanId);
           if(l){l.pendingTxId=txId;save();renderCurrentView();}
@@ -8526,7 +8579,7 @@ function saveLoan(id) {
       return;
     }
   }
-  save(); closeModal(); renderCurrentView(); showToast('✅ Préstamo guardado');
+  save(); closeModal(); renderCurrentView(); showToast('✅ Prestamo guardado');
 }
 
 function setBorrowedCalcMode(mode) {
@@ -8614,6 +8667,7 @@ function saveBorrowedLoan(id=null) {
   const description=document.getElementById('mDesc').value.trim();
   const emoji=normalizeIcon(document.getElementById('mEmoji')?.value.trim()||'bank','borrowed');
   const category=document.getElementById('mCat')?.value||'deuda';
+  const currency=document.getElementById('mLoanCurrency')?.value||S.baseCurrency||'USD';
   const isOnce=document.getElementById('mBorrowedType')?.value==='once';
   const paymentsCount=isOnce?1:(parseInt(document.getElementById('mPayments').value)||1);
   const frequency=isOnce?'once':(document.getElementById('mFreq')?.value||'monthly');
@@ -8642,7 +8696,7 @@ function saveBorrowedLoan(id=null) {
     const prev=previousPaid.find(p=>p.number===i+1);
     return {id:prev?.id||uid(),number:i+1,amount:perPayment,date:nextDateByFrequency(dueDate,frequency,i),paid:!!prev,paidDate:prev?.paidDate||null,paidAt:prev?.paidAt||null,createdAt:prev?.createdAt||new Date().toISOString()};
   });
-  const payload={personName,loanName,totalAmount:amount,amount,dueDate,startDate:dueDate,description,emoji,category,paymentsCount,frequency,perPayment,installments,paid:installments.every(p=>p.paid),addsToLiquidity,alreadySpent,receivedAccountId,receivedDate:addsToLiquidity?(existing?.receivedDate||isoToday()):null,createdDate:existing?.createdDate||isoToday(),createdAt:existing?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+  const payload={personName,loanName,totalAmount:amount,amount,dueDate,startDate:dueDate,description,emoji,category,currency,paymentsCount,frequency,perPayment,installments,paid:installments.every(p=>p.paid),addsToLiquidity,alreadySpent,receivedAccountId,receivedDate:addsToLiquidity?(existing?.receivedDate||isoToday()):null,createdDate:existing?.createdDate||isoToday(),createdAt:existing?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
   if(existing) Object.assign(existing,payload);
   else { const newBlId=uid(); S.borrowedLoans.unshift({id:newBlId,...payload}); }
   setLastAction();
@@ -8651,8 +8705,8 @@ function saveBorrowedLoan(id=null) {
     const newBlId=(S.borrowedLoans[0]||{}).id;
     const connContact=(S.personContacts||[]).find(c=>c.displayName===personName&&c.connectionStatus==='connected');
     if(connContact&&connContact.linkedUserId){
-      closeModal(); renderCurrentView(); showToast('Préstamo recibido guardado');
-      sendTransactionRequest(personName,'loan_received',amount,description||`Préstamo recibido de ${personName}`,{paymentsCount}).then(txId=>{
+      closeModal(); renderCurrentView(); showToast('Prestamo recibido guardado');
+      sendTransactionRequest(personName,'loan_received',amount,description||`Prestamo recibido de ${personName}`,{paymentsCount}).then(txId=>{
         if(txId){
           const bl=S.borrowedLoans.find(x=>x.id===newBlId);
           if(bl){bl.pendingTxId=txId;save();renderCurrentView();}
@@ -8662,7 +8716,7 @@ function saveBorrowedLoan(id=null) {
       return;
     }
   }
-  closeModal(); renderCurrentView(); showToast('Préstamo recibido guardado');
+  closeModal(); renderCurrentView(); showToast('Prestamo recibido guardado');
 }
 
 function saveIncomeCategory() {
@@ -9400,7 +9454,7 @@ async function respondToTransactionRequest(requestId, accept) {
         S.borrowedLoans=S.borrowedLoans||[];
         S.borrowedLoans.unshift({
           id:uid(),personName:req.payload_json?.senderName||'Usuario',
-          loanName:req.description||'Préstamo recibido',
+          loanName:req.description||'Prestamo recibido',
           totalAmount:req.amount,amount:req.amount,
           dueDate:req.date||isoToday(),
           description:req.description||'',
@@ -9417,7 +9471,7 @@ async function respondToTransactionRequest(requestId, accept) {
         S.loans=S.loans||[];
         S.loans.unshift({
           id:uid(),personName:req.payload_json?.senderName||'Usuario',
-          loanName:req.description||'Préstamo',
+          loanName:req.description||'Prestamo',
           totalAmount:req.amount,note:req.description||'',
           emoji:'brief',category:'personal',source:{type:'balance',id:null},
           payments:[],
@@ -9522,16 +9576,29 @@ function notificationTimeLabel(dateLike) {
   return fmtDate(fmtISO(d));
 }
 
+function getUpcomingPaymentRows(daysAhead=2) {
+  const todayKey=isoToday();
+  const end=new Date(today());
+  end.setDate(end.getDate()+daysAhead);
+  const endKey=fmtISO(end);
+  const months=new Set([monthKey(today()),monthKey(end)]);
+  const rows=[];
+  months.forEach(m=>getMonthPayments(m).forEach(p=>{
+    if(p.date>=todayKey&&p.date<=endKey&&!p.paid&&p.kind!=='loan') rows.push(p);
+  }));
+  return rows.sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+}
+
 function getTodayPaymentNotification() {
   const todayKey=isoToday();
-  const rows=getMonthPayments(monthKey(today())).filter(p=>p.date===todayKey&&!p.paid&&p.kind!=='loan');
+  const rows=getUpcomingPaymentRows(2);
   if(!rows.length) return null;
   return {
     id:`today-payments:${todayKey}`,type:'daily_payments',priority:3,createdAt:todayKey,
-    title:'Hoy tienes pagos programados',
-    description:`${rows.length} pago${rows.length!==1?'s':''} pendiente${rows.length!==1?'s':''} para hoy`,
+    title:'Pagos próximos',
+    description:`${rows.length} pago${rows.length!==1?'s':''} pendiente${rows.length!==1?'s':''} en los próximos 2 días`,
     status:'recordatorio',
-    items:rows.map(p=>({name:p.name,amount:p.amount,meta:catLabel(p.category||'pago')})),
+    items:rows.map(p=>({name:p.name,amount:p.amount,meta:`${fmtDate(p.date)} · ${catLabel(p.category||'pago')}`})),
     actionLabel:'Ver detalles'
   };
 }
@@ -9645,6 +9712,34 @@ function updateBadges() {
   updateNotificationBadge();
 }
 
+function sendNativeNotification(title, body, channel='interactions') {
+  const ns=S.notificationSettings||{};
+  if(!ns.enabled) return;
+  if(channel==='payments'&&!ns.upcomingPayments) return;
+  if(channel==='interactions'&&!ns.interactions) return;
+  if(!('Notification' in window)||Notification.permission!=='granted') return;
+  try { new Notification(title, {body, icon:'./apple-touch-icon.png'}); } catch(e) {}
+}
+
+function checkDailyPaymentReminder() {
+  const ns=S.notificationSettings||{};
+  if(!ns.enabled||!ns.upcomingPayments) return;
+  const now=new Date();
+  if(now.getHours()<10) return;
+  const key=`payment-reminder:${isoToday()}`;
+  if(localStorage.getItem(key)) return;
+  const rows=getUpcomingPaymentRows(2);
+  if(!rows.length) return;
+  localStorage.setItem(key,new Date().toISOString());
+  sendNativeNotification('Pagos próximos',`${rows.length} pago${rows.length!==1?'s':''} pendiente${rows.length!==1?'s':''} en los próximos 2 días.`,'payments');
+}
+
+function startNotificationScheduler() {
+  checkDailyPaymentReminder();
+  if(window._notificationScheduler) clearInterval(window._notificationScheduler);
+  window._notificationScheduler=setInterval(checkDailyPaymentReminder,60000);
+}
+
 function triggerReactionAnimation(emoji, senderName) {
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:9998;overflow:hidden';
@@ -9729,6 +9824,7 @@ async function pollReactions() {
           description: `${senderName} te mandó ${emoji}`,
           status: 'no_leida', items: [], actionLabel: ''
         });
+        sendNativeNotification('¡Te mandaron un saludo!',`${senderName} te mandó ${emoji}`,'interactions');
       }
       setTimeout(() => triggerReactionAnimation(emoji, senderName), idx * 600);
     });
@@ -9737,17 +9833,73 @@ async function pollReactions() {
   } catch(e) { console.warn('pollReactions:', e); }
 }
 
+function normalizeTxDescriptionText(value) {
+  return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+}
+
+function pendingLoanMatchesSettledTransaction(loan, row, isBorrowed) {
+  if(!loan||!row) return false;
+  const expectedType=isBorrowed?'loan_received':'loan_given';
+  if(row.type!==expectedType) return false;
+  const loanAmount=Number(isBorrowed?(loan.totalAmount||loan.amount||0):(loan.totalAmount||loan.amount||0));
+  const txAmount=Number(row.amount||0);
+  if(!Number.isFinite(loanAmount)||!Number.isFinite(txAmount)||Math.abs(loanAmount-txAmount)>0.01) return false;
+  const txDesc=normalizeTxDescriptionText(row.description);
+  if(!txDesc) return true;
+  const labels=[
+    loan.loanName, loan.description, loan.name, loan.note,
+    isBorrowed?`Prestamo recibido de ${loan.personName||''}`:`Prestamo a ${loan.personName||''}`,
+    isBorrowed?`Prestamo recibido de ${loan.personName||''}`:`Prestamo a ${loan.personName||''}`
+  ].map(normalizeTxDescriptionText).filter(Boolean);
+  return labels.some(label=>label===txDesc||label.includes(txDesc)||txDesc.includes(label));
+}
+
+function clearSettledPendingLoans(rows) {
+  const settled=(rows||[]).filter(row=>row&&['accepted','rejected'].includes(row.status));
+  if(!settled.length) return false;
+  let changed=false;
+  const clearPending=(loan)=>{
+    if(loan&&loan.pendingTxId){ loan.pendingTxId=null; changed=true; }
+  };
+  const clearByExactId=(loan)=>{
+    if(loan&&loan.pendingTxId&&settled.some(row=>row.id===loan.pendingTxId)) clearPending(loan);
+  };
+  (S.loans||[]).forEach(clearByExactId);
+  (S.borrowedLoans||[]).forEach(clearByExactId);
+  (S.loans||[]).filter(loan=>loan.pendingTxId).forEach(loan=>{
+    if(settled.some(row=>pendingLoanMatchesSettledTransaction(loan,row,false))) clearPending(loan);
+  });
+  (S.borrowedLoans||[]).filter(loan=>loan.pendingTxId).forEach(loan=>{
+    if(settled.some(row=>pendingLoanMatchesSettledTransaction(loan,row,true))) clearPending(loan);
+  });
+  return changed;
+}
+
 async function checkSentTransactionUpdates() {
   if(!supabase||!CURRENT_USER) return;
   try {
-    const {data}=await supabase.from('persona_transaction_requests')
+    const pendingIds=[...(S.loans||[]),...(S.borrowedLoans||[])]
+      .map(loan=>loan&&loan.pendingTxId)
+      .filter(Boolean);
+    const sentQuery=supabase.from('persona_transaction_requests')
       .select('id,type,amount,description,status,updated_at')
       .eq('sender_user_id',CURRENT_USER.id)
       .in('status',['accepted','rejected']);
-    if(!data||!data.length) return;
+    const pendingQuery=pendingIds.length
+      ? supabase.from('persona_transaction_requests')
+        .select('id,type,amount,description,status,updated_at')
+        .in('id',pendingIds)
+        .in('status',['accepted','rejected'])
+      : Promise.resolve({data:[]});
+    const [sentRes,pendingRes]=await Promise.all([sentQuery,pendingQuery]);
+    const byId={};
+    [...(sentRes.data||[]),...(pendingRes.data||[])].forEach(row=>{ if(row&&row.id) byId[row.id]=row; });
+    const data=Object.values(byId);
+    if(!data.length) return;
     if(!S.notificationEvents) S.notificationEvents=[];
     if(!S._notifiedSentTxIds) S._notifiedSentTxIds={};
     let changed=false;
+    if(clearSettledPendingLoans(data)) changed=true;
     data.forEach(row=>{
       // Clear pendingTxId from any loan/borrowedLoan waiting on this tx
       const allLoans=[...(S.loans||[]),...(S.borrowedLoans||[])];
@@ -9765,9 +9917,10 @@ async function checkSentTransactionUpdates() {
         description:`Tu ${typeLabel} de ${fmt(row.amount)}${row.description?' ('+row.description+')':''} fue ${accepted?'aceptada':'rechazada'}.`,
         status:accepted?'unread':'action_required',items:[],actionLabel:accepted?'':'Revisar'
       });
+      sendNativeNotification(accepted?'Transacción aceptada':'Transacción rechazada',`Tu ${typeLabel} de ${fmt(row.amount)} fue ${accepted?'aceptada':'rechazada'}.`,'interactions');
       changed=true;
     });
-    if(changed){ save(); updateNotificationBadge(); }
+    if(changed){ save(); updateNotificationBadge(); if(currentView==='home') renderHome(); }
   } catch(e){ console.warn('checkSentTransactionUpdates:',e); }
 }
 
@@ -9786,9 +9939,10 @@ async function pollProfileSync() {
       if(!row.sender_user_id) return;
       S.linkedProfiles[row.sender_user_id]={
         displayName:p.displayName||'Usuario',
-        avatarMode:p.avatarMode||'emoji',
+        avatarMode:p.avatarMode||'initial',
         avatarValue:p.avatarValue||'',
         avatarColor:p.avatarColor||'#6c63c7',
+        profilePhoto:p.profilePhoto||'',
         updatedAt:row.created_at||new Date().toISOString()
       };
       const c=(S.personContacts||[]).find(x=>x.linkedUserId===row.sender_user_id);
@@ -9812,9 +9966,12 @@ async function pollInbox() {
     ]);
     const connCount=(connRes.data||[]).length;
     const txCount=(txRes.data||[]).length;
+    const prevConn=S._pendingConnCount||0, prevTx=S._pendingTxCount||0;
     const changed=connCount!==S._pendingConnCount||txCount!==S._pendingTxCount;
     S._pendingConnCount=connCount; S._pendingTxCount=txCount;
     if(changed) updateBadges();
+    if(txCount>prevTx) sendNativeNotification('Nueva solicitud', 'Tienes una solicitud o asignación pendiente por revisar.', 'interactions');
+    if(connCount>prevConn) sendNativeNotification('Nueva conexión', 'Tienes una solicitud de conexión pendiente.', 'interactions');
     checkSentConnectionUpdates();
     checkSentTransactionUpdates();
     pollReactions();
@@ -10118,7 +10275,7 @@ function openAppMenu() {
 
   /* ── Workspace selector ── */
   `<button onclick="closeAppMenu();showView('profile')" style="width:100%;display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:14px;background:linear-gradient(135deg,rgba(124,111,218,0.15),rgba(108,99,199,0.08));border:1px solid rgba(124,111,218,0.25);text-align:left;cursor:pointer;margin-bottom:12px">
-    <div style="width:38px;height:38px;border-radius:12px;background:${S.profileAvatarColor||'#6c63c7'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.9rem;font-weight:800;color:#fff">${profileAvatarText()}</div>
+    <div style="flex-shrink:0">${renderProfileAvatar(38,12)}</div>
     <div style="flex:1;min-width:0">
       <div style="font-size:0.58rem;font-weight:700;color:#7c6fda;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:1px">${activeSpace?'Espacio activo':'Mi perfil'}</div>
       <div style="font-weight:800;color:#fff;font-size:0.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${spaceLabel}</div>
@@ -10193,14 +10350,27 @@ function profileInitialChar() {
   return (profileName.trim().split(/\s+/).map(w=>w[0]||'').join('').slice(0,1)||'?').toUpperCase();
 }
 function profileAvatarText() {
-  const mode=(profileDraft?.avatarMode)||S.profileAvatarMode||'emoji';
-  const val=(profileDraft?.avatarValue ?? S.profileEmoji ?? '').trim();
-  if(mode==='initial') return (val||profileInitialChar()).slice(0,1).toUpperCase();
-  return val || profileInitialChar();
+  return profileInitialChar();
 }
 function profileAvatarStyle() {
   const color=(profileDraft?.avatarColor)||S.profileAvatarColor||'#6c63c7';
-  return `width:58px;height:58px;border-radius:18px;background:${color};display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.45rem;font-weight:800`;
+  const photo=(profileDraft?.photo)||S.profilePhoto||'';
+  return photo
+    ? `width:58px;height:58px;border-radius:18px;background-image:url('${photo}');background-size:cover;background-position:center;border:1px solid rgba(255,255,255,0.12);box-shadow:0 12px 28px rgba(0,0,0,.22)`
+    : `width:58px;height:58px;border-radius:18px;background:${color};display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.45rem;font-weight:800`;
+}
+function renderProfileAvatar(size=58,radius=18) {
+  const photo=(profileDraft?.photo)||S.profilePhoto||'';
+  const color=(profileDraft?.avatarColor)||S.profileAvatarColor||'#6c63c7';
+  return photo
+    ? `<div style="width:${size}px;height:${size}px;border-radius:${radius}px;background-image:url('${photo}');background-size:cover;background-position:center;border:1px solid rgba(255,255,255,0.12);box-shadow:0 12px 28px rgba(0,0,0,.22)"></div>`
+    : `<div style="width:${size}px;height:${size}px;border-radius:${radius}px;background:${color};display:flex;align-items:center;justify-content:center;color:#fff;font-size:${Math.max(14,Math.round(size*.38))}px;font-weight:900">${profileAvatarText()}</div>`;
+}
+function renderLinkedAvatar(linkedP,name,size=48) {
+  if(linkedP?.profilePhoto) return `<div style="width:${size}px;height:${size}px;border-radius:50%;background-image:url('${linkedP.profilePhoto}');background-size:cover;background-position:center;border:1px solid rgba(255,255,255,0.12);flex-shrink:0"></div>`;
+  const bg=linkedP?.avatarColor||personaColor(name||'Contacto');
+  const txt=((linkedP?.displayName||name||'?')[0]||'?').toUpperCase();
+  return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:white;flex-shrink:0">${txt}</div>`;
 }
 function updateProfileAvatarMode(value){
   if(!profileDraft) initProfileDraft();
@@ -10219,9 +10389,10 @@ function updateProfileAvatarColor(value){
 function initProfileDraft(){
   profileDraft={
     name:S.profileName||'Mi perfil',
-    avatarMode:S.profileAvatarMode||'emoji',
-    avatarValue:S.profileEmoji||'',
+    avatarMode:'initial',
+    avatarValue:'',
     avatarColor:S.profileAvatarColor||'#6c63c7',
+    photo:S.profilePhoto||'',
     baseCurrency:S.baseCurrency||'USD'
   };
   profileDraftDirty=false;
@@ -10233,10 +10404,10 @@ function discardProfileDraft(){
 function saveProfileDraft(showMsg=true){
   if(!profileDraft) initProfileDraft();
   S.profileName=(profileDraft.name||'').trim()||'Mi perfil';
-  S.profileAvatarMode=profileDraft.avatarMode==='initial'?'initial':'emoji';
-  S.profileEmoji=((profileDraft.avatarValue||'').trim()).slice(0,S.profileAvatarMode==='initial'?1:4);
-  if(S.profileAvatarMode==='initial') S.profileEmoji=(S.profileEmoji||profileInitialChar())[0].toUpperCase();
+  S.profileAvatarMode='initial';
+  S.profileEmoji=profileInitialChar();
   S.profileAvatarColor=/^#([0-9A-Fa-f]{6})$/.test(profileDraft.avatarColor||'')?profileDraft.avatarColor:'#6c63c7';
+  S.profilePhoto=profileDraft.photo||'';
   S.baseCurrency=profileDraft.baseCurrency==='COP'?'COP':'USD';
   save();
   profileDraftDirty=false;
@@ -10256,8 +10427,18 @@ function updateProfileDraftCurrency(v){
 }
 function pickProfileEmoji(v){
   if(!profileDraft) initProfileDraft();
-  profileDraft.avatarValue=(v||'').trim().slice(0,4);
-  profileDraft.avatarMode='emoji';
+  profileDraftDirty=true;
+  renderProfileView();
+}
+function onProfilePhotoSelected(evt){
+  const f=evt.target.files&&evt.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ if(!profileDraft) initProfileDraft(); profileDraft.photo=String(r.result||''); profileDraftDirty=true; renderProfileView(); };
+  r.readAsDataURL(f);
+}
+function removeProfilePhoto(){
+  if(!profileDraft) initProfileDraft();
+  profileDraft.photo='';
   profileDraftDirty=true;
   renderProfileView();
 }
@@ -10265,7 +10446,7 @@ async function pushProfileSyncToLinked(){
   if(!supabase||!CURRENT_USER) return;
   const links=(S.personContacts||[]).filter(c=>c.connectionStatus==='connected'&&c.linkedUserId);
   if(!links.length) return;
-  const payload={displayName:S.profileName||CURRENT_USER.email||'Usuario',avatarMode:S.profileAvatarMode||'emoji',avatarValue:S.profileEmoji||'',avatarColor:S.profileAvatarColor||'#6c63c7'};
+  const payload={displayName:S.profileName||CURRENT_USER.email||'Usuario',avatarMode:'initial',avatarValue:profileInitialChar(),avatarColor:S.profileAvatarColor||'#6c63c7',profilePhoto:S.profilePhoto||''};
   try{
     const rows=links.map(c=>({
       sender_user_id:CURRENT_USER.id,receiver_user_id:c.linkedUserId,sender_person_id:c.id||null,type:'profile_sync',amount:0.01,description:'sync',date:isoToday(),payload_json:payload,status:'pending'
@@ -10289,7 +10470,7 @@ function renderProfileView() {
   document.getElementById('profileContent').innerHTML=`<div style="display:flex;flex-direction:column;gap:12px">
     <div class="card p-4" style="border:1px solid rgba(124,111,218,0.22)">
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
-        <div style="${profileAvatarStyle()}">${profileAvatarText()}</div>
+        <label style="position:relative;cursor:pointer;flex-shrink:0">${renderProfileAvatar(58,18)}<span style="position:absolute;right:-3px;bottom:-3px;width:23px;height:23px;border-radius:50%;background:#6c63c7;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;border:2px solid #111327">?</span><input type="file" accept="image/*" onchange="onProfilePhotoSelected(event)" style="display:none"></label>
         <div style="flex:1;min-width:0">
           <div style="font-size:0.6rem;color:#7c6fda;font-weight:800;text-transform:uppercase;letter-spacing:.08em">Mi perfil</div>
           <div style="font-size:1.05rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${profileName}</div>
@@ -10298,24 +10479,6 @@ function renderProfileView() {
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <div><label style="font-size:0.58rem;color:#5c6480;font-weight:800;text-transform:uppercase">Nombre</label><input id="profileNameInput2" value="${(profileDraft.name||'').replace(/"/g,'&quot;')}" oninput="updateProfileDraftName(this.value)" style="width:100%;margin-top:5px;background:#252836;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px 12px;color:#fff;font-weight:700"></div>
-        <div><label style="font-size:0.58rem;color:#5c6480;font-weight:800;text-transform:uppercase">Avatar</label>
-          <select onchange="updateProfileAvatarMode(this.value)" style="width:100%;margin-top:5px;background:#252836;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px 12px;color:#fff;font-weight:700">
-            <option value="emoji" ${(profileDraft.avatarMode||'emoji')==='emoji'?'selected':''}>Emoji</option>
-            <option value="initial" ${(profileDraft.avatarMode||'emoji')==='initial'?'selected':''}>Letra</option>
-          </select>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-        <div><label style="font-size:0.58rem;color:#5c6480;font-weight:800;text-transform:uppercase">${(profileDraft.avatarMode||'emoji')==='initial'?'Letra':'Emoji'}</label>
-          ${(profileDraft.avatarMode||'emoji')==='emoji'
-            ?`<div style="margin-top:5px;background:#252836;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:8px">
-                <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px">
-                  ${['😀','😊','🙂','😎','🤓','🧠','💼','🏦','💰','🟢','🔵','🟣','⭐','🔥','✨'].map(em=>`<button onclick="pickProfileEmoji('${em}')" style="height:34px;border-radius:8px;border:${(profileDraft.avatarValue||'')===em?'1px solid #7c6fda':'1px solid rgba(255,255,255,0.08)'};background:${(profileDraft.avatarValue||'')===em?'rgba(124,111,218,0.2)':'#1f2235'};font-size:1rem">${em}</button>`).join('')}
-                </div>
-              </div>`
-            :`<input maxlength="1" value="${(profileDraft.avatarValue||'').slice(0,1).toUpperCase()}" placeholder="${profileInitials.slice(0,1)}" oninput="updateProfileEmoji(this.value)" style="width:100%;margin-top:5px;background:#252836;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px 12px;color:#fff;font-weight:700;text-transform:uppercase">`
-          }
-        </div>
         <div><label style="font-size:0.58rem;color:#5c6480;font-weight:800;text-transform:uppercase">Color</label><input type="color" value="${profileDraft.avatarColor||'#6c63c7'}" onchange="updateProfileAvatarColor(this.value)" style="width:100%;height:43px;margin-top:5px;background:#252836;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:6px"></div>
       </div>
     </div>
@@ -10356,6 +10519,52 @@ function renderProfileView() {
 function renderMascotas(){
   const pets=(S.pets||[]).slice().sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
   const normalizeProduct=(p)=>typeof p==='string'?{name:p,brand:'',value:0,scope:'specific',sharedWith:''}:p;
+  if(currentPetId){
+    const p=pets.find(x=>x.id===currentPetId);
+    if(!p){ currentPetId=null; return renderMascotas(); }
+    const products=(p.products||[]).map(normalizeProduct);
+    const productsValue=products.reduce((sum,pr)=>sum+(Number(pr.value||0)||0),0);
+    const ageLabel=p.birthDate?fmtDate(p.birthDate):'Sin fecha';
+    const petPhoto=p.photo
+      ? `<img src="${p.photo}" style="width:76px;height:76px;border-radius:20px;object-fit:${p.photoFit||'cover'};border:2px solid rgba(245,158,11,.35);box-shadow:0 12px 30px rgba(0,0,0,.28)">`
+      : `<div style="width:76px;height:76px;border-radius:20px;background:linear-gradient(135deg,rgba(245,158,11,.25),rgba(124,111,218,.18));display:flex;align-items:center;justify-content:center;font-size:2rem;border:1px solid rgba(255,255,255,.1)">🐾</div>`;
+    document.getElementById('mascotasContent').innerHTML=`<div class="flex items-center justify-between mb-3">
+      <button onclick="currentPetId=null;renderMascotas()" class="btn-dark px-3 py-2 text-sm">← Mascotas</button>
+      <button onclick="prefillPet('${p.id}')" class="btn-dark px-3 py-2 text-sm" title="Editar mascota">⚙ Editar</button>
+    </div>
+    <div class="card p-4 mb-3" style="background:linear-gradient(135deg,rgba(30,41,59,.96),rgba(15,23,42,.98));border:1px solid rgba(245,158,11,.25)">
+      <div style="display:flex;gap:14px;align-items:center">
+        ${petPhoto}
+        <div style="min-width:0;flex:1">
+          <div style="font-size:1.25rem;font-weight:900;color:#fff;line-height:1.1">${p.name||'Mascota'}</div>
+          <div style="font-size:.74rem;color:#fbbf24;font-weight:700;margin-top:4px">${p.type||'Mascota'}</div>
+          <div style="font-size:.7rem;color:#94a3b8;margin-top:4px">${ageLabel} · ${p.weightValue||'-'} ${p.weightUnit||''}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px">
+        <div class="card2 p-3"><div style="font-size:.6rem;color:#5c6480">Vacunas</div><div style="font-weight:900;color:#fff">${p.vaccinesEnabled?(p.vaccines||[]).length||'Sí':'No'}</div></div>
+        <div class="card2 p-3"><div style="font-size:.6rem;color:#5c6480">Productos</div><div style="font-weight:900;color:#fff">${products.length}</div></div>
+        <div class="card2 p-3"><div style="font-size:.6rem;color:#5c6480">Valor</div><div style="font-weight:900;color:#fff">${fmt(productsValue)}</div></div>
+      </div>
+    </div>
+    <div class="card p-3 mb-2">
+      <div style="font-size:.72rem;color:#94a3b8;font-weight:800;margin-bottom:8px">Información</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:.82rem;color:#e8eaf2">
+        <div style="display:flex;justify-content:space-between;gap:10px"><span style="color:#94a3b8">Nacimiento</span><b>${p.birthDate?fmtDate(p.birthDate):'-'}</b></div>
+        <div style="display:flex;justify-content:space-between;gap:10px"><span style="color:#94a3b8">Peso</span><b>${p.weightValue||'-'} ${p.weightUnit||''}</b></div>
+        <div style="display:flex;justify-content:space-between;gap:10px"><span style="color:#94a3b8">Comparte casa</span><b>${p.sharedHome?'Sí':'No'}</b></div>
+        <div style="display:flex;justify-content:space-between;gap:10px"><span style="color:#94a3b8">Notas</span><b style="text-align:right">${p.notes||'-'}</b></div>
+      </div>
+    </div>
+    <div class="card p-3">
+      <div style="font-size:.72rem;color:#94a3b8;font-weight:800;margin-bottom:8px">Productos</div>
+      ${products.length?products.map(pr=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:9px 0;border-top:1px solid var(--border)"><div><div style="font-weight:800;color:#fff">${pr.name||'Producto'}</div><div style="font-size:.68rem;color:#94a3b8">${pr.brand||'Sin marca'}${pr.scope==='shared'?' · compartido':' · específico'}</div></div><div style="font-weight:800;color:#fbbf24">${pr.value?fmt(pr.value):''}</div></div>`).join(''):`<div class="text-slate-400 text-sm py-3 text-center">Sin productos registrados</div>`}
+    </div>`;
+    const oldFabIn=document.getElementById('mascotasFab'); if(oldFabIn) oldFabIn.remove();
+    const fabIn=document.createElement('button'); fabIn.id='mascotasFab'; fabIn.className='bear-fab'; fabIn.textContent='Editar'; document.body.appendChild(fabIn);
+    makeFabDraggable(fabIn, ()=>prefillPet(p.id));
+    return;
+  }
   const allProducts=pets.flatMap(p=>(p.products||[]).map(normalizeProduct));
   const totalProducts=allProducts.length;
   const seenShared=new Set();
@@ -10377,7 +10586,7 @@ function renderMascotas(){
     </div>
   </div>`;
   html+=`${!pets.length?`<div class="card p-5 text-center text-slate-400 text-sm">Sin mascotas aún.</div>`:pets.map(p=>`<div class="card p-4 mb-2">
-    <button onclick="openModal('petDetail','${p.id}')" style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;width:100%;text-align:left">
+    <button onclick="currentPetId='${p.id}';renderMascotas()" style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;width:100%;text-align:left">
       <div style="display:flex;gap:10px;align-items:center;min-width:0;flex:1">
         ${p.photo?`<img src="${p.photo}" style="width:42px;height:42px;border-radius:50%;object-fit:${p.photoFit||'cover'}">`:`<div style="width:42px;height:42px;border-radius:50%;background:#252836;display:flex;align-items:center;justify-content:center">🐾</div>`}
         <div style="min-width:0"><div style="font-weight:800;color:#fff">${p.name||'Mascota'}</div><div style="font-size:.72rem;color:#94a3b8">${p.type||'-'} · ${p.birthDate?fmtDate(p.birthDate):'-'} · ${p.weightValue||'-'} ${p.weightUnit||''}</div></div>
@@ -10455,6 +10664,7 @@ function savePet(){
 function prefillPet(id){
   const p=(S.pets||[]).find(x=>x.id===id); if(!p) return;
   window._mPetLoadedFromEdit=false;
+  window._mPetLoadedEditId='';
   openModal('petFormModal',`${p.type||'Perro'}|${p.id}`);
 }
 function deletePet(id){ if(!confirm('¿Borrar mascota?')) return; S.pets=(S.pets||[]).filter(x=>x.id!==id); save(); renderMascotas(); }
@@ -10547,7 +10757,7 @@ function savePetFromModal(type){
     birthDate:(document.getElementById('mPetBirth')?.value||''),
     weightValue:parseFloat(document.getElementById('mPetWeight')?.value||'0')||0,
     weightUnit:(document.getElementById('mPetWeightUnit')?.value||'kg'),
-    photo:window._mPetPhoto||'',
+    photo:window._mPetPhoto||((S.pets||[]).find(x=>x.id===editId)?.photo||''),
     photoFit:window._mPetFit||'cover',
     vaccinesEnabled:!!window._mPetVaccinesYes,
     vaccines:[...(window._mPetVaccines||[])],
@@ -10565,14 +10775,55 @@ function savePetFromModal(type){
   const idx=(S.pets||[]).findIndex(x=>x.id===payload.id);
   if(idx>=0) S.pets[idx]=payload; else S.pets.unshift(payload);
   save();
-  window._mPetVaccines=[]; window._mPetProducts=[]; window._mPetVaccinesYes=false; window._mPetPhoto=''; window._mPetFit='cover'; window._mPetLoadedFromEdit=false; window._mPetType=''; window._mPetDraft=null; window._mPetSharedHome=false; window._mPetSpecificProduct=false; window._mPetSharedWith='';
+  window._mPetVaccines=[]; window._mPetProducts=[]; window._mPetVaccinesYes=false; window._mPetPhoto=''; window._mPetFit='cover'; window._mPetLoadedFromEdit=false; window._mPetLoadedEditId=''; window._mPetType=''; window._mPetDraft=null; window._mPetSharedHome=false; window._mPetSpecificProduct=false; window._mPetSharedWith='';
   closeModal();
+  currentPetId=payload.id;
   renderMascotas();
   showToast(editId?'Mascota actualizada':'Mascota creada');
 }
 
+function vehicleTravelMiles(carId){
+  return (S.carMileageLogs||[]).filter(l=>l.carId===carId).reduce((s,l)=>s+(Number(l.totalMiles||0)||0),0);
+}
+function vehicleCurrentMiles(car){
+  if(!car) return 0;
+  return (Number(car.startMiles||0)||0)+vehicleTravelMiles(car.id);
+}
+function vehicleNextOilInfo(carId){
+  const oil=(S.carServiceLogs||[]).filter(s=>s.carId===carId&&s.kind==='oil').sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0]||null;
+  return {date:oil?.nextDate||'', miles:Number(oil?.nextMiles||0)||0};
+}
+function setMileageTab(tab){
+  currentMileageTab=['miles','oil','repair'].includes(tab)?tab:'miles';
+  renderMillas();
+}
+function changeVehicleMonth(delta) {
+  const d=parseDate(`${vehicleMonth||monthKey(today())}-01`);
+  d.setMonth(d.getMonth()+delta);
+  vehicleMonth=monthKey(d);
+  renderMillas();
+}
+function openCurrentVehicleAdd(){
+  if(!currentMileageCarId){ openModal('carFormModal'); return; }
+  if(currentMileageTab==='oil') openModal('oilChangeFormModal',currentMileageCarId);
+  else if(currentMileageTab==='repair') openModal('repairFormModal',currentMileageCarId);
+  else openModal('mileageFormModal',currentMileageCarId);
+}
+function setMileageContinueMode(useLast){
+  const startWrap=document.getElementById('mMileStartWrap');
+  const manual=document.getElementById('mMileManual');
+  const start=document.getElementById('mMileStart');
+  const suggested=document.getElementById('mMileSuggestedStart')?.value||'';
+  if(manual) manual.value=useLast?'0':'1';
+  if(startWrap) startWrap.style.display=useLast?'none':'block';
+  if(start&&useLast) start.value=suggested;
+}
+
 function renderMillas(){
   const cars=S.cars||[];
+  if(!vehicleMonth) vehicleMonth=monthKey(today());
+  const [vy,vm]=vehicleMonth.split('-').map(Number);
+  const monthNames=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
   const allLogs=(S.carMileageLogs||[]);
   const serviceLogs=(S.carServiceLogs||[]);
   if(currentMileageCarId){
@@ -10580,38 +10831,69 @@ function renderMillas(){
     if(!car){ currentMileageCarId=null; return renderMillas(); }
     const logs=allLogs.filter(l=>l.carId===car.id).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
     const svc=serviceLogs.filter(l=>l.carId===car.id).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
-    const totalMiles=logs.reduce((s,l)=>s+(l.totalMiles||0),0);
+    const monthLogs=logs.filter(l=>monthKey(parseDate(l.date||isoToday()))===vehicleMonth);
+    const monthSvc=svc.filter(s=>monthKey(parseDate(s.date||isoToday()))===vehicleMonth);
+    const tripMiles=vehicleTravelMiles(car.id);
+    const currentMiles=vehicleCurrentMiles(car);
     const repairsCount=svc.filter(s=>s.kind==='repair').length;
-    const lastOil=svc.filter(s=>s.kind==='oil').sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0]||null;
-    const nextOilMiles=lastOil?.nextMiles||0;
+    const nextOil=vehicleNextOilInfo(car.id);
+    const oilHistory=monthSvc.filter(s=>s.kind==='oil');
+    const repairHistory=monthSvc.filter(s=>s.kind==='repair');
     const history=[
       ...logs.map(l=>({kind:'miles',date:l.date||isoToday(),title:l.title||'Viaje',subtitle:`${l.startMiles||0} → ${l.endMiles||0} mi`,amount:`${Number(l.totalMiles||0).toFixed(1)} mi`})),
       ...svc.map(s=>({kind:s.kind,date:s.date||isoToday(),title:s.kind==='oil'?'Cambio de aceite':'Reparación',subtitle:s.title||'',amount:s.cost?fmt(s.cost):''}))
     ].sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-    document.getElementById('millasContent').innerHTML=`<div class="flex items-center justify-between mb-3"><button onclick="currentMileageCarId=null;renderMillas()" class="btn-dark px-3 py-2 text-sm">← Vehículos</button><button onclick="openModal('exportVehicleOptions','${car.id}')" class="btn-primary px-3 py-2 text-sm">Exportar</button></div>
-      <div class="card p-4 mb-3" style="background:linear-gradient(135deg,rgba(30,41,59,.92),rgba(15,23,42,.96));border:1px solid rgba(99,102,241,.28)">
-        <div style="font-weight:800;color:#fff;font-size:1rem;display:flex;align-items:center;gap:6px">🚘 ${car.name}</div>
-        <div style="font-size:.72rem;color:#cbd5e1;margin-top:2px">Modelo y placa: ${car.model||'-'} · ${car.plate||'-'}</div>
-        <div style="font-size:.72rem;color:#94a3b8">Marca y año: ${car.brand||'-'} · ${car.year||'-'}</div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px">
-          <div class="card2 p-2 text-center"><div style="font-size:0.6rem;color:#5c6480">Viajes</div><div style="font-weight:800;color:#fff">${logs.length}</div></div>
-          <div class="card2 p-2 text-center"><div style="font-size:0.6rem;color:#5c6480">Millas totales</div><div style="font-weight:800;color:#fff">${totalMiles.toFixed(1)}</div></div>
-          <div class="card2 p-2 text-center"><div style="font-size:0.6rem;color:#5c6480">Próx. aceite</div><div style="font-weight:800;color:#fff">${nextOilMiles||0}</div></div>
-          <div class="card2 p-2 text-center"><div style="font-size:0.6rem;color:#5c6480">Reparaciones</div><div style="font-weight:800;color:#fff">${repairsCount}</div></div>
+    const filtered=currentMileageTab==='oil'
+      ? oilHistory.map(s=>({kind:'oil',date:s.date||isoToday(),title:'Cambio de aceite',subtitle:s.title||'',amount:s.cost?fmt(s.cost):''}))
+      : currentMileageTab==='repair'
+        ? repairHistory.map(s=>({kind:'repair',date:s.date||isoToday(),title:'Reparación',subtitle:s.title||'',amount:s.cost?fmt(s.cost):''}))
+        : monthLogs.map(l=>({kind:'miles',date:l.date||isoToday(),title:l.title||l.project||'Trayecto',subtitle:`${l.startMiles||0} → ${l.endMiles||0} mi`,amount:`${Number(l.totalMiles||0).toFixed(1)} mi`}));
+    document.getElementById('millasContent').innerHTML=`<div class="flex items-center justify-between mb-3"><button onclick="currentMileageCarId=null;renderMillas()" class="btn-dark px-3 py-2 text-sm">← Vehículos</button><div style="display:flex;gap:6px"><button onclick="openModal('carFormModal','${car.id}')" class="btn-dark px-3 py-2 text-sm" title="Editar vehículo">⚙ Editar</button><button onclick="openModal('exportVehicleOptions','${car.id}')" class="btn-primary px-3 py-2 text-sm">Exportar</button></div></div>
+      <div class="card p-4 mb-3" style="background:radial-gradient(circle at top left,rgba(34,211,238,.18),transparent 34%),linear-gradient(135deg,rgba(30,41,59,.96),rgba(15,23,42,.98));border:1px solid rgba(34,211,238,.24)">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+          <div style="min-width:0">
+            <div style="font-weight:900;color:#fff;font-size:1.18rem;line-height:1.1;display:flex;align-items:center;gap:7px">🚘 ${car.name}</div>
+            <div style="font-size:.72rem;color:#cbd5e1;margin-top:6px">${[car.brand,car.model,car.year].filter(Boolean).join(' · ')||'Sin modelo registrado'}</div>
+            <div style="font-size:.68rem;color:#94a3b8;margin-top:3px">${car.plate?`Placa ${car.plate}`:'Sin placa'} · Inicial ${Number(car.startMiles||0).toLocaleString('en-US')} mi</div>
+          </div>
+          <div style="text-align:right;background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.22);border-radius:14px;padding:9px 10px;min-width:92px">
+            <div style="font-size:.58rem;color:#67e8f9;font-weight:800;text-transform:uppercase">Actuales</div>
+            <div style="font-size:1rem;font-weight:900;color:#fff">${currentMiles.toLocaleString('en-US')}</div>
+            <div style="font-size:.56rem;color:#94a3b8">millas</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:14px">
+          <div class="card2 p-3" style="border-color:rgba(34,211,238,.18)"><div style="font-size:0.58rem;color:#5c6480;text-transform:uppercase;font-weight:800">Viajes</div><div style="font-weight:900;color:#fff;font-size:1.08rem">${logs.length}</div></div>
+          <div class="card2 p-3" style="border-color:rgba(34,211,238,.18)"><div style="font-size:0.58rem;color:#5c6480;text-transform:uppercase;font-weight:800">Millas viajes</div><div style="font-weight:900;color:#fff;font-size:1.08rem">${tripMiles.toFixed(1)}</div></div>
+          <div class="card2 p-3" style="border-color:rgba(34,211,238,.18)"><div style="font-size:0.58rem;color:#5c6480;text-transform:uppercase;font-weight:800">Próx. aceite</div><div style="font-weight:900;color:#fff;font-size:.98rem">${nextOil.date?fmtDate(nextOil.date):(nextOil.miles?nextOil.miles.toLocaleString('en-US')+' mi':'—')}</div></div>
+          <div class="card2 p-3" style="border-color:rgba(34,211,238,.18)"><div style="font-size:0.58rem;color:#5c6480;text-transform:uppercase;font-weight:800">Reparaciones</div><div style="font-weight:900;color:#fff;font-size:1.08rem">${repairsCount}</div></div>
         </div>
       </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <button onclick="changeVehicleMonth(-1)" style="width:40px;height:40px;border-radius:12px;background:#1a1d2e;border:none;color:#22d3ee;font-size:1.1rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">‹</button>
+        <div style="text-align:center">
+          <div style="color:#fff;font-size:1.35rem;font-weight:900;letter-spacing:-0.4px">${monthNames[vm-1]}</div>
+          <div style="color:#5c6480;font-size:0.7rem;font-weight:600">Historial del vehículo ${vy}</div>
+        </div>
+        <button onclick="changeVehicleMonth(1)" style="width:40px;height:40px;border-radius:12px;background:#1a1d2e;border:none;color:#22d3ee;font-size:1.1rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">›</button>
+      </div>
+      <div class="mod-tabs grid-cols-3" style="margin-bottom:10px">
+        <button class="pill-tab ${currentMileageTab==='miles'?'active':''}" onclick="setMileageTab('miles',this)">Millas</button>
+        <button class="pill-tab ${currentMileageTab==='oil'?'active':''}" onclick="setMileageTab('oil',this)">Aceite</button>
+        <button class="pill-tab ${currentMileageTab==='repair'?'active':''}" onclick="setMileageTab('repair',this)">Reparaciones</button>
+      </div>
       <div class="card p-3 mb-2">
-        <div style="font-size:.72rem;color:#94a3b8;font-weight:700;margin-bottom:6px">Historial del vehículo</div>
-        ${history.length?history.map(h=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--border)"><div><div style="font-weight:700;color:#fff">${h.kind==='miles'?'Millas':(h.kind==='oil'?'Aceite':'Arreglo')} · ${fmtDate(h.date)}</div><div style="font-size:.68rem;color:#94a3b8">${h.title}${h.subtitle?` · ${h.subtitle}`:''}</div></div><div style="font-weight:700;color:#a5b4fc">${h.amount||''}</div></div>`).join(''):`<div class="text-slate-400 text-sm py-3 text-center">Sin registros aún</div>`}
+        <div style="font-size:.72rem;color:#94a3b8;font-weight:700;margin-bottom:6px">Historial de ${currentMileageTab==='miles'?'millas':currentMileageTab==='oil'?'aceite':'reparaciones'}</div>
+        ${filtered.length?filtered.sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(h=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--border)"><div><div style="font-weight:700;color:#fff">${h.kind==='miles'?'Trayecto':(h.kind==='oil'?'Aceite':'Reparación')} · ${fmtDate(h.date)}</div><div style="font-size:.68rem;color:#94a3b8">${h.title}${h.subtitle?` · ${h.subtitle}`:''}</div></div><div style="font-weight:700;color:#a5b4fc">${h.amount||''}</div></div>`).join(''):`<div class="text-slate-400 text-sm py-3 text-center">Sin registros aún</div>`}
       </div>`;
     const oldFabIn=document.getElementById('millasFab'); if(oldFabIn) oldFabIn.remove();
     const fabIn=document.createElement('button'); fabIn.id='millasFab'; fabIn.className='bear-fab'; fabIn.textContent='Nuevo'; document.body.appendChild(fabIn);
-    makeFabDraggable(fabIn, ()=>openModal('carActionChoice', car.id));
+    makeFabDraggable(fabIn, ()=>openCurrentVehicleAdd());
     return;
   }
   document.getElementById('millasContent').innerHTML=`${!cars.length?`<div class="card p-5 text-center text-slate-400 text-sm">Sin vehículos aún.</div>`:cars.map(c=>{
-    const logs=allLogs.filter(l=>l.carId===c.id); const miles=logs.reduce((s,l)=>s+(l.totalMiles||0),0);
-    return `<div class="card p-4 mb-2" style="background:linear-gradient(135deg,rgba(30,41,59,.9),rgba(15,23,42,.95));border:1px solid rgba(99,102,241,.24)"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><button onclick="currentMileageCarId='${c.id}';renderMillas()" class="text-left flex-1 min-w-0"><div style="font-weight:800;color:#fff;display:flex;align-items:center;gap:6px">🚘 ${c.name}${c.plate?` · ${c.plate}`:''}</div><div style="font-size:.72rem;color:#94a3b8">${logs.length} viaje(s) · ${miles.toFixed(1)} millas</div></button><div style="display:flex;gap:6px"><button onclick="openModal('carFormModal','${c.id}')" class="btn-dark px-3 py-1.5 text-xs">Editar</button><button onclick="deleteCar('${c.id}')" class="btn-red px-3 py-1.5 text-xs">Borrar</button></div></div></div>`;
+    const logs=allLogs.filter(l=>l.carId===c.id); const miles=vehicleTravelMiles(c.id); const actual=vehicleCurrentMiles(c);
+    return `<div class="card p-4 mb-2" style="background:linear-gradient(135deg,rgba(30,41,59,.9),rgba(15,23,42,.95));border:1px solid rgba(99,102,241,.24)"><button onclick="currentMileageCarId='${c.id}';currentMileageTab='miles';renderMillas()" class="text-left w-full"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div class="min-w-0"><div style="font-weight:800;color:#fff;display:flex;align-items:center;gap:6px">🚘 ${c.name}${c.plate?` · ${c.plate}`:''}</div><div style="font-size:.72rem;color:#94a3b8">${logs.length} viaje(s) · ${miles.toFixed(1)} millas de viaje</div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:.58rem;color:#5c6480;font-weight:800;text-transform:uppercase">Actuales</div><div style="font-weight:900;color:#67e8f9">${actual.toLocaleString('en-US')}</div></div></div></button></div>`;
   }).join('')}
   `;
   const oldFab=document.getElementById('millasFab'); if(oldFab) oldFab.remove();
@@ -10684,13 +10966,20 @@ function deleteCar(id){
   if(currentMileageCarId===id) currentMileageCarId=null;
   save(); renderMillas(); showToast('Vehículo eliminado');
 }
+function deleteCarFromEdit(id){
+  closeModal();
+  setTimeout(()=>deleteCar(id),50);
+}
 function saveMileageFromModal(){
   const carId=(document.getElementById('mMileCarId')?.value||'').trim();
   const editId=(document.getElementById('mMileEditId')?.value||'').trim();
-  const start=parseFloat(document.getElementById('mMileStart')?.value||'0');
+  const car=(S.cars||[]).find(c=>c.id===carId);
+  const useSuggested=(document.getElementById('mMileManual')?.value||'0')!=='1';
+  const start=useSuggested?vehicleCurrentMiles(car):parseFloat(document.getElementById('mMileStart')?.value||'0');
   const end=parseFloat(document.getElementById('mMileEnd')?.value||'0');
   const project=(document.getElementById('mMileProject')?.value||'').trim();
   if(!carId){ showToast('Selecciona un vehículo'); return; }
+  if(!Number.isFinite(start)){ showToast('Ingresa odómetro inicial'); return; }
   if(!Number.isFinite(end)){ showToast('Ingresa odómetro final'); return; }
   if(!project){ showToast('Proyecto/categoría requerido'); return; }
   if(end<=start){ showToast('El odómetro final debe ser mayor que el inicial.'); return; }
@@ -10702,7 +10991,7 @@ function saveMileageFromModal(){
     endMiles:end,
     totalMiles:Math.max(0,end-start),
     project,
-    date:isoToday(),
+    date:(document.getElementById('mMileDate')?.value||isoToday()),
     notes:(document.getElementById('mMileNotes')?.value||'').trim(),
     createdMode:(document.getElementById('mMileManual')?.value==='1'?'manual':'suggested'),
     updatedAt:new Date().toISOString()
@@ -10720,10 +11009,12 @@ function saveOilChangeFromModal(){
   const place=(document.getElementById('mOilPlace')?.value||'').trim();
   const currentMiles=parseFloat(document.getElementById('mOilCurrent')?.value||'0')||0;
   const nextMiles=parseFloat(document.getElementById('mOilNext')?.value||'0')||0;
+  const nextDate=(document.getElementById('mOilNextDate')?.value||'');
+  const date=(document.getElementById('mOilDate')?.value||isoToday());
   const cost=parseFloat(document.getElementById('mOilCost')?.value||'0')||0;
   if(!carId||!place){ showToast('Completa lugar y vehículo'); return; }
   S.carServiceLogs=S.carServiceLogs||[];
-  S.carServiceLogs.unshift({id:uid(),carId,kind:'oil',title:place,currentMiles,nextMiles,cost,notes:(document.getElementById('mOilNotes')?.value||'').trim(),date:isoToday(),updatedAt:new Date().toISOString()});
+  S.carServiceLogs.unshift({id:uid(),carId,kind:'oil',title:place,currentMiles,nextMiles,nextDate,cost,notes:(document.getElementById('mOilNotes')?.value||'').trim(),date,updatedAt:new Date().toISOString()});
   save(); closeModal(); renderMillas(); showToast('Cambio de aceite guardado');
 }
 function saveRepairFromModal(){
@@ -10784,8 +11075,7 @@ function renderCurrentView() {
     if(dmToggle) dmToggle.checked=document.body.classList.contains('dark');
     const ns=S.notificationSettings||{};
     const notifP=document.getElementById('notifPayments'); if(notifP) notifP.checked=!!ns.upcomingPayments;
-    const notifI=document.getElementById('notifIncome'); if(notifI) notifI.checked=!!ns.incomeDue;
-    const notifL=document.getElementById('notifLowBalance'); if(notifL) notifL.checked=!!ns.lowBalance;
+    const notifI=document.getElementById('notifInteractions'); if(notifI) notifI.checked=!!ns.interactions;
     // Render PIN (async: generate if needed)
     const pinEl=document.getElementById('pinDisplay');
     if(pinEl) {
@@ -10811,10 +11101,9 @@ function toggleDarkMode(enabled) {
 }
 
 function saveNotificationSettings() {
-  if(!S.notificationSettings) S.notificationSettings={enabled:false,upcomingPayments:false,incomeDue:false,lowBalance:false};
+  if(!S.notificationSettings) S.notificationSettings={enabled:false,upcomingPayments:false,interactions:false};
   S.notificationSettings.upcomingPayments=document.getElementById('notifPayments')?.checked||false;
-  S.notificationSettings.incomeDue=document.getElementById('notifIncome')?.checked||false;
-  S.notificationSettings.lowBalance=document.getElementById('notifLowBalance')?.checked||false;
+  S.notificationSettings.interactions=document.getElementById('notifInteractions')?.checked||false;
   save(); showToast('Preferencias guardadas');
 }
 
@@ -10826,11 +11115,12 @@ async function requestNotificationPermission() {
   try {
     const permission=await Notification.requestPermission();
     if(permission==='granted') {
-      if(!S.notificationSettings) S.notificationSettings={enabled:false,upcomingPayments:false,incomeDue:false,lowBalance:false};
+      if(!S.notificationSettings) S.notificationSettings={enabled:false,upcomingPayments:false,interactions:false};
       S.notificationSettings.enabled=true;
       save();
       showToast('Notificaciones activadas');
       new Notification('BearAgenda', {body:'Recordatorios activados correctamente.', icon:'./apple-touch-icon.png'});
+      startNotificationScheduler();
     } else {
       showToast('Permiso denegado. Actívalos en Configuración del dispositivo.');
     }
@@ -10904,7 +11194,7 @@ async function formatModule(label) {
     'Calendario':'Se borrarán notas y tareas del calendario. Las listas de compras quedan aparte.',
     'Lista de compras':'Se borrarán todas las listas de compras.',
     'Proyecciones / Planes':'Se borrarán planes y proyecciones personalizadas.',
-    'Préstamos':'Se borrarán préstamos hechos y préstamos recibidos con sus cuotas futuras.'
+    'Prestamos':'Se borrarán préstamos hechos y préstamos recibidos con sus cuotas futuras.'
   };
   if(!confirm(`${messages[label]||'Se borrará este módulo.'}\n\n¿Continuar?`)) return;
   if(label==='Finanzas'){S.bills=[];S.oneTimePayments=[];S.paidBills=[];S.expenses=[];}
@@ -10914,7 +11204,7 @@ async function formatModule(label) {
   else if(label==='Calendario'){S.calendarNotes={};}
   else if(label==='Lista de compras'){S.shoppingLists=[];S.shoppingList=[];}
   else if(label==='Proyecciones / Planes'){S.plans=[];S.customPlans=[];S.showDefaultPlans=false;}
-  else if(label==='Préstamos'){S.loans=[];S.borrowedLoans=[];}
+  else if(label==='Prestamos'){S.loans=[];S.borrowedLoans=[];}
   save(); updateHeaderBalance(); renderCurrentView(); showToast(`${label} limpio`);
 }
 
@@ -11016,6 +11306,7 @@ let _mSwipeY0=null, _mSwipeDY=0, _mSwipeOn=false, _mFromHandle=false;
 document.addEventListener('DOMContentLoaded', async () => {
   load();
   loadDarkMode();
+  startNotificationScheduler();
 
   if (!supabase) {
     updateHeaderBalance();
