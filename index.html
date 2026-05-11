@@ -10839,9 +10839,16 @@ function renderMascotas(){
         <div class="card2 p-3"><div style="font-size:.6rem;color:#5c6480">Productos</div><div style="font-weight:900;color:#fff">${products.length}</div></div>
         <div class="card2 p-3"><div style="font-size:.6rem;color:#5c6480">Valor</div><div style="font-weight:900;color:#fff">${fmt(productsValue)}</div></div>
       </div>
-      ${p.shareCode?`<div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;background:rgba(124,111,218,0.08);border:1px solid rgba(124,111,218,0.2);border-radius:10px;padding:10px 12px">
-        <div><div style="font-size:0.58rem;color:#5c6480;font-weight:700;text-transform:uppercase">Código para compartir</div><div style="font-size:1rem;color:#7c6fda;font-family:monospace;font-weight:900;letter-spacing:.12em;margin-top:2px">${p.shareCode}</div></div>
-        <button onclick="navigator.clipboard.writeText('${p.shareCode}').then(()=>showToast('Código copiado'))" style="background:rgba(124,111,218,0.15);border:1px solid rgba(124,111,218,0.25);color:#7c6fda;font-size:0.7rem;font-weight:700;padding:6px 12px;border-radius:8px">Copiar</button>
+      ${p.shareCode?`<div style="margin-top:12px;background:rgba(124,111,218,0.08);border:1px solid rgba(124,111,218,0.2);border-radius:10px;padding:10px 12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div><div style="font-size:0.58rem;color:#5c6480;font-weight:700;text-transform:uppercase">Código para compartir</div><div style="font-size:1.1rem;color:#7c6fda;font-family:monospace;font-weight:900;letter-spacing:.14em;margin-top:2px">${p.shareCode}</div></div>
+          <button onclick="navigator.clipboard.writeText('${p.shareCode}').then(()=>showToast('Código copiado'))" style="background:rgba(124,111,218,0.15);border:1px solid rgba(124,111,218,0.25);color:#7c6fda;font-size:0.7rem;font-weight:700;padding:6px 12px;border-radius:8px;flex-shrink:0">Copiar</button>
+        </div>
+        <button onclick="publishPetToCloud('${p.id}')" style="width:100%;background:${p.cloudPublished?'rgba(74,222,128,0.12)':'rgba(124,111,218,0.15)'};border:1px solid ${p.cloudPublished?'rgba(74,222,128,0.25)':'rgba(124,111,218,0.25)'};color:${p.cloudPublished?'#4ade80':'#7c6fda'};font-size:0.75rem;font-weight:700;padding:8px 0;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:6px">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+          ${p.cloudPublished?`Publicado · Actualizar`:'Publicar con el código'}
+        </button>
+        <div style="font-size:0.6rem;color:#5c6480;margin-top:6px;line-height:1.4">${p.cloudPublished?`Última publicación: ${p.cloudPublishedAt?p.cloudPublishedAt.slice(0,10):'hoy'}. Cualquier persona con el código puede copiar esta ficha.`:'Publica la ficha para que otros puedan copiarla con el código.'}</div>
       </div>`:''}
     </div>
     <div class="card p-3 mb-2">
@@ -10965,18 +10972,61 @@ function prefillPet(id){
   openModal('petFormModal',`${p.type||'Perro'}|${p.id}`);
 }
 function deletePet(id){ if(!confirm('¿Borrar mascota?')) return; S.pets=(S.pets||[]).filter(x=>x.id!==id); save(); renderMascotas(); }
-function joinPetByCode(){
+async function publishPetToCloud(petId){
+  if(!supabase){showToast('Sin conexión a la nube');return;}
+  const p=(S.pets||[]).find(x=>x.id===petId);
+  if(!p) return;
+  const btn=event&&event.target;
+  if(btn){btn.disabled=true;btn.textContent='Publicando…';}
+  const snapshot={
+    name:p.name,type:p.type||'Mascota',birthDate:p.birthDate||'',
+    weightValue:p.weightValue||0,weightUnit:p.weightUnit||'kg',
+    vaccinesEnabled:!!p.vaccinesEnabled,vaccines:p.vaccines||[],
+    products:(p.products||[]).map(pr=>({...pr})),
+    notes:p.notes||'',foodBrand:p.foodBrand||'',
+    photo:p.photo||'',photoFit:p.photoFit||'cover',
+    shareCode:p.shareCode,publishedAt:new Date().toISOString()
+  };
+  const {error}=await supabase.from('house_data').upsert(
+    {id:'pet:'+p.shareCode,data:snapshot,updated_at:new Date().toISOString()},
+    {onConflict:'id'}
+  );
+  if(btn){btn.disabled=false;}
+  if(error){showToast('Error al publicar. Intenta sin foto si el error persiste.');return;}
+  const pi=(S.pets||[]).findIndex(x=>x.id===petId);
+  if(pi>=0){S.pets[pi].cloudPublished=true;S.pets[pi].cloudPublishedAt=new Date().toISOString();save();}
+  showToast('¡Publicado! Código: '+p.shareCode);
+  renderMascotas();
+}
+async function joinPetByCode(){
   const code=(document.getElementById('petShareCodeInput')?.value||'').trim().toUpperCase();
   if(!code||code.length<4){showToast('Ingresa un código válido');return;}
-  const pet=(S.pets||[]).find(p=>p.shareCode===code);
-  if(pet){
-    closeModal();
-    currentPetId=pet.id;
-    renderMascotas();
-    showToast('¡Mascota encontrada!');
-  } else {
-    showToast('Código no encontrado en este perfil');
+  const localPet=(S.pets||[]).find(p=>p.shareCode===code);
+  if(localPet){
+    closeModal();currentPetId=localPet.id;renderMascotas();
+    showToast('Esa mascota ya está en tu perfil');return;
   }
+  if(!supabase){showToast('Sin conexión a la nube');return;}
+  const btn=document.getElementById('petShareCodeInput')?.nextElementSibling;
+  if(btn){btn.disabled=true;btn.textContent='Buscando…';}
+  const {data,error}=await supabase.from('house_data').select('data').eq('id','pet:'+code).maybeSingle();
+  if(btn){btn.disabled=false;btn.textContent='Buscar';}
+  if(error||!data||!data.data||!data.data.name){showToast('Código no encontrado');return;}
+  const snap=data.data;
+  const newPet={
+    id:uid(),name:snap.name,type:snap.type||'Mascota',
+    birthDate:snap.birthDate||'',weightValue:snap.weightValue||0,weightUnit:snap.weightUnit||'kg',
+    vaccinesEnabled:!!snap.vaccinesEnabled,vaccines:[...(snap.vaccines||[])],
+    products:[...(snap.products||[])],
+    notes:snap.notes||'',foodBrand:snap.foodBrand||'',
+    photo:snap.photo||'',photoFit:snap.photoFit||'cover',
+    shareCode:Math.random().toString(36).substring(2,8).toUpperCase(),
+    originCode:code,updatedAt:new Date().toISOString()
+  };
+  if(!S.pets) S.pets=[];
+  S.pets.unshift(newPet);
+  save();closeModal();currentPetId=newPet.id;renderMascotas();
+  showToast('¡'+newPet.name+' agregado a tu perfil!');
 }
 
 function onModalPetPhotoSelected(evt){
