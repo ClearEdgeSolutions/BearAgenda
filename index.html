@@ -532,6 +532,11 @@
       <div id="millasContent"></div>
     </div>
   </div>
+  <div id="view-mundial" class="view">
+    <div class="px-4 py-5">
+      <div id="mundialContent"></div>
+    </div>
+  </div>
   <div id="view-profile" class="view">
     <div class="px-4 py-5" id="profileContent"></div>
   </div>
@@ -1143,6 +1148,9 @@ function normalizeState() {
   if (!S.pets) S.pets = [];
   if (!S.cars) S.cars = [];
   if (!S.carMileageLogs) S.carMileageLogs = [];
+  if (!S.albumOwned) S.albumOwned = [];
+  // Migrate old numeric IDs to string codes (format changed)
+  if (S.albumOwned.length && typeof S.albumOwned[0] === 'number') S.albumOwned = [];
   if (!S.sharedActivity) S.sharedActivity = [];
   if (S.userPin === undefined) S.userPin = null;
   if (!S.notificationSettings) S.notificationSettings = {enabled:false,upcomingPayments:false,interactions:false};
@@ -1380,7 +1388,12 @@ async function save() {
     S.userId=CURRENT_USER.id;
     S.userEmail=CURRENT_USER.email||S.userEmail||'';
   }
-  try { localStorage.setItem(userLocalKey(), JSON.stringify(S)); }
+  try {
+    const _j=JSON.stringify(S);
+    localStorage.setItem(userLocalKey(), _j);
+    // Mirror to base key so load() (which reads SK) always has the latest data
+    if(CURRENT_USER) localStorage.setItem(SK, _j);
+  }
   catch(e) { console.warn('save localStorage:', e); }
   if (!supabase || !CURRENT_USER) return;
   try {
@@ -3303,7 +3316,7 @@ function completeShoppingList(listId, stay=false) {
 }
 
 function updateHeaderTitle() {
-  const titles={home:'Inicio',cheques:'Ingresos',facturas:'Finanzas',cal:'Calendario',casa:'Espacios',bolsillos:'Bolsillos',cuentas:'Wallet',mascotas:'Mascotas',millas:'Vehículos',plan:'Inicio',analysis:'Análisis',config:'Configuración',profile:'Mi perfil',personas:'Personas'};
+  const titles={home:'Inicio',cheques:'Ingresos',facturas:'Finanzas',cal:'Calendario',casa:'Espacios',bolsillos:'Bolsillos',cuentas:'Wallet',mascotas:'Mascotas',millas:'Vehículos',plan:'Inicio',analysis:'Análisis',config:'Configuración',profile:'Mi perfil',personas:'Personas',mundial:'Mundial'};
   const el=document.getElementById('headerTitle');
   const sub=document.getElementById('headerSubtitle');
   const inSpace=currentView==='casa'&&currentSpaceId&&currentSpaceName;
@@ -10693,7 +10706,7 @@ function showView(view) {
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+view).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active','text-indigo-600'));
-  const idx={home:0,cheques:1,facturas:2,cal:3,casa:4,personas:undefined,plan:undefined,analysis:undefined,bolsillos:undefined,cuentas:undefined,mascotas:undefined,millas:undefined,config:undefined}[view];
+  const idx={home:0,cheques:1,facturas:2,cal:3,casa:4,personas:undefined,plan:undefined,analysis:undefined,bolsillos:undefined,cuentas:undefined,mascotas:undefined,millas:undefined,mundial:undefined,config:undefined}[view];
   const btns=document.querySelectorAll('.nav-btn');
   if(idx!==undefined){btns[idx].classList.add('active','text-indigo-600');}
   if(view==='profile' && (!profileDraft || !profileDraftDirty)) initProfileDraft();
@@ -10703,6 +10716,7 @@ function showView(view) {
 function openAppMenu() {
   const menuIcons={
     home:`<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 21V12h6v9"/></svg>`,
+    mundial:`<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/><path stroke-linecap="round" d="M2 12h20"/></svg>`,
     plan:`<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>`,
     analysis:`<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>`,
     personas:`<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>`,
@@ -10718,6 +10732,7 @@ function openAppMenu() {
     ['cuentas','Wallet','Mis cuentas y bolsillos','#a78bfa'],
     ['mascotas','Mascotas','Perfiles de mascotas','#f59e0b'],
     ['millas','Vehículos','Registros por carro','#22d3ee'],
+    ['mundial','Mundial','Álbum del Mundial 2026','#f97316'],
   ];
   const profileName=S.profileName||'Mi perfil';
   const profileInitials=(profileName.trim().split(/\s+/).map(w=>w[0]||'').join('').slice(0,2)||'?').toUpperCase();
@@ -10745,7 +10760,7 @@ function openAppMenu() {
 
   /* ── Menu items ── */
   items.map(([view,title,desc,color])=>{
-    const iconBg=color==='#7c6fda'?'rgba(124,111,218,0.12)':color==='#4ade80'?'rgba(74,222,128,0.1)':color==='#f59e0b'?'rgba(245,158,11,0.1)':color==='#06b6d4'?'rgba(6,182,212,0.1)':color==='#a78bfa'?'rgba(167,139,250,0.1)':'rgba(74,222,128,0.1)';
+    const iconBg=color==='#7c6fda'?'rgba(124,111,218,0.12)':color==='#4ade80'?'rgba(74,222,128,0.1)':color==='#f59e0b'?'rgba(245,158,11,0.1)':color==='#06b6d4'?'rgba(6,182,212,0.1)':color==='#a78bfa'?'rgba(167,139,250,0.1)':color==='#22d3ee'?'rgba(34,211,238,0.1)':color==='#f97316'?'rgba(249,115,22,0.12)':'rgba(124,111,218,0.1)';
     return `<button onclick="closeAppMenu();showView('${view}')" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;background:#111327;border:1px solid rgba(255,255,255,0.05);text-align:left;cursor:pointer;margin-bottom:4px">
       <div style="width:34px;height:34px;border-radius:10px;background:${iconBg};display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${color}">${menuIcons[view]||''}</div>
       <div style="flex:1;min-width:0">
@@ -11710,6 +11725,325 @@ function exportCarMileageReport(carId){
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`reporte_millas_${(car.name||'carro').replace(/\s+/g,'_')}_${isoToday()}.html`; a.click();
 }
 
+// ── Mundial / Álbum ──────────────────────────────────────────
+// [groupId, teamCode, teamNameEs, ...18 players]
+const _WC26_TEAMS=[
+// Grupo A: México · Sudáfrica · Corea del Sur · Rep. Checa
+['A','MEX','México','Luis Malagón','Johan Vasquez','Jorge Sánchez','Cesar Montes','Jesus Gallardo','Israel Reyes','Diego Lainez','Carlos Rodriguez','Edson Alvarez','Orbelin Pineda','Marcel Ruiz','Érick Sánchez','Hirving Lozano','Santiago Giménez','Raúl Jiménez','Alexis Vega','Roberto Alvarado','Cesar Huerta'],
+['A','RSA','Sudáfrica','Ronwen Williams','Sipho Chaine','Aubrey Modiba','Samukele Kabini','Mbekezeli Mbokazi','Khulumani Ndamane','Siyabonga Ngezana','Khuliso Mudau','Nkosinathi Sibisi','Teboho Mokoena','Thalente Mbatha','Bathasi Aubaas','Yaya Sithole','Sipho Mbule','Lyle Foster','Iqraam Rayners','Mohau Nkota','Oswin Appollis'],
+['A','KOR','Corea del Sur','Hyeon-woo Jo','Seung-Gyu Kim','Min-jae Kim','Yu-min Cho','Young-woo Seol','Han-beom Lee','Tae-seok Lee','Myung-jae Lee','Jae-sung Lee','In-beom Hwang','Kang-in Lee','Seung-ho Paik','Jens Castrop','Dong-yeong Lee','Gue-sung Cho','Heung-min Son','Hee-chan Hwang','Hyeon-Gyu Oh'],
+['A','CZE','Chequia','Matej Kovar','Jindrich Stanek','Ladislav Krejci','Vladimir Coufal','Jaroslav Zeleny','Tomas Holes','David Zima','Michal Sadilek','Lukas Provod','Lukas Cerv','Tomas Soucek','Pavel Sulc','Matej Vydra','Vasil Kusej','Tomas Chory','Vaclav Cerny','Adam Hlozek','Patrik Schick'],
+// Grupo B: Canadá · Bosnia · Qatar · Suiza
+['B','CAN','Canadá','Dayne St.Clair','Alphonso Davies','Alistair Johnston','Samuel Adekugbe','Richie Laryea','Derek Cornelius','Moïse Bombito','Kamal Miller','Stephen Eustáquio','Ismaël Koné','Jonathan Osorio','Jacob Shaffelburg','Mathieu Choinière','Niko Sigur','Tajon Buchanan','Liam Millar','Cyle Larin','Jonathan David'],
+['B','BIH','Bosnia y Herz.','Nikola Vasilj','Amer Dedic','Sead Kolasinac','Tarik Muharemovic','Nihad Mujakic','Nikola Katic','Amir Hadziahmetovic','Benjamin Tahirovic','Armin Gigovic','Ivan Sunjic','Ivan Basic','Dzenis Burnic','Esmir Bajraktarevic','Amar Memic','Ermedin Demirovic','Edin Dzeko','Samed Bazdar','Haris Tabakovic'],
+['B','QAT','Qatar','Meshaal Barsham','Sultan Albrake','Lucas Mendes','Homam Ahmed','Boualem Khoukhi','Pedro Miguel','Tarek Salman','Mohamed Al-Mannai','Karim Boudiaf','Assim Madibo','Ahmed Fatehi','Mohammed Waad','Abdulaziz Hatem','Hassan Al-Haydos','Edmilson Junior','Akram Hassan Afif','Ahmed Al Ganehi','Almoez Ali'],
+['B','SUI','Suiza','Gregor Kobel','Yvon Mvogo','Manuel Akanji','Ricardo Rodriguez','Nico Elvedi','Aurèle Amenda','Silvan Widmer','Granit Xhaka','Denis Zakaria','Remo Freuler','Fabian Rieder','Ardon Jashari','Johan Manzambi','Michel Aebischer','Breel Embolo','Ruben Vargas','Dan Ndoye','Zeki Amdouni'],
+// Grupo C: Brasil · Marruecos · Haití · Escocia
+['C','BRA','Brasil','Alisson','Bento','Marquinhos','Éder Militão','Gabriel Magalhães','Danilo','Wesley','Lucas Paquetá','Casemiro','Bruno Guimarães','Luiz Henrique','Vinicius Júnior','Rodrygo','João Pedro','Matheus Cunha','Gabriel Martinelli','Raphinha','Estévão'],
+['C','MAR','Marruecos','Yassine Bounou','Munir El Kajoui','Achraf Hakimi','Noussair Mazraoui','Nayef Aguerd','Roman Saiss','Jawad El Yamio','Adam Masina','Sofyan Amrabat','Azzedine Ounahi','Eliesse Ben Seghir','Bilal El Khannouss','Ismael Saibari','Youssef En-Nesyri','Abde Ezzalzouli','Soufiane Rahimi','Brahim Diaz','Ayoub El Kaabi'],
+['C','HAI','Haití','Johny Placide','Carlens Arcus','Martin Expérience','Jean-Kevin Duverne','Ricardo Adé','Duke Lacroix','Garven Metusala','Hannes Delcroix','Leverton Pierre','Danley Jean Jacques','Jean-Ricner Bellegarde','Christopher Attys','Derrick Etienne Jr.','Josue Casimir','Ruben Providence','Duckens Nazon','Louicius Deedson','Frantzdy Pierrot'],
+['C','SCO','Escocia','Angus Gunn','Jack Hendry','Kieran Tierney','Aaron Hickey','Andrew Robertson','Scott McKenna','John Souttar','Anthony Ralston','Grant Hanley','Scott McTominay','Billy Gilmour','Lewis Ferguson','Ryan Christie','Kenny McLean','John McGinn','Lyndon Dykes','Che Adams','Ben Doak'],
+// Grupo D: EE.UU. · Paraguay · Australia · Turquía
+['D','USA','Estados Unidos','Matt Freese','Chris Richards','Tim Ream','Mark McKenzie','Alex Freeman','Antonee Robinson','Tyler Adams','Tanner Tessmann','Weston McKennie','Christian Roldan','Timothy Weah','Diego Luna','Malik Tillman','Christian Pulisic','Brenden Aaronson','Ricardo Pepi','Haji Wright','Folarin Balogun'],
+['D','PAR','Paraguay','Roberto Fernandez','Orlando Gill','Gustavo Gomez','Fabián Balbuena','Juan José Cáceres','Omar Alderete','Junior Alonso','Mathías Villasanti','Diego Gomez','Damián Bobadilla','Andres Cubas','Matias Galarza Fonda','Julio Enciso','Alejandro Romero Gamarra','Miguel Almirón','Ramon Sosa','Angel Romero','Antonio Sanabria'],
+['D','AUS','Australia','Mathew Ryan','Joe Gauci','Harry Souttar','Alessandro Circati','Jordan Bos','Aziz Behich','Cameron Burgess','Lewis Miller','Milos Degenek','Jackson Irvine','Riley McGree','Aiden O\'Neill','Connor Metcalfe','Patrick Yazbek','Craig Goodwin','Kusini Yengi','Nestory Irankunda','Mohamed Touré'],
+['D','TUR','Turquía','Ugurcan Cakir','Mert Muldur','Zeki Celik','Abdulkerim Bardakci','Caglar Soyuncu','Merih Demiral','Ferdi Kadioglu','Kaan Ayhan','Ismail Yuksek','Hakan Calhanoglu','Orkun Kokcu','Arda Guler','Irfan Can Kahvecu','Yunus Akgun','Can Uzun','Baris Alper Yilmaz','Kerem Akturkoglu','Kenan Yildiz'],
+// Grupo E: Alemania · Curazao · Costa de Marfil · Ecuador
+['E','GER','Alemania','Marc-André ter Stegen','Jonathan Tah','David Raum','Nico Schlotterbeck','Antonio Rüdiger','Waldemar Anton','Ridle Baku','Maximilian Mittelstädt','Joshua Kimmich','Florian Wirtz','Felix Nmecha','Leon Goretzka','Jamal Musiala','Serge Gnabry','Kai Havertz','Leroy Sané','Karim Adeyemi','Nick Woltemade'],
+['E','CUW','Curazao','Eloy Room','Armando Obispo','Sherel Floranus','Jurien Gaari','Joshua Brenet','Roshon Van Eijma','Shurandy Sambo','Livano Comenencia','Godfried Roemeratoe','Juninho Bacuna','Leandro Bacuna','Tahith Chong','Kenji Gorre','Jearl Margaritha','Jurgen Locadia','Jeremy Antonisse','Gervane Kastaneer','Sontje Hansen'],
+['E','CIV','Costa de Marfil','Yahia Fofana','Ghislain Konan','Wilfried Singo','Odilon Kossounou','Evan Ndicka','Willy Boly','Emmanuel Agbadou','Ousmane Diomande','Franck Kessie','Seko Fofana','Ibrahim Sangare','Jean-Philippe Gbamin','Amad Diallo','Sébastien Haller','Simon Adingra','Yan Diomande','Evann Guessand','Oumar Diakite'],
+['E','ECU','Ecuador','Hernán Galíndez','Gonzalo Valle','Piero Hincapié','Pervis Estupiñán','Willian Pacho','Ángelo Preciado','Joel Ordóñez','Moises Caicedo','Alan Franco','Kendry Paez','Pedro Vite','John Yeboah','Leonardo Campana','Gonzalo Plata','Nilson Angulo','Alan Minda','Kevin Rodriguez','Enner Valencia'],
+// Grupo F: Países Bajos · Japón · Suecia · Túnez
+['F','NED','Países Bajos','Bart Verbruggen','Virgil van Dijk','Micky van de Ven','Jurrien Timber','Denzel Dumfries','Nathan Aké','Jeremie Frimpong','Jan Paul van Hecke','Tijjani Reijnders','Ryan Gravenberch','Teun Koopmeiners','Frenkie de Jong','Xavi Simons','Justin Kluivert','Memphis Depay','Donyell Malen','Wout Weghorst','Cody Gakpo'],
+['F','JPN','Japón','Zion Suzuki','Henry Heroki Mochizuki','Ayumu Seko','Junnosuke Suzuki','Shogo Taniguchi','Tsuyoshi Watanabe','Kaishu Sano','Yuki Soma','Ao Tanaka','Daichi Kamada','Takefusa Kubo','Ritsu Doan','Keito Nakamura','Takumi Minamino','Shuto Machino','Junya Ito','Koki Ogawa','Ayase Ueda'],
+['F','SWE','Suecia','Victor Johansson','Isak Hien','Gabriel Gudmundsson','Emil Holm','Victor Nilsson Lindelöf','Gustaf Lagerbielke','Lucas Bergvall','Hugo Larsson','Jesper Karlström','Yasin Ayari','Mattias Svanberg','Daniel Svensson','Ken Sema','Roony Bardghji','Dejan Kulusevski','Anthony Elanga','Alexander Isak','Viktor Gyökeres'],
+['F','TUN','Túnez','Bechir Ben Said','Aymen Dahmen','Van Valery','Montassar Talbi','Yassine Meriah','Ali Abdi','Dylan Bronn','Ellyes Skhiri','Aissa Laidouni','Ferjani Sassi','Mohamed Ali Ben Romdhane','Hannibal Mejbri','Elias Achouri','Elias Saad','Hazem Mastouri','Ismael Gharbi','Sayfallah Ltaief','Naim Sliti'],
+// Grupo G: Bélgica · Egipto · Irán · Nueva Zelanda
+['G','BEL','Bélgica','Thibaut Courtois','Arthur Theate','Timothy Castagne','Zeno Debast','Brandon Mechele','Maxim De Cuyper','Thomas Meunier','Youri Tielemans','Amadou Onana','Nicolas Raskin','Alexis Saelemaekers','Hans Vanaken','Kevin De Bruyne','Jérémy Doku','Charles De Ketelaere','Leandro Trossard','Loïs Openda','Romelu Lukaku'],
+['G','EGY','Egipto','Mohamed El Shenawy','Mohamed Hany','Mohamed Hamdy','Yasser Ibrahim','Khaled Sobhi','Ramy Rabia','Hossam Abdelmaguid','Ahmed Fatouh','Marwan Attia','Zizo','Hamdy Fathy','Mohamed Lasheen','Emam Ashour','Osama Faisal','Mohamed Salah','Mostafa Mohamed','Trezeguet','Omar Marmoush'],
+['G','IRN','Irán','Alireza Beiranvand','Morteza Pouraliganji','Ehsan Hajsafi','Milad Mohammadi','Shojae Khalilzadeh','Ramin Rezaeian','Hossein Kanaani','Sadegh Moharrami','Saleh Hardani','Saeed Ezatolahi','Saman Ghoddos','Omid Noorafkan','Roozbeh Cheshmi','Mohammad Mohebi','Sardar Azmoun','Mehdi Taremi','Alireza Jahanbakhsh','Ali Gholizadeh'],
+['G','NZL','Nueva Zelanda','Max Crocombe','Alex Paulsen','Michael Boxall','Liberato Cacace','Tim Payne','Tyler Bindon','Francis de Vries','Finn Surman','Joe Bell','Sarpreet Singh','Ryan Thomas','Matthew Garbett','Marko Stamenić','Ben Old','Chris Wood','Elijah Just','Callum McCowatt','Kosta Barbarouses'],
+// Grupo H: España · Cabo Verde · Arabia Saudita · Uruguay
+['H','ESP','España','Unai Simon','Robin Le Normand','Aymeric Laporte','Dean Huijsen','Pedro Porro','Dani Carvajal','Marc Cucurella','Martín Zubimendi','Rodri','Pedri','Fabian Ruiz','Mikel Merino','Lamine Yamal','Dani Olmo','Nico Williams','Ferran Torres','Álvaro Morata','Mikel Oyarzabal'],
+['H','CPV','Cabo Verde','Vozinha','Logan Costa','Pico','Diney','Steven Moreira','Wagner Pina','Joao Paulo','Yannick Semedo','Kevin Pina','Patrick Andrade','Jamiro Monteiro','Deroy Duarte','Garry Rodrigues','Jovane Cabral','Ryan Mendes','Dailon Livramento','Willy Semedo','Bebé'],
+['H','KSA','Arabia Saudita','Nawaf Alaqidi','Abdulrahman Al-Sanbi','Saud Abdulhamid','Nawaf Bouwashl','Jihad Thakri','Moteb Al-Harbi','Hassan Altambakti','Musab Aljuwayr','Ziyad Aljohani','Abdullah Alkhaibari','Nasser Aldawsari','Saleh Abu Alshamat','Marwan Alsahafi','Salem Aldawsari','Abdulrahman Al-Aboud','Feras Akbrikan','Saleh Alshehri','Abdullah Al-Hamdan'],
+['H','URU','Uruguay','Sergio Rochet','Santiago Mele','Ronald Araujo','José María Giménez','Sebastian Caceres','Mathias Olivera','Guillermo Varela','Nahitan Nandez','Federico Valverde','Giorgian De Arrascaeta','Rodrigo Bentancur','Manuel Ugarte','Nicolás de la Cruz','Maxi Araujo','Darwin Núñez','Federico Viñas','Rodrigo Aguirre','Facundo Pellistri'],
+// Grupo I: Francia · Senegal · Iraq · Noruega
+['I','FRA','Francia','Mike Maignan','Theo Hernandez','William Saliba','Jules Kounde','Ibrahima Konate','Dayot Upamecano','Lucas Digne','Aurélien Tchouaméni','Eduardo Camavinga','Manu Kone','Adrien Rabiot','Michael Olise','Ousmane Dembele','Bradley Barcola','Désiré Doué','Kingsley Coman','Hugo Ekitike','Kylian Mbappé'],
+['I','SEN','Senegal','Eduardo Mendy','Yehvann Diouf','Moussa Niakhaté','Abdoulaye Seck','Ismail Jakobs','El Hadji Malick Diouf','Kalidou Koulibaly','Idrissa Gana Gueye','Pape Matar Sarr','Pape Gueye','Habib Diarra','Lamine Camara','Sadio Mane','Ismaïla Sarr','Boulaye Dia','Iliman Ndiaye','Nicolas Jackson','Krepin Diatta'],
+['I','IRQ','Iraq','Jalal Hassan','Rebin Sulaka','Hussein Ali','Akam Hashem','Merchas Doski','Zaid Tahseen','Manaf Younis','Zidane Iqbal','Amir Al-Ammari','Ibrahim Bavesh','Ali Jasim','Youssef Amyn','Aimar Sher','Marko Farji','Osama Rashid','Ali Al-Hamadi','Aymen Hussein','Mohanad Ali'],
+['I','NOR','Noruega','Orjan Nyland','Julian Ryerson','Leo Ostigård','Kristoffer Vassbakk Ajer','Marcus Holmgren Pedersen','David Møller Wolfe','Torbjørn Heggem','Morten Thorsby','Martin Ødegaard','Sander Berge','Andreas Schjelderup','Patrick Berg','Erling Haaland','Alexander Sørloth','Aron Dønnum','Jorgen Strand Larsen','Antonio Nusa','Oscar Bobb'],
+// Grupo J: Argentina · Argelia · Austria · Jordania
+['J','ARG','Argentina','Emiliano Martinez','Nahuel Molina','Cristian Romero','Nicolas Otamendi','Nicolas Tagliafico','Leonardo Balerdi','Enzo Fernandez','Alexis Mac Allister','Rodrigo De Paul','Exequiel Palacios','Leandro Paredes','Nico Paz','Franco Mastantuono','Nico Gonzalez','Lionel Messi','Lautaro Martinez','Julian Alvarez','Giuliano Simeone'],
+['J','ALG','Argelia','Alexis Guendouz','Ramy Bensebaini','Youcef Atal','Rayan Aït-Nouri','Mohamed Amine Tougai','Aïssa Mandi','Ismael Bennacer','Houssem Aouar','Hicham Boudaoui','Ramiz Zerrouki','Nabil Bentaleb','Farés Chaibi','Riyad Mahrez','Said Benrahma','Anis Hadj Moussa','Amine Gouiri','Baghdad Bounedjah','Mohammed Amoura'],
+['J','AUT','Austria','Alexander Schlager','Patrick Pentz','David Alaba','Kevin Danso','Philipp Lienhart','Stefan Bosch','Phillipp Mwene','Alexander Prass','Xavier Schlager','Marcel Sabitzer','Konrad Laimer','Florian Grillitsch','Nicolas Seiwald','Romano Schmid','Patrick Wimmer','Christoph Baumgartner','Michael Gregoritsch','Marko Arnautović'],
+['J','JOR','Jordania','Yazeed Abulaila','Ihsan Haddad','Mohammad Abu Hashish','Yazan Al-Arab','Abdallah Nasib','Saleem Obaid','Mohammad Abualnadi','Ibrahim Saadeh','Nizar Al-Rashdan','Noor Al-Rawabdeh','Mohannad Abu Taha','Amer Jamous','Mousa Al-Taamari','Yazan Al-Naimat','Mahmoud Al-Mardi','Ali Olwan','Mohammad Abu Zrayq','Ibrahim Sabra'],
+// Grupo K: Portugal · R.D. Congo · Uzbekistán · Colombia
+['K','POR','Portugal','Diogo Costa','Jose Sa','Ruben Dias','João Cancelo','Diogo Dalot','Nuno Mendes','Gonçalo Inácio','Bernardo Silva','Bruno Fernandes','Ruben Neves','Vitinha','João Neves','Cristiano Ronaldo','Francisco Trincao','João Felix','Gonçalo Ramos','Pedro Neto','Rafael Leão'],
+['K','COD','R.D. Congo','Lionel Mpasi','Aaron Wan-Bissaka','Axel Tuanzebe','Arthur Masuaku','Chancel Mbemba','Joris Kayembe','Charles Pickel','Ngal\'ayel Mukau','Edo Kayembe','Samuel Moutoussamy','Noah Sadiki','Théo Bongonda','Meschak Elia','Yoane Wissa','Brian Cipenga','Fiston Mayele','Cédric Bakambu','Nathanaël Mbuku'],
+['K','UZB','Uzbekistán','Utkir Yusupov','Farrukh Savfiev','Sherzod Nasrullaev','Umar Eshmurodov','Husniddin Aliqulov','Rustamjon Ashurmatov','Khojiakbar Alijonov','Abdukodir Khusanov','Odiljon Hamrobekov','Otabek Shukurov','Jamshid Iskanderov','Azizbek Turgunboev','Khojimat Erkinov','Eldor Shomurodov','Oston Urunov','Jaloliddin Masharipov','Igor Sergeev','Abbosbek Fayzullaev'],
+['K','COL','Colombia','Camilo Vargas','David Ospina','Dávinson Sánchez','Yerry Mina','Daniel Munoz','Johan Mojica','Jhon Lucumí','Santiago Arias','Jefferson Lerma','Kevin Castaño','Richard Rios','James Rodriguez','Juan Fernando Quintero','Jorge Carrascal','Jhon Arias','Jhon Cordova','Luis Suarez','Luis Diaz'],
+// Grupo L: Inglaterra · Croacia · Ghana · Panamá
+['L','ENG','Inglaterra','Jordan Pickford','John Stones','Marc Guéhi','Ezri Konsa','Trent Alexander-Arnold','Reece James','Dan Burn','Jordan Henderson','Declan Rice','Jude Bellingham','Cole Palmer','Morgan Rogers','Anthony Gordon','Phil Foden','Bukayo Saka','Harry Kane','Marcus Rashford','Ollie Watkins'],
+['L','CRO','Croacia','Dominik Livaković','Duje Caleta-Car','Josko Gvardiol','Josip Stanišić','Luka Vušković','Josip Sutalo','Kristijan Jakic','Luka Modrić','Mateo Kovacic','Martin Baturina','Lovro Majer','Mario Pasalic','Petar Sucic','Ivan Perišić','Marco Pasalic','Ante Budimir','Andrej Kramarić','Franjo Ivanovic'],
+['L','GHA','Ghana','Lawrence Ati Zigi','Tariq Lamptey','Mohammed Salisu','Alidu Seidu','Alexander Djiku','Gideon Mensah','Caleb Yirenkyi','Abdul Issahaku Fatawu','Thomas Partey','Salis Abdul Samed','Kamaldeen Sulemana','Mohammed Kudus','Inaki Williams','Jordan Ayew','Andrew Ayew','Joseph Paintsil','Osman Bukari','Antoine Semenyo'],
+['L','PAN','Panamá','Orlando Mosquera','Luis Mejia','Fidel Escobar','Andres Andrade','Michael Amir Murillo','Eric Davis','Jose Cordoba','Cesar Blackman','Cristian Martinez','Aníbal Godoy','Adalberto Carrasquilla','Édgar Bárcenas','Carlos Harvey','Ismael Díaz','Jose Fajardo','Cecilio Waterman','Jose Luiz Rodriguez','Alberto Quintero'],
+];
+
+const _WC26_FLAGS={
+  MEX:'🇲🇽',RSA:'🇿🇦',KOR:'🇰🇷',CZE:'🇨🇿',
+  CAN:'🇨🇦',BIH:'🇧🇦',QAT:'🇶🇦',SUI:'🇨🇭',
+  BRA:'🇧🇷',MAR:'🇲🇦',HAI:'🇭🇹',SCO:'🏴󠁧󠁢󠁳󠁣󠁴󁿢',
+  USA:'🇺🇸',PAR:'🇵🇾',AUS:'🇦🇺',TUR:'🇹🇷',
+  GER:'🇩🇪',CUW:'🇨🇼',CIV:'🇨🇮',ECU:'🇪🇨',
+  NED:'🇳🇱',JPN:'🇯🇵',SWE:'🇸🇪',TUN:'🇹🇳',
+  BEL:'🇧🇪',EGY:'🇪🇬',IRN:'🇮🇷',NZL:'🇳🇿',
+  ESP:'🇪🇸',CPV:'🇨🇻',KSA:'🇸🇦',URU:'🇺🇾',
+  FRA:'🇫🇷',SEN:'🇸🇳',IRQ:'🇮🇶',NOR:'🇳🇴',
+  ARG:'🇦🇷',ALG:'🇩🇿',AUT:'🇦🇹',JOR:'🇯🇴',
+  POR:'🇵🇹',COD:'🇨🇩',UZB:'🇺🇿',COL:'🇨🇴',
+  ENG:'🏴󠁧󠁢󠁥󠁮󠁧󁿢',CRO:'🇭🇷',GHA:'🇬🇭',PAN:'🇵🇦',
+};
+
+const WORLD_CUP_2026_CHECKLIST=(function(){
+  const list=[];let idx=1;
+  [{code:'00',title:'We Are Panini',type:'panini',isFoil:true},
+   {code:'FWC1',title:'Emblema Oficial',type:'emblem',isFoil:true},
+   {code:'FWC2',title:'Trofeo FIFA',type:'trophy',isFoil:true},
+   {code:'FWC3',title:'Estadio Azteca — México',type:'stadium',isFoil:false},
+   {code:'FWC4',title:'MetLife Stadium — EE.UU.',type:'stadium',isFoil:false},
+   {code:'FWC5',title:'AT&T Stadium — EE.UU.',type:'stadium',isFoil:false},
+   {code:'FWC6',title:'BC Place — Canadá',type:'stadium',isFoil:false},
+   {code:'FWC7',title:'Foto Oficial — EE.UU.',type:'host',isFoil:true},
+   {code:'FWC8',title:'Foto Oficial — Canadá',type:'host',isFoil:true},
+  ].forEach(s=>list.push({...s,internalIndex:idx++}));
+  _WC26_TEAMS.forEach(([grp,tc,tn,...players])=>{
+    const gn='Grupo '+grp;
+    list.push({code:tc+'1',teamCode:tc,team:tn,group:grp,groupName:gn,title:'Escudo',type:'badge',isFoil:true,internalIndex:idx++});
+    list.push({code:tc+'2',teamCode:tc,team:tn,group:grp,groupName:gn,title:'Foto del equipo',type:'photo',isFoil:false,internalIndex:idx++});
+    players.forEach((p,pi)=>list.push({code:tc+(pi+3),teamCode:tc,team:tn,group:grp,groupName:gn,title:p,type:'player',isFoil:false,internalIndex:idx++}));
+  });
+  [{code:'FWC9',title:'Uruguay 1930'},{code:'FWC10',title:'Italia 1934'},{code:'FWC11',title:'Francia 1938'},
+   {code:'FWC12',title:'Brasil 1950'},{code:'FWC13',title:'Suiza 1954'},{code:'FWC14',title:'Suecia 1958'},
+   {code:'FWC15',title:'Chile 1962'},{code:'FWC16',title:'Inglaterra 1966'},{code:'FWC17',title:'México 1970'},
+   {code:'FWC18',title:'Alemania 1974'},{code:'FWC19',title:'Argentina 1978'},
+  ].forEach(s=>list.push({...s,type:'museum',isFoil:true,internalIndex:idx++}));
+  return list;
+})();
+
+function getAlbumData(){
+  if(window._albumDataCache) return window._albumDataCache;
+  const groups={},teams={};
+  WORLD_CUP_2026_CHECKLIST.forEach(s=>{
+    if(!s.teamCode) return;
+    if(!groups[s.group]) groups[s.group]={id:s.group,name:s.groupName,teamIds:[]};
+    if(!teams[s.teamCode]){
+      teams[s.teamCode]={id:s.teamCode,name:s.team,groupId:s.group,groupName:s.groupName,stickers:[]};
+      groups[s.group].teamIds.push(s.teamCode);
+    }
+    teams[s.teamCode].stickers.push(s.code);
+  });
+  const sortedGroups='ABCDEFGHIJKL'.split('').map(id=>groups[id]).filter(Boolean);
+  window._albumDataCache={groups:sortedGroups,teams};
+  return window._albumDataCache;
+}
+
+function toggleSticker(code){
+  if(!S.albumOwned) S.albumOwned=[];
+  const idx=S.albumOwned.indexOf(code);
+  if(idx>=0) S.albumOwned.splice(idx,1); else S.albumOwned.push(code);
+  save();
+  if(window._mundialSub==='team') renderAlbumTeam(); else renderMundial();
+}
+
+function markAllTeam(teamId,markOwned){
+  const d=getAlbumData(); const team=d.teams[teamId]; if(!team) return;
+  if(!S.albumOwned) S.albumOwned=[];
+  const owned=new Set(S.albumOwned);
+  team.stickers.forEach(c=>{ if(markOwned) owned.add(c); else owned.delete(c); });
+  S.albumOwned=[...owned]; save(); renderAlbumTeam();
+}
+
+function renderMundial(){
+  const sub=window._mundialSub||'album';
+  if(sub==='group') renderAlbumGroup();
+  else if(sub==='team') renderAlbumTeam();
+  else renderAlbumMain();
+}
+
+function renderAlbumMain(){
+  const d=getAlbumData();
+  const owned=new Set(S.albumOwned||[]);
+  const total=WORLD_CUP_2026_CHECKLIST.length, got=owned.size, missing=total-got, pct=Math.round(got/total*100);
+  const filter=window._albumFilter||'all';
+  const search=(window._albumSearch||'').toLowerCase().trim();
+
+  let searchResults=null;
+  if(search){
+    let all=WORLD_CUP_2026_CHECKLIST.filter(s=>{
+      if(filter==='owned'&&!owned.has(s.code)) return false;
+      if(filter==='missing'&&owned.has(s.code)) return false;
+      return s.code.toLowerCase().includes(search)
+        ||s.title.toLowerCase().includes(search)
+        ||(s.team&&s.team.toLowerCase().includes(search))
+        ||(s.groupName&&s.groupName.toLowerCase().includes(search))
+        ||(s.type&&s.type.toLowerCase().includes(search));
+    });
+    searchResults=all;
+  }
+
+  let html=`<div style="margin-bottom:14px">
+    <div style="font-size:1.15rem;font-weight:900;color:#fff">🌍 Álbum Mundial 2026</div>
+    <div style="font-size:.68rem;color:#5c6480;margin-top:2px">${total} figuritas · 48 selecciones · 12 grupos</div>
+  </div>
+  <div class="card p-4 mb-3" style="background:linear-gradient(135deg,rgba(249,115,22,.14),rgba(124,111,218,.07));border:1px solid rgba(249,115,22,.28)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <span style="font-size:.6rem;font-weight:800;color:#fb923c;text-transform:uppercase;letter-spacing:.08em">Progreso del álbum</span>
+      <span style="font-size:1.2rem;font-weight:900;color:#fb923c">${pct}%</span>
+    </div>
+    <div style="width:100%;height:8px;background:#1a1d2e;border-radius:99px;overflow:hidden;margin-bottom:12px">
+      <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#ea580c,#fb923c);border-radius:99px;transition:width .5s"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+      <div class="card2 p-3" style="text-align:center"><div style="font-size:.55rem;color:#5c6480;font-weight:700;margin-bottom:3px">TOTAL</div><div style="font-weight:900;color:#fff;font-size:1.1rem">${total}</div></div>
+      <div class="card2 p-3" style="text-align:center"><div style="font-size:.55rem;color:#4ade80;font-weight:700;margin-bottom:3px">TENGO</div><div style="font-weight:900;color:#4ade80;font-size:1.1rem">${got}</div></div>
+      <div class="card2 p-3" style="text-align:center"><div style="font-size:.55rem;color:#f87171;font-weight:700;margin-bottom:3px">FALTAN</div><div style="font-weight:900;color:#f87171;font-size:1.1rem">${missing}</div></div>
+    </div>
+  </div>
+  <div style="display:flex;gap:6px;margin-bottom:10px">
+    ${['all','owned','missing'].map(f=>`<button onclick="window._albumFilter='${f}';window._albumSearch='';renderMundial()" style="flex:1;padding:8px 0;border-radius:10px;font-size:.72rem;font-weight:700;border:none;background:${filter===f?'#f97316':'#1a1d2e'};color:${filter===f?'#fff':'#5c6480'};cursor:pointer">${f==='all'?'Todas':f==='owned'?'✅ Tengo':'❌ Faltan'}</button>`).join('')}
+  </div>
+  <div style="margin-bottom:14px">
+    <input id="albumSearchInput" type="search" placeholder="Buscar jugador, selección, grupo, código..." value="${(window._albumSearch||'').replace(/"/g,'&quot;')}"
+      oninput="window._albumSearch=this.value;renderMundial()"
+      style="width:100%;padding:10px 14px;border-radius:12px;background:#1a1d2e;border:1px solid rgba(255,255,255,.08);color:#fff;font-size:.8rem;box-sizing:border-box;outline:none">
+  </div>`;
+
+  if(searchResults!==null){
+    html+=`<div style="font-size:.68rem;color:#5c6480;margin-bottom:10px">${searchResults.length} resultado${searchResults.length!==1?'s':''} para "<b style="color:#e8eaf2">${(window._albumSearch||'').replace(/</g,'&lt;')}</b>"</div>`;
+    if(!searchResults.length){
+      html+=`<div class="card p-5 text-center" style="color:#5c6480;font-size:.82rem">Sin resultados</div>`;
+    } else {
+      html+=`<div style="display:grid;gap:5px">`;
+      searchResults.forEach(s=>{
+        const o=owned.has(s.code);
+        const foil=s.isFoil?`<span style="font-size:.5rem;background:rgba(251,191,36,.18);color:#fbbf24;padding:1px 5px;border-radius:4px;font-weight:700">✨</span>`:'';
+        html+=`<button onclick="toggleSticker('${s.code}')" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;border:2px solid ${o?'rgba(74,222,128,.45)':'rgba(255,255,255,.07)'};background:${o?'rgba(74,222,128,.09)':'#1a1d2e'};cursor:pointer;text-align:left;width:100%">
+          <span style="font-size:.7rem;font-weight:900;color:${o?'#4ade80':'#4a5170'};min-width:38px">${s.code}</span>
+          <span style="flex:1;font-size:.76rem;font-weight:600;color:${o?'#e8eaf2':'#7a8099'}">${s.title}${s.team?' · '+s.team:''}</span>
+          ${foil}<span style="font-size:.8rem">${o?'✅':'⬜'}</span>
+        </button>`;
+      });
+      html+=`</div>`;
+    }
+  } else {
+    html+=`<div style="font-size:.6rem;font-weight:800;color:#4a5170;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Grupos</div>`;
+    d.groups.forEach(g=>{
+      let grpTotal=0,grpOwned=0;
+      g.teamIds.forEach(tid=>{ const t=d.teams[tid]; grpTotal+=t.stickers.length; grpOwned+=t.stickers.filter(c=>owned.has(c)).length; });
+      const gPct=grpTotal>0?Math.round(grpOwned/grpTotal*100):0;
+      const names=g.teamIds.map(tid=>(_WC26_FLAGS[tid]||'')+' '+d.teams[tid].name).join('  ·  ');
+      html+=`<div class="card p-4 mb-2" style="cursor:pointer" onclick="window._mundialSub='group';window._mundialGroup='${g.id}';renderMundial()">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <span style="font-weight:800;color:#fff">${g.name}</span>
+          <span style="font-size:.72rem;font-weight:800;color:#fb923c">${gPct}%</span>
+        </div>
+        <div style="font-size:.6rem;color:#5c6480;margin-bottom:7px">${names}</div>
+        <div style="width:100%;height:5px;background:#1a1d2e;border-radius:99px;overflow:hidden;margin-bottom:7px">
+          <div style="height:100%;width:${gPct}%;background:#f97316;border-radius:99px;transition:width .4s"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;font-size:.63rem">
+          <span style="color:#64748b">📦 ${grpTotal}</span><span style="color:#4ade80">✅ ${grpOwned}</span><span style="color:#f87171">❌ ${grpTotal-grpOwned}</span>
+          <svg width="12" height="12" fill="none" stroke="#3a4060" stroke-width="2.5" viewBox="0 0 24 24" style="margin-left:auto"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        </div>
+      </div>`;
+    });
+  }
+
+  document.getElementById('mundialContent').innerHTML=html;
+  const el=document.getElementById('albumSearchInput');
+  if(el&&window._albumSearch){el.focus();el.setSelectionRange(el.value.length,el.value.length);}
+}
+
+function renderAlbumGroup(){
+  const d=getAlbumData();
+  const owned=new Set(S.albumOwned||[]);
+  const g=d.groups.find(x=>x.id===window._mundialGroup);
+  if(!g){window._mundialSub='album';renderAlbumMain();return;}
+
+  let html=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <button onclick="window._mundialSub='album';renderMundial()" class="btn-dark px-3 py-2 text-sm">← Álbum</button>
+    <span style="font-size:1.1rem;font-weight:900;color:#fff">${g.name}</span>
+  </div>`;
+
+  g.teamIds.forEach(tid=>{
+    const team=d.teams[tid];
+    const tot=team.stickers.length;
+    const got=team.stickers.filter(c=>owned.has(c)).length;
+    const pct=Math.round(got/tot*100);
+    html+=`<div class="card p-4 mb-3" style="cursor:pointer" onclick="window._mundialSub='team';window._mundialTeam='${tid}';renderMundial()">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div><div style="font-weight:800;color:#fff">${_WC26_FLAGS[tid]||''} ${team.name}</div><div style="font-size:.63rem;color:#5c6480;margin-top:2px">${team.groupName} · ${team.stickers[0]}–${team.stickers[team.stickers.length-1]}</div></div>
+        <div style="text-align:right;flex-shrink:0"><div style="font-weight:900;color:#fb923c;font-size:1.1rem">${pct}%</div><div style="font-size:.6rem;color:#5c6480">${got}/${tot}</div></div>
+      </div>
+      <div style="width:100%;height:5px;background:#1a1d2e;border-radius:99px;overflow:hidden;margin-bottom:8px">
+        <div style="height:100%;width:${pct}%;background:#f97316;border-radius:99px;transition:width .4s"></div>
+      </div>
+      <div style="display:flex;gap:12px;font-size:.63rem">
+        <span style="color:#4ade80">✅ ${got} obtenidas</span><span style="color:#f87171">❌ ${tot-got} faltantes</span>
+        <svg width="12" height="12" fill="none" stroke="#3a4060" stroke-width="2.5" viewBox="0 0 24 24" style="margin-left:auto;align-self:center"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('mundialContent').innerHTML=html;
+}
+
+function renderAlbumTeam(){
+  const d=getAlbumData();
+  const owned=new Set(S.albumOwned||[]);
+  const team=d.teams[window._mundialTeam];
+  if(!team){window._mundialSub='group';renderAlbumGroup();return;}
+  const tot=team.stickers.length;
+  const got=team.stickers.filter(c=>owned.has(c)).length;
+  const pct=Math.round(got/tot*100);
+  const sMap=Object.fromEntries(WORLD_CUP_2026_CHECKLIST.map(s=>[s.code,s]));
+
+  let html=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+    <button onclick="window._mundialSub='group';renderMundial()" class="btn-dark px-3 py-2 text-sm">← ${team.groupName}</button>
+  </div>
+  <div class="card p-4 mb-3" style="background:linear-gradient(135deg,rgba(249,115,22,.12),rgba(30,41,59,.95));border:1px solid rgba(249,115,22,.22)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div><div style="font-weight:900;color:#fff;font-size:1rem">${_WC26_FLAGS[team.id]||''} ${team.name}</div><div style="font-size:.63rem;color:#5c6480;margin-top:2px">${team.groupName} · ${tot} figuritas</div></div>
+      <div style="text-align:right"><div style="font-weight:900;color:#fb923c;font-size:1.25rem">${pct}%</div><div style="font-size:.6rem;color:#5c6480">${got}/${tot}</div></div>
+    </div>
+    <div style="width:100%;height:6px;background:#1a1d2e;border-radius:99px;overflow:hidden;margin-bottom:10px">
+      <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#ea580c,#fb923c);border-radius:99px;transition:width .4s"></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="markAllTeam('${team.id}',true)" style="flex:1;padding:8px;border-radius:9px;border:none;background:rgba(74,222,128,.12);color:#4ade80;font-size:.7rem;font-weight:700;cursor:pointer">✅ Marcar todas</button>
+      <button onclick="markAllTeam('${team.id}',false)" style="flex:1;padding:8px;border-radius:9px;border:none;background:rgba(239,68,68,.09);color:#f87171;font-size:.7rem;font-weight:700;cursor:pointer">❌ Desmarcar todas</button>
+    </div>
+  </div>
+  <div style="display:grid;gap:5px">`;
+
+  team.stickers.forEach(code=>{
+    const s=sMap[code]||{code,title:'',type:'player',isFoil:false};
+    const o=owned.has(code);
+    const foil=s.isFoil?`<span style="font-size:.5rem;background:rgba(251,191,36,.18);color:#fbbf24;padding:1px 4px;border-radius:3px;font-weight:700">✨</span>`:'';
+    const icon=s.type==='badge'?'🏅':s.type==='photo'?'📸':s.type==='museum'?'🏛️':s.type==='stadium'?'🏟️':s.type==='trophy'?'🏆':s.type==='host'?'🌎':'';
+    html+=`<button onclick="toggleSticker('${code}')" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;border:2px solid ${o?'rgba(74,222,128,.45)':'rgba(255,255,255,.07)'};background:${o?'rgba(74,222,128,.09)':'#1a1d2e'};cursor:pointer;text-align:left;width:100%">
+      <span style="font-size:.7rem;font-weight:900;color:${o?'#4ade80':'#4a5170'};min-width:42px">${code}</span>
+      <span style="flex:1;font-size:.78rem;font-weight:600;color:${o?'#e8eaf2':'#7a8099'}">${icon}${s.title}</span>
+      ${foil}<span style="font-size:.85rem">${o?'✅':'⬜'}</span>
+    </button>`;
+  });
+
+  html+=`</div>`;
+  document.getElementById('mundialContent').innerHTML=html;
+}
+// ────────────────────────────────────────────────────────────
+
 function renderCurrentView() {
   if(currentView==='home') renderHome();
   else if(currentView==='cheques') renderChecks();
@@ -11723,6 +12057,7 @@ function renderCurrentView() {
   else if(currentView==='cuentas') renderAccounts();
   else if(currentView==='mascotas') renderMascotas();
   else if(currentView==='millas') renderMillas();
+  else if(currentView==='mundial') renderMundial();
   else if(currentView==='profile') renderProfileView();
   else if(currentView==='config'){
     const nameEl=document.getElementById('profileNameInput');if(nameEl)nameEl.value=S.profileName||'';
