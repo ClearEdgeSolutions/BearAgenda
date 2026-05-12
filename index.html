@@ -233,6 +233,49 @@
       -webkit-text-fill-color: #94a3b8 !important;
       background: #1f2235 !important;
     }
+    /* Cycle modal checkbox/pill visibility - scoped only to cycle record modal */
+    #mCycleActive,
+    .cycle-symptom-cb {
+      -webkit-appearance: auto !important;
+      appearance: auto !important;
+      accent-color: #f472b6 !important;
+      opacity: 1 !important;
+      flex-shrink: 0;
+    }
+    label:has(#mCycleActive),
+    label:has(.cycle-symptom-cb) {
+      color: #475569 !important;
+      -webkit-text-fill-color: #475569 !important;
+      background: #f8fafc !important;
+      border-color: #e2e8f0 !important;
+    }
+    label:has(#mCycleActive) span {
+      color: #334155 !important;
+      -webkit-text-fill-color: #334155 !important;
+    }
+    label:has(.cycle-symptom-cb:checked) {
+      background: rgba(244,114,182,0.14) !important;
+      border-color: rgba(244,114,182,0.45) !important;
+      color: #be185d !important;
+      -webkit-text-fill-color: #be185d !important;
+    }
+    body.dark label:has(#mCycleActive),
+    body.dark label:has(.cycle-symptom-cb) {
+      background: #252836 !important;
+      border-color: rgba(255,255,255,0.10) !important;
+      color: #e8eaf2 !important;
+      -webkit-text-fill-color: #e8eaf2 !important;
+    }
+    body.dark label:has(#mCycleActive) span {
+      color: #e8eaf2 !important;
+      -webkit-text-fill-color: #e8eaf2 !important;
+    }
+    body.dark label:has(.cycle-symptom-cb:checked) {
+      background: rgba(244,114,182,0.22) !important;
+      border-color: rgba(244,114,182,0.65) !important;
+      color: #fce7f3 !important;
+      -webkit-text-fill-color: #fce7f3 !important;
+    }
     /* Modal sheet */
     #modalSheet { background: var(--card) !important; }
     #modalSheet.modal-dark-bg { background: #1a1d2e !important; }
