@@ -185,6 +185,54 @@
     /* Input styling */
     input, select, textarea { background: var(--icon-bg); color: var(--text); border: 1px solid var(--border); border-radius: 12px; }
     input::placeholder, textarea::placeholder { color: var(--text-muted); }
+    /* Cycle modal field visibility — scoped only to cycle record forms */
+    #mCycleStart,
+    #mCycleEnd,
+    #mCycleEndFinal,
+    #mCycleFlow,
+    #mCycleNotes {
+      color: #0f172a !important;
+      -webkit-text-fill-color: #0f172a !important;
+      background: #f8fafc !important;
+      color-scheme: light;
+    }
+    #mCycleFlow option {
+      color: #0f172a !important;
+      background: #ffffff !important;
+    }
+    #mCycleStart:disabled,
+    #mCycleEnd:disabled,
+    #mCycleEndFinal:disabled,
+    #mCycleFlow:disabled,
+    #mCycleNotes:disabled {
+      opacity: 1 !important;
+      color: #475569 !important;
+      -webkit-text-fill-color: #475569 !important;
+      background: #eef2f7 !important;
+    }
+    body.dark #mCycleStart,
+    body.dark #mCycleEnd,
+    body.dark #mCycleEndFinal,
+    body.dark #mCycleFlow,
+    body.dark #mCycleNotes {
+      color: #e8eaf2 !important;
+      -webkit-text-fill-color: #e8eaf2 !important;
+      background: #252836 !important;
+      color-scheme: dark;
+    }
+    body.dark #mCycleFlow option {
+      color: #e8eaf2 !important;
+      background: #252836 !important;
+    }
+    body.dark #mCycleStart:disabled,
+    body.dark #mCycleEnd:disabled,
+    body.dark #mCycleEndFinal:disabled,
+    body.dark #mCycleFlow:disabled,
+    body.dark #mCycleNotes:disabled {
+      color: #94a3b8 !important;
+      -webkit-text-fill-color: #94a3b8 !important;
+      background: #1f2235 !important;
+    }
     /* Modal sheet */
     #modalSheet { background: var(--card) !important; }
     #modalSheet.modal-dark-bg { background: #1a1d2e !important; }
