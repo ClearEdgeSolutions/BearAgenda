@@ -187,6 +187,8 @@
     input::placeholder, textarea::placeholder { color: var(--text-muted); }
     /* Modal sheet */
     #modalSheet { background: var(--card) !important; }
+    #modalSheet.modal-dark-bg { background: #1a1d2e !important; }
+    #modalSheet.modal-dark-bg #modalContent { padding: 0; }
     /* Logo wrap */
     #headerLogoWrap { background: transparent !important; }
     /* Dark mode overrides for any legacy Tailwind classes */
@@ -535,6 +537,11 @@
   <div id="view-mundial" class="view">
     <div class="px-4 py-5">
       <div id="mundialContent"></div>
+    </div>
+  </div>
+  <div id="view-cycle" class="view">
+    <div class="px-4 py-5">
+      <div id="cycleContent"></div>
     </div>
   </div>
   <div id="view-profile" class="view">
@@ -1148,6 +1155,7 @@ function normalizeState() {
   if (!S.pets) S.pets = [];
   if (!S.cars) S.cars = [];
   if (!S.carMileageLogs) S.carMileageLogs = [];
+  if (!S.cycleRecords) S.cycleRecords = [];
   if (!S.albumOwned) S.albumOwned = [];
   // Migrate old numeric IDs to string codes (format changed)
   if (S.albumOwned.length && typeof S.albumOwned[0] === 'number') S.albumOwned = [];
@@ -3406,7 +3414,7 @@ function renderChecks() {
   </div>`;
 
   if(incomeTab==='active') {
-    const activeGroups=Object.entries(groups).filter(([cat,items])=>items.some(p=>!p.received&&!p.inactive)).sort(([a],[b])=>a.localeCompare(b));
+    const activeGroups=Object.entries(groups).filter(([cat,items])=>items.some(p=>monthKey(parseDate(p.date))===incomeMonth)).sort(([a],[b])=>a.localeCompare(b));
     // Summary card
     html+=`<div class="card p-4 mb-4">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
@@ -3420,7 +3428,7 @@ function renderChecks() {
         <span style="margin-left:auto;background:rgba(124,111,218,0.15);color:#a5b4fc;font-size:0.6rem;font-weight:700;padding:3px 8px;border-radius:99px;border:1px solid rgba(124,111,218,0.2)">${activeGroups.length} fuente${activeGroups.length!==1?'s':''}</span>
       </div>
       <div style="display:flex;justify-content:space-between;margin-bottom:10px">
-        <div><div style="color:#5c6480;font-size:0.6rem;font-weight:700;text-transform:uppercase;margin-bottom:2px">Programado</div><div style="color:#fff;font-size:1.05rem;font-weight:800">${fmt(thisIn)}</div></div>
+        <div><div style="color:#5c6480;font-size:0.6rem;font-weight:700;text-transform:uppercase;margin-bottom:2px">Este mes</div><div style="color:#fff;font-size:1.05rem;font-weight:800">${fmt(thisIn)}</div></div>
         <div style="text-align:right"><div style="color:#5c6480;font-size:0.6rem;font-weight:700;text-transform:uppercase;margin-bottom:2px">Recibido</div><div style="color:#4ade80;font-size:1.05rem;font-weight:800">${fmt(paidToToday)}</div></div>
       </div>
       <div style="width:100%;height:6px;background:#252836;border-radius:99px;overflow:hidden;margin-bottom:5px">
@@ -3431,8 +3439,8 @@ function renderChecks() {
     <div style="color:#7c6fda;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Fuentes activas</div>`;
     if(!activeGroups.length) html+=`<div class="card p-4" style="text-align:center;color:#5c6480">Sin fuentes activas. Agrega un ingreso para empezar.</div>`;
     activeGroups.forEach(([cat,items])=>{
-      const futureItems=items.filter(p=>!p.received&&!p.inactive).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
-      const receivedItems=items.filter(p=>p.received);
+      const futureItems=items.filter(p=>!p.received&&!p.inactive&&monthKey(parseDate(p.date))===incomeMonth).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
+      const receivedItems=items.filter(p=>p.received&&monthKey(parseDate(p.receivedDate||p.date))===incomeMonth);
       const received=receivedItems.reduce((s,p)=>s+(p.amount||0),0);
       const sample=items[0]||{};
       const next=futureItems[0];
@@ -3476,7 +3484,7 @@ function renderChecks() {
       </div>`;
     });
   } else if(incomeTab==='pending') {
-    const pending=(S.paychecks||[]).filter(p=>!p.received&&!p.inactive&&monthKey(parseDate(p.date))===incomeMonth).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
+    const pending=(S.paychecks||[]).filter(p=>!p.received&&!p.inactive&&monthKey(parseDate(p.date))===incomeMonth&&p.paymentType!=='unico').sort((a,b)=>parseDate(a.date)-parseDate(b.date));
     const pendingTotal=pending.reduce((s,p)=>s+(p.amount||0),0);
     const monthPaid=allIncome.filter(t=>parseDate(t.date)>=monthStart&&parseDate(t.date)<=monthEnd).reduce((s,t)=>s+t.amount,0);
     const totalMonth=monthPaid+pendingTotal;
@@ -4064,7 +4072,7 @@ function renderBills() {
         else payBtn=`<button onclick="event.stopPropagation();markBorrowedPaid('${item.id}','${item.paymentId||''}')" style="${btnStyle}">${payIcon}Pagar</button>`;
       } else if(item.kind==='house'){
         if(item.paid) payBtn=`<button onclick="event.stopPropagation();showView('casa')" style="${btnStyle};background:rgba(255,255,255,0.06);color:#94a3b8">Ver Espacios</button>`;
-        else payBtn=`<button onclick="event.stopPropagation();openModal('addHousePayment','${item.id}')" style="${btnStyle}">${payIcon}Abonar</button>`;
+        else payBtn=`<button onclick="event.stopPropagation();openModal('addExpense',null,{fromAbono:true})" style="${btnStyle}">${payIcon}Abonar</button>`;
       }
       const canEditHouse=item.kind==='house'&&((H.items||[]).find(x=>x.id===item.id)?.assignedTo===currentHousePerson());
       let editBtn='';
@@ -5670,7 +5678,7 @@ function renderPersonas() {
         </div>
         <div style="display:flex;gap:6px">
           <button onclick="event.stopPropagation();openModal('addLoanChoice',null,{contactName:'${encodeURIComponent(p.name)}'})" style="${darkBtn}"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Registrar</button>
-          ${leDebo>0?`<button onclick="event.stopPropagation();openModal('personaDetail','${encodeURIComponent(p.name)}')" style="${darkBtn}"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Pagar</button>`:''}
+          ${leDebo>0?`<button onclick="event.stopPropagation();openModal('payPersonaLoan','${encodeURIComponent(p.name)}')" style="${darkBtn}"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Pagar</button>`:''}
         </div>
       </div>`;
     });
@@ -6538,7 +6546,7 @@ function openModal(type, id, extra) {
     loansFromThem.forEach(l=>borrowedInstallments(l).filter(p=>!p.paid&&p.date&&p.date>=todayStr&&p.date<=end14Str).forEach(p=>upPay.push({date:p.date,amount:p.amount,dir:'pay',name:l.loanName||l.description||'Prestamo'})));
     upPay.sort((a,b)=>a.date<b.date?-1:1);
     // Botones de emoji — igual que personaDetail (sendReaction vía Supabase)
-    const _emojis=['❤️','😄','🙏','👏','🤝','💰'];
+    const _emojis=['❤️','😂','🙌','🔥','🎉','💸','👏','😍'];
     const _btnStyle='width:42px;height:42px;border-radius:50%;background:#252836;border:1px solid rgba(255,255,255,0.08);font-size:1.3rem;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1;text-decoration:none';
     const _safeName=key.replace(/'/g,"\\'");
     const emojiBtns=_emojis.map(em=>{
@@ -6564,17 +6572,17 @@ function openModal(type, id, extra) {
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
       <div style="background:#252836;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:10px 8px;text-align:center">
-        <div style="font-size:1.1rem;margin-bottom:3px">🏠</div>
+        <div style="display:flex;justify-content:center;margin-bottom:4px;color:#7c6fda"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 22V12h6v10"/></svg></div>
         <div style="font-size:1.1rem;font-weight:800;color:#e8eaf2">${sharedCount}</div>
         <div style="font-size:0.58rem;color:#94a3b8;font-weight:600;margin-top:2px;line-height:1.3">Espacios<br>compartidos</div>
       </div>
       <div style="background:#252836;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:10px 8px;text-align:center">
-        <div style="font-size:1.1rem;margin-bottom:3px">💸</div>
+        <div style="display:flex;justify-content:center;margin-bottom:4px;color:#4ade80"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m-7 7l7-7 7 7"/></svg></div>
         <div style="font-size:0.9rem;font-weight:800;color:${totalOwedByThem>0?'#4ade80':'#5c6480'}">${totalOwedByThem>0?fmt(totalOwedByThem):'—'}</div>
         <div style="font-size:0.58rem;color:#94a3b8;font-weight:600;margin-top:2px;line-height:1.3">Me<br>debe</div>
       </div>
       <div style="background:#252836;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:10px 8px;text-align:center">
-        <div style="font-size:1.1rem;margin-bottom:3px">🤑</div>
+        <div style="display:flex;justify-content:center;margin-bottom:4px;color:#f87171"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7l-7 7-7-7"/></svg></div>
         <div style="font-size:0.9rem;font-weight:800;color:${totalIOweThem>0?'#f87171':'#5c6480'}">${totalIOweThem>0?fmt(totalIOweThem):'—'}</div>
         <div style="font-size:0.58rem;color:#94a3b8;font-weight:600;margin-top:2px;line-height:1.3">Le<br>debo</div>
       </div>
@@ -7005,7 +7013,7 @@ function openModal(type, id, extra) {
   else if(type==='addExpense'||type==='editExpense') {
     const q=type==='editExpense'?(S.expenses.find(x=>x.id===id)||{}):(extra||{});
     const _expBackBtn=(extra&&extra.backTo)?`<button onclick="openModal('${extra.backTo}','${extra.backId||''}')" class="flex items-center gap-1.5 text-indigo-600 text-sm font-bold mb-3"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Volver</button>`:'';
-    html=`${_expBackBtn}<h3 class="text-lg font-bold text-slate-800 mb-1">${type==='editExpense'?'Editar gasto':'Registrar pago realizado'}</h3>
+    html=`${_expBackBtn}<h3 class="text-lg font-bold text-slate-800 mb-1">${type==='editExpense'?'Editar gasto':(extra&&extra.fromAbono?'Registrar abono':extra&&extra.fromLoanPay?'Pagar préstamo':'Registrar pago realizado')}</h3>
     <div class="space-y-3">
       <div><label class="text-xs font-bold text-slate-500 uppercase">Descripción</label>
       <input type="text" id="mName" value="${q.name||''}" placeholder="ej. Gasolina, supermercado…" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
@@ -7028,6 +7036,7 @@ function openModal(type, id, extra) {
         ${paymentCategoryOptions(q.category||'personal')}
       </select></div>
       <input type="hidden" id="mPaid" value="true">
+      ${(extra&&extra.loanId)?`<input type="hidden" id="mLoanId" value="${extra.loanId}"><input type="hidden" id="mInstallmentId" value="${extra.installmentId||''}">`:'' }
       <button onclick="saveExpense(${type==='editExpense'?`'${id}'`:'null'})" class="w-full btn-primary py-3">Guardar gasto</button>
     </div>`;
     setTimeout(updateTrmVisibility,30);
@@ -7692,108 +7701,101 @@ function openModal(type, id, extra) {
       ...(meHaPagado>0?[[meHaPagado,'Me pagó','bg-indigo-50 text-indigo-700']]:[])
     ];
     const lentTxs=p.txs.filter(t=>t.type==='lent'&&!t.done);
+    const lentDone=p.txs.filter(t=>t.type==='lent'&&t.done);
     const borrowedTxs=p.txs.filter(t=>t.type==='borrowed'&&!t.done);
-    const incomeTxs=p.txs.filter(t=>t.type==='income');
-    const doneTxs=p.txs.filter(t=>t.done&&t.type!=='income');
+    const borrowedDone=p.txs.filter(t=>t.type==='borrowed'&&t.done);
     const _encodedName=encodeURIComponent(name);
-    function txRow(tx){
-      const isLent=tx.type==='lent';
-      const paidCuotas=isLent?tx.payments.length:(tx.installments||[]).filter(i=>i.paid).length;
-      const totalCuotas=isLent?(tx.recurring?Math.ceil(tx.amount/(tx.recurring.amount||1)):tx.payments.length):(tx.paymentsCount||1);
-      const cuotaInfo=totalCuotas>1?`${paidCuotas}/${totalCuotas} pagos`:'Pago único';
-      const nextInst=isLent?null:(tx.installments||[]).find(i=>!i.paid);
-      const detailModal=isLent?'loanDetail':'borrowedLoanDetail';
-      return `<button onclick="openModal('${detailModal}','${tx.id}',{backTo:'personaDetail',backId:'${_encodedName}'})" class="w-full text-left py-3 border-t border-slate-100 first:border-t-0 hover:bg-slate-50 rounded-xl px-2 -mx-2 transition">
-        <div class="flex items-start gap-3">
-          <div class="w-9 h-9 rounded-xl ${isLent?'bg-green-50':'bg-red-50'} flex items-center justify-center text-base flex-shrink-0">${isLent?'💸':'🏦'}</div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <span class="font-semibold text-slate-800 text-sm">${tx.loanName||(isLent?'Prestamo prestado':'Prestamo recibido')}</span>
-              <span class="text-[9px] ${tx.done?'bg-green-100 text-green-700':'bg-amber-100 text-amber-700'} font-bold px-1.5 py-0.5 rounded-full">${tx.done?'✓ Saldado':'Activo'}</span>
-            </div>
-            <div class="text-xs text-slate-400 mt-0.5">${isLent?'Prestaste':'Te prestaron'} ${fmt(tx.amount)} · ${fmtDate(tx.date)} · ${cuotaInfo}</div>
-            ${tx.note?`<div class="text-xs text-slate-500 mt-0.5 italic">${tx.note}</div>`:''}
-            ${!tx.done&&tx.pending?`<div class="text-xs font-bold ${isLent?'text-green-600':'text-red-500'} mt-0.5">Pendiente: ${fmt(tx.pending)}</div>`:''}
-            ${!isLent&&nextInst?`<div class="text-xs text-indigo-500 mt-0.5">Próxima cuota ${fmtDate(nextInst.date)} · ${fmt(nextInst.amount)}</div>`:''}
-          </div>
-          <svg class="w-4 h-4 text-slate-300 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
-        </div>
-      </button>`;
-    }
     const contact=(S.personContacts||[]).find(c=>c.displayName===name)||null;
     const connStatus=contact?contact.connectionStatus:'manual_only';
-    const reactionEmojis = ['🎉','❤️','🔥','👏','😂','🙏','💪','🤝','✨','😎'];
-    const reactionPanelHtml = connStatus==='connected' && contact?.linkedUserId ? `
-      <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-3 mb-3">
-        <div class="text-[10px] font-bold text-indigo-400 uppercase tracking-wide mb-2">Enviar saludo</div>
-        <div class="flex flex-wrap gap-2 justify-center">
-          ${reactionEmojis.map(e=>`<button onclick="sendReaction('${contact.linkedUserId}','${name.replace(/'/g,"\\'")}','${e}')" class="text-2xl w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-indigo-100 active:scale-75 transition">${e}</button>`).join('')}
-        </div>
-      </div>` : '';
-    const sharedActs=(S.sharedActivity||[]).filter(a=>(a.personName||'').toLowerCase()===(name||'').toLowerCase()).sort((a,b)=>String(b.at||'').localeCompare(String(a.at||''))).slice(0,8);
-    const connBannerHtml={
-      connected:`<div class="flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl px-3 py-2 mb-3 text-xs font-semibold text-green-700">🔗 Conectado con ${contact?.linkedDisplayName||'usuario real'}</div>`,
-      connection_pending:`<div class="flex items-center justify-between bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 mb-3 text-xs font-semibold text-amber-700"><span>⏳ Solicitud de conexión enviada, esperando respuesta...</span></div>`,
-      rejected:`<div class="bg-red-50 border border-red-100 rounded-xl px-3 py-2 mb-3 text-xs font-semibold text-red-500">✗ Solicitud rechazada. Edita el perfil para intentar de nuevo.</div>`,
-    }[connStatus]||'';
     const sharedSpacesCount=(S.spaces||[]).filter(sp=>{
       const members=[...(sp.members||[]),...(sp.participants||[])];
       return members.some(m=>String(m?.name||m||'').toLowerCase()===name.toLowerCase());
     }).length;
-    const upcomingRelated=getUpcomingItems(14).filter(it=>{
-      const n=String(it.personName||it.name||'').toLowerCase();
-      return n.includes(name.toLowerCase());
-    });
-    const canReact=connStatus==='connected' && contact?.linkedUserId;
+    const todayStr=isoToday();
+    const end14=new Date(); end14.setDate(end14.getDate()+14);
+    const end14Str=end14.toISOString().slice(0,10);
+    const upPay=[];
+    lentTxs.forEach(l=>(l.payments||[]).filter(pp=>!pp.paid&&pp.date&&pp.date>=todayStr&&pp.date<=end14Str).forEach(pp=>upPay.push({date:pp.date,amount:pp.amount,dir:'receive',name:l.loanName||'Préstamo'})));
+    borrowedTxs.forEach(l=>(l.installments||[]).filter(pp=>!pp.paid&&pp.date&&pp.date>=todayStr&&pp.date<=end14Str).forEach(pp=>upPay.push({date:pp.date,amount:pp.amount,dir:'pay',name:l.loanName||l.description||'Préstamo'})));
+    upPay.sort((a,b)=>a.date<b.date?-1:1);
+    const personPaychecks=(S.paychecks||[]).filter(pc=>pc.category==='persona'&&(pc.personName||'').toLowerCase()===name.toLowerCase()).sort((a,b)=>parseDate(b.date)-parseDate(a.date));
+    const canReact=connStatus==='connected'&&contact?.linkedUserId;
     const emojiSet=['❤️','😂','🙌','🔥','🎉','💸','👏','😍'];
-    html=`<div style="background:linear-gradient(180deg,rgba(4,12,35,.98),rgba(6,18,48,.98));border:1px solid rgba(120,125,255,.24);border-radius:28px;padding:16px 14px 18px;box-shadow:0 24px 48px rgba(0,0,0,.45)">
-      <div style="width:72px;height:6px;border-radius:999px;background:rgba(255,255,255,.28);margin:0 auto 14px"></div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-        <div style="width:64px;height:64px;border-radius:50%;background:#6b6ef6;box-shadow:0 0 18px rgba(107,110,246,.55);display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;color:#fff">${personaInitials(name).slice(0,1)}</div>
+    function txRow(tx){
+      const isLent=tx.type==='lent';
+      const pendingAmt=isLent?(tx.pending||0):(tx.installments||[]).filter(i=>!i.paid).reduce((s,i)=>s+(i.amount||0),0);
+      const paidCuotas=isLent?(tx.payments||[]).length:(tx.installments||[]).filter(i=>i.paid).length;
+      const totalCuotas=isLent?(tx.recurring?Math.ceil(tx.amount/(tx.recurring.amount||1)):(tx.payments||[]).length):(tx.paymentsCount||1);
+      const nextInst=isLent?null:(tx.installments||[]).find(i=>!i.paid);
+      const detailModal=isLent?'loanDetail':'borrowedLoanDetail';
+      return `<button onclick="openModal('${detailModal}','${tx.id}',{backTo:'personaDetail',backId:'${_encodedName}'})" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);text-align:left;width:100%;cursor:pointer">
+        <div style="width:36px;height:36px;border-radius:11px;background:${isLent?'rgba(74,222,128,.14)':'rgba(248,113,113,.12)'};display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">${isLent?'💸':'🏦'}</div>
         <div style="flex:1;min-width:0">
-          <div style="font-size:2rem;font-weight:800;color:#fff;line-height:1">${name}</div>
-          <div style="font-size:1.05rem;color:${connStatus==='connected'?'#55e46c':'#f59e0b'};margin-top:6px">● ${connStatus==='connected'?'Conectada':'Pendiente'}</div>
+          <div style="font-weight:700;color:${tx.done?'#5c6480':'#e8eaf2'};font-size:.83rem">${tx.loanName||(isLent?'Préstamo prestado':'Préstamo recibido')}</div>
+          <div style="font-size:.67rem;color:#5c6480;margin-top:2px">${fmt(tx.amount)} · ${fmtDate(tx.date)}${totalCuotas>1?' · '+paidCuotas+'/'+totalCuotas+' cuotas':''}</div>
+          ${!tx.done&&pendingAmt?`<div style="font-size:.7rem;font-weight:700;color:${isLent?'#4ade80':'#f87171'};margin-top:2px">Pendiente: ${fmt(pendingAmt)}</div>`:''}
+          ${nextInst?`<div style="font-size:.68rem;color:#818cf8;margin-top:2px">Próxima cuota: ${fmtDate(nextInst.date)} · ${fmt(nextInst.amount)}</div>`:''}
         </div>
-        <button onclick="closeModal();setTimeout(()=>openModal('editPersona','${encodeURIComponent(name)}'),180)" style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#9aa6d9;font-size:1.2rem">💬</button>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px">
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:12px 10px;min-height:120px">
-          <div style="width:38px;height:38px;border-radius:12px;background:rgba(109,103,255,.18);display:flex;align-items:center;justify-content:center;color:#8b8fff">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 11.5l9-7 9 7M5.5 10.5V20h13V10.5"/></svg>
-          </div>
-          <div style="font-size:2rem;font-weight:800;color:#fff;margin-top:6px">${sharedSpacesCount}</div>
-          <div style="font-size:1rem;color:#9eaad2;line-height:1.2;margin-top:4px">Espacios compartidos</div>
+        <svg width="13" height="13" fill="none" stroke="#3a4060" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+      </button>`;
+    }
+    html=`<div style="padding:16px 14px 20px">
+      <button onclick="closeModal()" style="display:flex;align-items:center;gap:5px;color:#7a8099;font-size:.78rem;font-weight:600;background:none;border:none;cursor:pointer;padding:0 0 10px">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+        Volver
+      </button>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:${canReact?'10px':'14px'}">
+        <div style="width:56px;height:56px;border-radius:50%;background:#6b6ef6;box-shadow:0 0 16px rgba(107,110,246,.5);display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:800;color:#fff;flex-shrink:0">${personaInitials(name).slice(0,1)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:1.35rem;font-weight:800;color:#fff;line-height:1.1">${name}</div>
+          <div style="font-size:.78rem;color:${connStatus==='connected'?'#55e46c':connStatus==='connection_pending'?'#f59e0b':'#5c6480'};margin-top:4px">● ${connStatus==='connected'?'Conectado':connStatus==='connection_pending'?'Pendiente':'Sin conexión'}</div>
         </div>
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:12px 10px;min-height:120px">
-          <div style="width:38px;height:38px;border-radius:12px;background:rgba(73,217,122,.16);display:flex;align-items:center;justify-content:center;color:#58e26f">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8a2 2 0 012-2h4l2 2h6a2 2 0 012 2v7a2 2 0 01-2 2H6a2 2 0 01-2-2V8z"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 12h6"/><path stroke-linecap="round" stroke-linejoin="round" d="M13 9l3 3-3 3"/></svg>
-          </div>
-          <div style="font-size:2rem;font-weight:800;color:#fff;margin-top:6px">${fmt(meDebe)}</div>
-          <div style="font-size:1rem;color:#9eaad2;line-height:1.2;margin-top:4px">Me debe</div>
+        <button onclick="openModal('editPersona','${encodeURIComponent(name)}')" style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#9aa6d9;font-size:.9rem;flex-shrink:0">✏️</button>
+      </div>
+      ${canReact?`<div style="margin-bottom:14px"><div style="font-size:.58rem;font-weight:800;color:#4a5170;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Enviar reacción</div><div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px">${emojiSet.map(e=>`<button onclick="sendReaction('${contact.linkedUserId}','${name.replace(/'/g,"\\'")}','${e}')" style="min-width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);font-size:1.4rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">${e}</button>`).join('')}</div></div>`:''}
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px">
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:10px 8px;text-align:center">
+          <div style="font-size:1.35rem;font-weight:800;color:#fff">${lentTxs.length+lentDone.length}</div>
+          <div style="font-size:.62rem;color:#9eaad2;margin-top:3px;line-height:1.3">Presté</div>
+          ${meDebe>0?`<div style="font-size:.68rem;font-weight:700;color:#4ade80;margin-top:3px">${fmt(meDebe)}</div>`:''}
         </div>
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:12px 10px;min-height:120px">
-          <div style="width:38px;height:38px;border-radius:12px;background:rgba(255,152,93,.16);display:flex;align-items:center;justify-content:center;color:#ff985d">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v8"/><path stroke-linecap="round" stroke-linejoin="round" d="M9.5 10.5c0-1 1-1.8 2.5-1.8s2.5.8 2.5 1.8-1 1.8-2.5 1.8-2.5.8-2.5 1.8 1 1.8 2.5 1.8 2.5-.8 2.5-1.8"/></svg>
-          </div>
-          <div style="font-size:2rem;font-weight:800;color:#ff985d;margin-top:6px">${fmt(leDebo)}</div>
-          <div style="font-size:1rem;color:#9eaad2;line-height:1.2;margin-top:4px">Le debo</div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:10px 8px;text-align:center">
+          <div style="font-size:1.35rem;font-weight:800;color:#fff">${borrowedTxs.length+borrowedDone.length}</div>
+          <div style="font-size:.62rem;color:#9eaad2;margin-top:3px;line-height:1.3">Me prestaron</div>
+          ${leDebo>0?`<div style="font-size:.68rem;font-weight:700;color:#f87171;margin-top:3px">${fmt(leDebo)}</div>`:''}
+        </div>
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:10px 8px;text-align:center">
+          <div style="font-size:1.35rem;font-weight:800;color:#fff">${sharedSpacesCount}</div>
+          <div style="font-size:.62rem;color:#9eaad2;margin-top:3px;line-height:1.3">Espacios</div>
         </div>
       </div>
-      <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:12px 12px;margin-bottom:16px">
-        <div style="display:flex;align-items:center;gap:8px;color:#fff;font-size:1.05rem;font-weight:700;margin-bottom:8px">📅 Próximos 14 días</div>
-        ${upcomingRelated.length
-          ?`<div style="display:flex;flex-direction:column;gap:6px">${upcomingRelated.slice(0,3).map(it=>`<div style="display:flex;justify-content:space-between;color:#aab4d9;font-size:.95rem"><span>${it.name||it.label||'Movimiento'}</span><span>${fmtDate(it.date||it.dueDate||isoToday())}</span></div>`).join('')}</div>`
-          :`<div style="height:120px;border-radius:14px;background:rgba(3,10,28,.45);border:1px solid rgba(255,255,255,.05);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#8ea0cb;text-align:center;font-size:1.05rem;line-height:1.3">
-              <div style="font-size:1.8rem;opacity:.7">🗓️</div>
-              <div>Sin pagos programados<br>en los próximos 14 días</div>
-            </div>`}
+      <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:12px;margin-bottom:14px">
+        <div style="font-size:.6rem;font-weight:800;color:#818cf8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">📅 Próximos 14 días</div>
+        ${upPay.length?`<div style="display:flex;flex-direction:column;gap:6px">${upPay.slice(0,5).map(pp=>`<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:.78rem;font-weight:600;color:#e8eaf2">${pp.name}</div><div style="font-size:.62rem;color:#5c6480">${fmtDate(pp.date)} · ${pp.dir==='receive'?'↓ A recibir':'↑ A pagar'}</div></div><span style="font-weight:700;color:${pp.dir==='receive'?'#4ade80':'#f87171'};font-size:.83rem">${pp.dir==='receive'?'+':'-'}${fmt(pp.amount)}</span></div>`).join('')}</div>`:`<div style="color:#5c6480;font-size:.78rem;text-align:center">Sin pagos programados</div>`}
       </div>
-      <div style="color:#dbe4ff;font-size:1.1rem;font-weight:700;margin-bottom:4px">Enviar a ${name}</div>
-      <div style="color:#8ea0cb;font-size:1rem;margin-bottom:10px">✦ Envía una lluvia de emojis ✦</div>
-      <div style="display:flex;gap:8px;justify-content:space-between;flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px">
-        ${emojiSet.map(e=>`<button onclick="${canReact?`sendReaction('${contact.linkedUserId}','${name.replace(/'/g,"\\'")}','${e}')`:`showToast('Conecta este contacto para enviar reacciones')`}" style="min-width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);font-size:1.8rem;display:flex;align-items:center;justify-content:center">${e}</button>`).join('')}
-      </div>
-      <div style="color:#8ea0cb;font-size:1rem;text-align:center;margin-top:10px">✦ Toca un emoji para enviarlo</div>
+      ${lentTxs.length?`<div style="font-size:.6rem;font-weight:800;color:#4ade80;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">💸 Presté · ${lentTxs.length} activo${lentTxs.length!==1?'s':''}</div><div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">${lentTxs.map(tx=>txRow(tx)).join('')}</div>`:''}
+      ${borrowedTxs.length?`<div style="font-size:.6rem;font-weight:800;color:#f87171;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">🏦 Me prestaron · ${borrowedTxs.length} activo${borrowedTxs.length!==1?'s':''}</div><div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">${borrowedTxs.map(tx=>txRow(tx)).join('')}</div>`:''}
+      ${(lentDone.length+borrowedDone.length)>0?`<div style="font-size:.6rem;font-weight:800;color:#5c6480;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">✅ Saldados · ${lentDone.length+borrowedDone.length}</div><div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">${[...lentDone,...borrowedDone].map(tx=>txRow(tx)).join('')}</div>`:''}
+      ${(!lentTxs.length&&!borrowedTxs.length&&!lentDone.length&&!borrowedDone.length)?`<div style="text-align:center;padding:20px 0;color:#5c6480;font-size:.85rem">Sin préstamos registrados</div>`:''}
+      ${personPaychecks.length?`<div style="margin-top:${(lentTxs.length||borrowedTxs.length||lentDone.length||borrowedDone.length)?'14px':'0'}">
+        <div style="font-size:.6rem;font-weight:800;color:#f59e0b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">💼 Pagos recibidos · ${personPaychecks.length}</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${personPaychecks.map(pc=>{
+            const isRec=!!pc.received;
+            const displayDate=pc.receivedDate||pc.date;
+            const accName=pc.receivedAccountId?((S.accounts||[]).find(a=>a.id===pc.receivedAccountId)?.name||'Cuenta'):'';
+            return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.15)">
+              <div style="width:36px;height:36px;border-radius:11px;background:rgba(245,158,11,.15);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">💵</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:700;color:#e8eaf2;font-size:.83rem">${pc.sourceName||name}</div>
+                <div style="font-size:.67rem;color:#5c6480;margin-top:2px">${fmtDate(displayDate)}${accName?' · '+accName:''}${pc.note?' · '+pc.note:''}</div>
+                <div style="font-size:.68rem;font-weight:700;color:${isRec?'#4ade80':'#f59e0b'};margin-top:2px">${isRec?'✓ Recibido':'⏳ Pendiente'}</div>
+              </div>
+              <div style="font-weight:800;color:#f59e0b;font-size:.9rem;flex-shrink:0">+${fmt(pc.amount||0)}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`:''}
     </div>`;
   }
   else if(type==='jobDetail') {
@@ -7895,6 +7897,39 @@ function openModal(type, id, extra) {
       <button onclick="saveNewPersonContact()" class="w-full btn-primary py-3">Agregar persona</button>
     </div>`;
   }
+  else if(type==='payPersonaLoan') {
+    const name=decodeURIComponent(id||'');
+    const activeLoans=(S.borrowedLoans||[]).filter(l=>l.personName===name&&!l.paid);
+    if(!activeLoans.length) {
+      html=`<h3 class="text-lg font-bold text-slate-800 mb-2">Pagar préstamo</h3><p class="text-sm text-slate-400 text-center py-6">No hay préstamos activos con ${name}.</p>`;
+    } else {
+      const _encName=encodeURIComponent(name);
+      let loanRows='';
+      activeLoans.forEach(l=>{
+        normalizeBorrowedLoan(l);
+        const _inst=borrowedInstallments(l);
+        const _next=_inst.find(p=>!p.paid);
+        const _amt=_next?_next.amount:(l.perPayment||l.amount||0);
+        const _iid=_next?_next.id:'';
+        const _label=_next?`Cuota ${_next.number}/${l.paymentsCount||_inst.length}`:'Pago total';
+        const _date=_next?_next.date:(l.startDate||l.dueDate||'');
+        const _lname=(l.loanName||('Préstamo de '+l.personName)).replace(/'/g,"\\'");
+        loanRows+=`<button onclick="openModal('addExpense',null,{name:'${_lname}',amount:${_amt},category:'personal',loanId:'${l.id}',installmentId:'${_iid}',fromLoanPay:true})" class="w-full card p-4 mb-2 text-left" style="cursor:pointer">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:42px;height:42px;border-radius:13px;background:#fef2f2;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#ef4444;font-size:1.2rem">🏦</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;color:#1e293b;font-size:.88rem">${l.loanName||('Préstamo de '+l.personName)}</div>
+              <div style="font-size:.68rem;color:#94a3b8;margin-top:2px">${_label}${_date?' · '+fmtDate(_date):''}</div>
+            </div>
+            <div style="font-weight:800;color:#ef4444;font-size:.95rem;flex-shrink:0">${fmt(_amt)}</div>
+          </div>
+        </button>`;
+      });
+      html=`<h3 class="text-lg font-bold text-slate-800 mb-1">Pagar préstamo</h3>
+      <p class="text-sm text-slate-500 mb-4">Selecciona el préstamo a pagar</p>
+      ${loanRows}`;
+    }
+  }
   else if(type==='confirmArchivePersona') {
     const name=decodeURIComponent(id||'');
     html=`<div class="text-center">
@@ -7905,6 +7940,52 @@ function openModal(type, id, extra) {
         <button onclick="closeModal()" class="bg-slate-100 text-slate-600 font-bold py-3 rounded-xl">Cancelar</button>
         <button onclick="archivePersona('${encodeURIComponent(name)}')" class="bg-red-500 text-white font-bold py-3 rounded-xl">Eliminar</button>
       </div>
+    </div>`;
+  }
+  else if(type==='addCycleRecord'||type==='editCycleRecord') {
+    const editRec=type==='editCycleRecord'?(S.cycleRecords||[]).find(r=>r.id===id):null;
+    const prefillActive=extra&&extra.isActive;
+    const SYMPTOMS=['Cramps','Headache','Back pain','Mood changes','Fatigue','Bloating','Acne','Tender breasts','Other'];
+    const selSymptoms=editRec?editRec.symptoms||[]:[];
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">${editRec?'Editar ciclo':'Registrar ciclo'}</h3>
+    <div class="space-y-3">
+      <div class="flex gap-3">
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Fecha de inicio</label>
+        <input type="date" id="mCycleStart" value="${editRec?editRec.periodStart:isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+        <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Fecha de fin</label>
+        <input type="date" id="mCycleEnd" value="${editRec&&editRec.periodEnd?editRec.periodEnd:''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1" ${(editRec&&editRec.isActive)||prefillActive?'disabled':''} placeholder="Opcional si aún activo"></div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 12px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+        <input type="checkbox" id="mCycleActive" ${(editRec&&editRec.isActive)||prefillActive?'checked':''} onchange="const e=document.getElementById('mCycleEnd');if(this.checked){e.value='';e.disabled=true;}else{e.disabled=false;}" style="accent-color:#f472b6;width:16px;height:16px">
+        <span class="text-sm font-semibold text-slate-700">Período todavía activo</span>
+      </label>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Intensidad del flujo</label>
+      <select id="mCycleFlow" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+        <option value="">Sin especificar</option>
+        <option value="light" ${editRec&&editRec.flowIntensity==='light'?'selected':''}>Light</option>
+        <option value="medium" ${editRec&&editRec.flowIntensity==='medium'?'selected':''}>Medium</option>
+        <option value="heavy" ${editRec&&editRec.flowIntensity==='heavy'?'selected':''}>Heavy</option>
+      </select></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Síntomas</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+        ${SYMPTOMS.map(s=>`<label style="display:flex;align-items:center;gap:5px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:99px;padding:4px 10px;cursor:pointer;font-size:.73rem;font-weight:600;color:#475569">
+          <input type="checkbox" class="cycle-symptom-cb" value="${s}" ${selSymptoms.includes(s)?'checked':''} style="accent-color:#f472b6"> ${s}
+        </label>`).join('')}
+      </div></div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Notas</label>
+      <textarea id="mCycleNotes" rows="2" placeholder="Opcional..." class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-sm resize-none">${editRec?editRec.notes||'':''}</textarea></div>
+      <button onclick="saveCycleRecord(${editRec?`'${editRec.id}'`:'null'})" class="w-full btn-primary py-3">Guardar</button>
+      ${editRec?`<button onclick="deleteCycleRecord('${editRec.id}');closeModal()" class="w-full bg-red-50 text-red-500 font-bold py-3 rounded-xl">Eliminar registro</button>`:''}
+    </div>`;
+  }
+  else if(type==='endCycleRecord') {
+    const r=(S.cycleRecords||[]).find(x=>x.id===id); if(!r) return;
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">Finalizar período</h3>
+    <p class="text-sm text-slate-500 mb-4">Período iniciado el ${fmtDate(r.periodStart)}</p>
+    <div class="space-y-3">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Fecha de finalización</label>
+      <input type="date" id="mCycleEndFinal" value="${isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      <button onclick="(function(){const d=document.getElementById('mCycleEndFinal').value;if(!d){showToast('Selecciona la fecha de fin');return;}if(d<'${r.periodStart}'){showToast('La fecha de fin no puede ser anterior al inicio');return;}const rec=(S.cycleRecords||[]).find(x=>x.id==='${id}');if(rec){rec.periodEnd=d;rec.isActive=false;rec.updatedAt=new Date().toISOString();}save();closeModal();renderCycle();showToast('Período finalizado ✓');})()" class="w-full btn-primary py-3">Confirmar</button>
     </div>`;
   }
   else if(type==='petAddType') {
@@ -8713,6 +8794,7 @@ function openModal(type, id, extra) {
   decorateMoneyInputs(document.getElementById('modalContent'));
   const _ov=document.getElementById('modalOverlay');
   const _sh=document.getElementById('modalSheet');
+  _sh.classList.toggle('modal-dark-bg', type==='personaDetail');
   _sh.style.transform='translateY(100%)';
   _sh.style.transition='';
   _ov.style.opacity='0';
@@ -8893,6 +8975,21 @@ function saveExpense(id=null) {
   } else {
     S.expenses.unshift({id:uid(),name,amount,date:date||isoToday(),category,currency,paid,dueDate:paid?(date||isoToday()):dueDate,paidDate:paid?(date||isoToday()):null,paidAt:paid?new Date().toISOString():null,source:paid?src:null,paidAmount:paid?conv.originalAmount:null,currencyConversion:conv,createdAt:new Date().toISOString()});
     if(paid) adjustSource(src, -conv.convertedAmount);
+  }
+  // Si viene del flujo payPersonaLoan, marcar la cuota del préstamo como pagada (sin doble deducción)
+  const _loanIdEl=document.getElementById('mLoanId');
+  if(_loanIdEl&&_loanIdEl.value) {
+    const _lId=_loanIdEl.value, _iId=document.getElementById('mInstallmentId')?.value||'';
+    const _bl=(S.borrowedLoans||[]).find(x=>x.id===_lId);
+    if(_bl) {
+      normalizeBorrowedLoan(_bl);
+      const _bi=_iId?(_bl.installments||[]).find(x=>x.id===_iId):(_bl.installments||[]).find(x=>!x.paid);
+      if(_bi&&!_bi.paid) {
+        _bi.paid=true; _bi.paidDate=isoToday(); _bi.paidAt=new Date().toISOString();
+        _bl.paid=(_bl.installments||[]).every(x=>x.paid);
+        if(_bl.paid){_bl.paidDate=isoToday();_bl.paidAt=new Date().toISOString();}
+      }
+    }
   }
   setLastAction(); closeModal(); renderCurrentView(); showToast('✅ Gasto registrado');
 }
@@ -10706,7 +10803,7 @@ function showView(view) {
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+view).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active','text-indigo-600'));
-  const idx={home:0,cheques:1,facturas:2,cal:3,casa:4,personas:undefined,plan:undefined,analysis:undefined,bolsillos:undefined,cuentas:undefined,mascotas:undefined,millas:undefined,mundial:undefined,config:undefined}[view];
+  const idx={home:0,cheques:1,facturas:2,cal:3,casa:4,personas:undefined,plan:undefined,analysis:undefined,bolsillos:undefined,cuentas:undefined,mascotas:undefined,millas:undefined,mundial:undefined,cycle:undefined,config:undefined}[view];
   const btns=document.querySelectorAll('.nav-btn');
   if(idx!==undefined){btns[idx].classList.add('active','text-indigo-600');}
   if(view==='profile' && (!profileDraft || !profileDraftDirty)) initProfileDraft();
@@ -10716,14 +10813,15 @@ function showView(view) {
 function openAppMenu() {
   const menuIcons={
     home:`<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 21V12h6v9"/></svg>`,
-    mundial:`<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/><path stroke-linecap="round" d="M2 12h20"/></svg>`,
+    mundial:`<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8M12 17v4M5 3h14v8a7 7 0 01-14 0V3zM5 7H2M19 7h3"/></svg>`,
     plan:`<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>`,
     analysis:`<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>`,
     personas:`<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>`,
     cuentas:`<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>`,
     bolsillos:`<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>`,
     mascotas:`<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="7.5" cy="8.5" r="1.5"/><circle cx="12" cy="6.5" r="1.5"/><circle cx="16.5" cy="8.5" r="1.5"/><path stroke-linecap="round" stroke-linejoin="round" d="M8 15c0-2.2 1.8-4 4-4s4 1.8 4 4c0 2.2-1.2 4-4 4s-4-1.8-4-4z"/></svg>`,
-    millas:`<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13l2-5h14l2 5v5a2 2 0 01-2 2h-2v-2H7v2H5a2 2 0 01-2-2v-5z"/><circle cx="7.5" cy="15.5" r="1.5"/><circle cx="16.5" cy="15.5" r="1.5"/></svg>`,
+    millas:`<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 17v-3l3-6h12l3 6v3M3 17h18"/><circle cx="7.5" cy="17" r="1.5"/><circle cx="16.5" cy="17" r="1.5"/></svg>`,
+    cycle:`<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 3"/><path stroke-linecap="round" stroke-linejoin="round" d="M6.3 17.7a7 7 0 0 0 9.9-9.9"/></svg>`,
   };
   const items=[
     ['home','Inicio','Vista principal y resumen','#7c6fda'],
@@ -10733,6 +10831,7 @@ function openAppMenu() {
     ['mascotas','Mascotas','Perfiles de mascotas','#f59e0b'],
     ['millas','Vehículos','Registros por carro','#22d3ee'],
     ['mundial','Mundial','Álbum del Mundial 2026','#f97316'],
+    ['cycle','Ciclo','Seguimiento del ciclo menstrual','#f472b6'],
   ];
   const profileName=S.profileName||'Mi perfil';
   const profileInitials=(profileName.trim().split(/\s+/).map(w=>w[0]||'').join('').slice(0,2)||'?').toUpperCase();
@@ -10760,7 +10859,7 @@ function openAppMenu() {
 
   /* ── Menu items ── */
   items.map(([view,title,desc,color])=>{
-    const iconBg=color==='#7c6fda'?'rgba(124,111,218,0.12)':color==='#4ade80'?'rgba(74,222,128,0.1)':color==='#f59e0b'?'rgba(245,158,11,0.1)':color==='#06b6d4'?'rgba(6,182,212,0.1)':color==='#a78bfa'?'rgba(167,139,250,0.1)':color==='#22d3ee'?'rgba(34,211,238,0.1)':color==='#f97316'?'rgba(249,115,22,0.12)':'rgba(124,111,218,0.1)';
+    const iconBg=color==='#7c6fda'?'rgba(124,111,218,0.12)':color==='#4ade80'?'rgba(74,222,128,0.1)':color==='#f59e0b'?'rgba(245,158,11,0.1)':color==='#06b6d4'?'rgba(6,182,212,0.1)':color==='#a78bfa'?'rgba(167,139,250,0.1)':color==='#22d3ee'?'rgba(34,211,238,0.1)':color==='#f97316'?'rgba(249,115,22,0.12)':color==='#f472b6'?'rgba(244,114,182,0.12)':'rgba(124,111,218,0.1)';
     return `<button onclick="closeAppMenu();showView('${view}')" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;background:#111327;border:1px solid rgba(255,255,255,0.05);text-align:left;cursor:pointer;margin-bottom:4px">
       <div style="width:34px;height:34px;border-radius:10px;background:${iconBg};display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${color}">${menuIcons[view]||''}</div>
       <div style="flex:1;min-width:0">
@@ -11868,6 +11967,7 @@ function renderMundial(){
   const sub=window._mundialSub||'album';
   if(sub==='group') renderAlbumGroup();
   else if(sub==='team') renderAlbumTeam();
+  else if(sub==='specials') renderAlbumSpecials();
   else renderAlbumMain();
 }
 
@@ -11937,6 +12037,24 @@ function renderAlbumMain(){
       html+=`</div>`;
     }
   } else {
+    const specials=WORLD_CUP_2026_CHECKLIST.filter(s=>!s.teamCode);
+    const spTotal=specials.length,spOwned=specials.filter(s=>owned.has(s.code)).length;
+    const spPct=Math.round(spOwned/spTotal*100);
+    html+=`<div style="font-size:.6rem;font-weight:800;color:#4a5170;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Especiales</div>
+    <div class="card p-4 mb-4" style="cursor:pointer;border-color:rgba(251,191,36,.3)" onclick="window._mundialSub='specials';renderMundial()">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <span style="font-weight:800;color:#fff">✨ Especiales</span>
+        <span style="font-size:.72rem;font-weight:800;color:#fbbf24">${spPct}%</span>
+      </div>
+      <div style="font-size:.6rem;color:#5c6480;margin-bottom:7px">Emblemas · estadios · países sede · historia · ${spTotal} figuritas</div>
+      <div style="width:100%;height:5px;background:#1a1d2e;border-radius:99px;overflow:hidden;margin-bottom:7px">
+        <div style="height:100%;width:${spPct}%;background:#fbbf24;border-radius:99px;transition:width .4s"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;font-size:.63rem">
+        <span style="color:#64748b">📦 ${spTotal}</span><span style="color:#4ade80">✅ ${spOwned}</span><span style="color:#f87171">❌ ${spTotal-spOwned}</span>
+        <svg width="12" height="12" fill="none" stroke="#3a4060" stroke-width="2.5" viewBox="0 0 24 24" style="margin-left:auto"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+      </div>
+    </div>`;
     html+=`<div style="font-size:.6rem;font-weight:800;color:#4a5170;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Grupos</div>`;
     d.groups.forEach(g=>{
       let grpTotal=0,grpOwned=0;
@@ -11999,6 +12117,33 @@ function renderAlbumGroup(){
   document.getElementById('mundialContent').innerHTML=html;
 }
 
+function renderAlbumSpecials(){
+  const owned=new Set(S.albumOwned||[]);
+  const specials=WORLD_CUP_2026_CHECKLIST.filter(s=>!s.teamCode);
+  const typeLabels={panini:'We Are Panini',emblem:'Emblema',trophy:'Trofeo',stadium:'Estadios',host:'Países sede',museum:'Historia del Mundial'};
+  let html=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <button onclick="window._mundialSub='album';renderMundial()" class="btn-dark px-3 py-2 text-sm">← Álbum</button>
+    <span style="font-size:1.1rem;font-weight:900;color:#fff">✨ Especiales</span>
+  </div>`;
+  const byType={};
+  specials.forEach(s=>{if(!byType[s.type])byType[s.type]=[];byType[s.type].push(s);});
+  Object.entries(byType).forEach(([type,stickers])=>{
+    const tOwned=stickers.filter(s=>owned.has(s.code)).length;
+    html+=`<div style="font-size:.6rem;font-weight:800;color:#4a5170;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;margin-top:12px">${typeLabels[type]||type} · ${tOwned}/${stickers.length}</div><div style="display:grid;gap:5px;margin-bottom:4px">`;
+    stickers.forEach(s=>{
+      const o=owned.has(s.code);
+      const foil=s.isFoil?`<span style="font-size:.5rem;background:rgba(251,191,36,.18);color:#fbbf24;padding:1px 5px;border-radius:4px;font-weight:700">✨</span>`:'';
+      html+=`<button onclick="toggleSticker('${s.code}')" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;border:2px solid ${o?'rgba(74,222,128,.45)':'rgba(255,255,255,.07)'};background:${o?'rgba(74,222,128,.09)':'#1a1d2e'};cursor:pointer;text-align:left;width:100%">
+        <span style="font-size:.7rem;font-weight:900;color:${o?'#4ade80':'#4a5170'};min-width:38px">${s.code}</span>
+        <span style="flex:1;font-size:.76rem;font-weight:600;color:${o?'#e8eaf2':'#7a8099'}">${s.title}</span>
+        ${foil}<span style="font-size:.8rem">${o?'✅':'⬜'}</span>
+      </button>`;
+    });
+    html+=`</div>`;
+  });
+  document.getElementById('mundialContent').innerHTML=html;
+}
+
 function renderAlbumTeam(){
   const d=getAlbumData();
   const owned=new Set(S.albumOwned||[]);
@@ -12042,6 +12187,292 @@ function renderAlbumTeam(){
   html+=`</div>`;
   document.getElementById('mundialContent').innerHTML=html;
 }
+// ════════════════════════════════════════
+// CYCLE TRACKER — módulo de ciclo menstrual
+// ════════════════════════════════════════
+
+function cycleDaysBetween(a,b){return Math.round((parseDate(b)-parseDate(a))/(86400000));}
+function cycleAddDays(dateStr,n){const d=parseDate(dateStr);d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
+
+function cyclePredictions(){
+  const recs=(S.cycleRecords||[]).slice().sort((a,b)=>a.periodStart.localeCompare(b.periodStart));
+  if(!recs.length) return null;
+  const last=recs[recs.length-1];
+  // Cycle lengths (diff between consecutive starts)
+  const recent=recs.slice(-6);
+  const cLens=[];
+  for(let i=1;i<recent.length;i++){
+    const d=cycleDaysBetween(recent[i-1].periodStart,recent[i].periodStart);
+    if(d>=14&&d<=60) cLens.push(d);
+  }
+  // Period lengths
+  const pLens=recs.filter(r=>r.periodEnd).map(r=>cycleDaysBetween(r.periodStart,r.periodEnd)+1).filter(d=>d>=1&&d<=12);
+  const avgCycle=cLens.length?Math.round(cLens.reduce((s,v)=>s+v,0)/cLens.length):28;
+  const avgPeriod=pLens.length?Math.round(pLens.reduce((s,v)=>s+v,0)/pLens.length):5;
+  const nextStart=cycleAddDays(last.periodStart,avgCycle);
+  const nextEnd=cycleAddDays(nextStart,avgPeriod-1);
+  const ovulation=cycleAddDays(nextStart,-14);
+  const fertileStart=cycleAddDays(ovulation,-5);
+  const fertileEnd=cycleAddDays(ovulation,1);
+  const confidence=recs.length<=1?'Getting started':recs.length===2?'Basic estimate':recs.length===3?'Improving accuracy':'Good estimate';
+  return{avgCycle,avgPeriod,nextStart,nextEnd,ovulation,fertileStart,fertileEnd,confidence,count:recs.length,cLens};
+}
+
+function cycleIsInRange(dateStr,start,end){return dateStr>=start&&dateStr<=end;}
+
+function renderCycleMiniCalendar(preds){
+  const today=isoToday();
+  const ym=today.slice(0,7);
+  const[yr,mo]=ym.split('-').map(Number);
+  const firstDay=new Date(yr,mo-1,1).getDay();
+  const daysInMonth=new Date(yr,mo,0).getDate();
+  const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  // Build sets of special days
+  const periodDays=new Set(), estimatedPeriodDays=new Set(), fertDays=new Set(), ovDays=new Set();
+  (S.cycleRecords||[]).forEach(r=>{
+    if(!r.periodStart) return;
+    const end=r.periodEnd||r.periodStart;
+    let d=r.periodStart;
+    while(d<=end){if(d.startsWith(ym)) periodDays.add(d.slice(8,10)*1);d=cycleAddDays(d,1);}
+  });
+  if(preds){
+    let d=preds.nextStart;
+    while(d<=preds.nextEnd){if(d.startsWith(ym)) estimatedPeriodDays.add(d.slice(8,10)*1);d=cycleAddDays(d,1);}
+    let f=preds.fertileStart;
+    while(f<=preds.fertileEnd){if(f.startsWith(ym)) fertDays.add(f.slice(8,10)*1);f=cycleAddDays(f,1);}
+    if(preds.ovulation.startsWith(ym)) ovDays.add(preds.ovulation.slice(8,10)*1);
+  }
+  const todayDay=today.startsWith(ym)?parseInt(today.slice(8,10)):0;
+  const WD=['S','M','T','W','T','F','S'];
+  let grid='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px">'+WD.map(d=>`<div style="text-align:center;font-size:.55rem;font-weight:700;color:#4a5170;padding:2px 0">${d}</div>`).join('')+'</div>';
+  grid+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">';
+  for(let i=0;i<firstDay;i++) grid+=`<div></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const isToday=d===todayDay;
+    const isPeriod=periodDays.has(d);
+    const isEst=estimatedPeriodDays.has(d);
+    const isFert=fertDays.has(d);
+    const isOv=ovDays.has(d);
+    let bg='transparent',color='#5c6480',border='none',dot='';
+    if(isPeriod){bg='rgba(239,68,68,0.25)';color='#f87171';border='1px solid rgba(239,68,68,0.4)';}
+    else if(isEst){bg='rgba(239,68,68,0.08)';color='#f87171';border='1px dashed rgba(239,68,68,0.35)';}
+    else if(isOv){bg='rgba(167,139,250,0.2)';color='#c4b5fd';border='1px solid rgba(167,139,250,0.5)';}
+    else if(isFert){bg='rgba(74,222,128,0.1)';color='#4ade80';border='1px solid rgba(74,222,128,0.2)';}
+    if(isToday&&!isPeriod&&!isEst&&!isFert&&!isOv){border='2px solid #7c6fda';color='#a5b4fc';}
+    grid+=`<div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:8px;background:${bg};border:${border};font-size:.68rem;font-weight:${isToday?'800':'500'};color:${color}${isToday?';box-shadow:0 0 0 1px rgba(124,111,218,.3)':''}">${d}</div>`;
+  }
+  grid+='</div>';
+  // Legend
+  const legend=`<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;font-size:.58rem">
+    <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:3px;background:rgba(239,68,68,.25);border:1px solid rgba(239,68,68,.4);display:inline-block"></span><span style="color:#5c6480">Period</span></span>
+    <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:3px;background:rgba(239,68,68,.08);border:1px dashed rgba(239,68,68,.35);display:inline-block"></span><span style="color:#5c6480">Est. period</span></span>
+    <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:3px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2);display:inline-block"></span><span style="color:#5c6480">Fertile</span></span>
+    <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:3px;background:rgba(167,139,250,.2);border:1px solid rgba(167,139,250,.5);display:inline-block"></span><span style="color:#5c6480">Ovulation</span></span>
+  </div>`;
+  return `<div class="card p-3 mb-3">
+    <div style="font-size:.62rem;font-weight:800;color:#f472b6;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">${MONTHS[mo-1]} ${yr}</div>
+    ${grid}${legend}
+  </div>`;
+}
+
+function renderCycle(){
+  const recs=(S.cycleRecords||[]).slice().sort((a,b)=>b.periodStart.localeCompare(a.periodStart));
+  const preds=cyclePredictions();
+  const activeRec=recs.find(r=>r.isActive&&!r.periodEnd);
+  const SYMPTOMS=['Cramps','Headache','Back pain','Mood changes','Fatigue','Bloating','Acne','Tender breasts','Other'];
+  let html='';
+
+  // ── Header
+  html+=`<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px">
+    <div>
+      <div style="font-size:1.15rem;font-weight:800;color:#fff;margin-bottom:2px">Ciclo</div>
+      <div style="font-size:.68rem;color:#5c6480">Seguimiento del ciclo · privado</div>
+    </div>
+    <button onclick="openModal('addCycleRecord')" style="background:rgba(244,114,182,0.15);color:#f472b6;border:1px solid rgba(244,114,182,0.3);border-radius:12px;font-size:.75rem;font-weight:700;padding:8px 12px;display:flex;align-items:center;gap:5px">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Registrar
+    </button>
+  </div>`;
+
+  // ── Active period banner
+  if(activeRec){
+    const days=cycleDaysBetween(activeRec.periodStart,isoToday())+1;
+    html+=`<div style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);border-radius:14px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:.62rem;font-weight:800;color:#f87171;text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px">Período activo · Día ${days}</div>
+        <div style="font-size:.8rem;color:#fca5a5">Inició el ${fmtDate(activeRec.periodStart)}</div>
+      </div>
+      <button onclick="openModal('endCycleRecord','${activeRec.id}')" style="background:#ef4444;color:#fff;border:none;border-radius:10px;font-size:.72rem;font-weight:700;padding:7px 12px">Finalizar</button>
+    </div>`;
+  }
+
+  // ── Onboarding (no records)
+  if(!recs.length){
+    html+=`<div class="card p-5" style="text-align:center;margin-bottom:14px">
+      <div style="width:56px;height:56px;border-radius:50%;background:rgba(244,114,182,0.12);border:1px solid rgba(244,114,182,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
+        <svg width="26" height="26" fill="none" stroke="#f472b6" stroke-width="1.6" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 7v5l3 3"/></svg>
+      </div>
+      <div style="font-weight:800;color:#fff;font-size:.95rem;margin-bottom:6px">Configura tu seguimiento</div>
+      <div style="font-size:.75rem;color:#5c6480;line-height:1.6;margin-bottom:18px">Para generar predicciones útiles, necesitamos algunos registros de ciclo. Puedes empezar registrando tu período actual o agregar ciclos anteriores si ya conoces las fechas.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button onclick="openModal('addCycleRecord',null,{isActive:true})" style="background:rgba(244,114,182,0.15);color:#f472b6;border:1px solid rgba(244,114,182,0.3);border-radius:12px;font-size:.75rem;font-weight:700;padding:10px 8px">
+          <div style="font-size:1rem;margin-bottom:4px">🩸</div>
+          Registrar período actual
+        </button>
+        <button onclick="openModal('addCycleRecord')" style="background:rgba(124,111,218,0.12);color:#a5b4fc;border:1px solid rgba(124,111,218,0.2);border-radius:12px;font-size:.75rem;font-weight:700;padding:10px 8px">
+          <div style="font-size:1rem;margin-bottom:4px">📅</div>
+          Agregar ciclo anterior
+        </button>
+      </div>
+    </div>
+    <div class="card p-4" style="border-left:2px solid rgba(244,114,182,0.4)">
+      <div style="font-size:.62rem;font-weight:800;color:#f472b6;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">¿Cómo funciona?</div>
+      <div style="font-size:.73rem;color:#5c6480;line-height:1.7">Registra al menos <span style="color:#e8eaf2;font-weight:700">3 ciclos</span> para obtener predicciones confiables. Puedes agregar ciclos anteriores si ya conoces esas fechas.</div>
+    </div>`;
+    document.getElementById('cycleContent').innerHTML=html;
+    return;
+  }
+
+  // ── Precision notice (< 3 cycles)
+  if(preds&&preds.count<3){
+    html+=`<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:12px;padding:10px 12px;margin-bottom:14px;font-size:.72rem;color:#fbbf24">
+      <strong>Predicciones básicas</strong> · Registra al menos 3 ciclos para mejorar la precisión. Puedes agregar ciclos anteriores ahora.
+      <button onclick="openModal('addCycleRecord')" style="display:block;margin-top:6px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;border-radius:8px;font-size:.68rem;font-weight:700;padding:5px 10px">+ Agregar ciclo anterior</button>
+    </div>`;
+  }
+
+  // ── Summary cards
+  if(preds){
+    const today=isoToday();
+    const daysToNext=cycleDaysBetween(today,preds.nextStart);
+    const daysToNextLabel=daysToNext>0?`en ${daysToNext} días`:daysToNext===0?'hoy':'hace '+Math.abs(daysToNext)+' días';
+    html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div class="card p-3">
+        <div style="font-size:.56rem;font-weight:800;color:#f472b6;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">Próximo período</div>
+        <div style="font-size:.9rem;font-weight:800;color:#fff;margin-bottom:2px">${fmtDate(preds.nextStart)}</div>
+        <div style="font-size:.62rem;color:#5c6480">${daysToNextLabel}</div>
+        <div style="font-size:.58rem;color:#4a5170;margin-top:4px;padding:2px 6px;background:rgba(244,114,182,0.08);border-radius:6px;display:inline-block">Estimado</div>
+      </div>
+      <div class="card p-3">
+        <div style="font-size:.56rem;font-weight:800;color:#4ade80;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">Ventana fértil</div>
+        <div style="font-size:.75rem;font-weight:700;color:#fff;margin-bottom:2px">${fmtDate(preds.fertileStart)}</div>
+        <div style="font-size:.62rem;color:#5c6480">al ${fmtDate(preds.fertileEnd)}</div>
+        <div style="font-size:.58rem;color:#4a5170;margin-top:4px;padding:2px 6px;background:rgba(74,222,128,0.08);border-radius:6px;display:inline-block">Estimado</div>
+      </div>
+      <div class="card p-3">
+        <div style="font-size:.56rem;font-weight:800;color:#c4b5fd;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">Ovulación</div>
+        <div style="font-size:.85rem;font-weight:800;color:#fff;margin-bottom:2px">${fmtDate(preds.ovulation)}</div>
+        <div style="font-size:.62rem;color:#5c6480">${preds.avgCycle-14} días del ciclo</div>
+        <div style="font-size:.58rem;color:#4a5170;margin-top:4px;padding:2px 6px;background:rgba(167,139,250,0.08);border-radius:6px;display:inline-block">Aprox.</div>
+      </div>
+      <div class="card p-3">
+        <div style="font-size:.56rem;font-weight:800;color:#60a5fa;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">Ciclo promedio</div>
+        <div style="font-size:.9rem;font-weight:800;color:#fff;margin-bottom:2px">${preds.cLens.length?preds.avgCycle+' días':'—'}</div>
+        <div style="font-size:.62rem;color:#5c6480">Período: ~${preds.avgPeriod} días</div>
+        <div style="font-size:.58rem;margin-top:4px;padding:2px 6px;border-radius:6px;display:inline-block;${preds.count>=4?'background:rgba(74,222,128,0.08);color:#4ade80':'background:rgba(245,158,11,0.08);color:#f59e0b'}">${preds.confidence}</div>
+      </div>
+    </div>`;
+  }
+
+  // ── Calendar
+  html+=renderCycleMiniCalendar(preds);
+
+  // ── Disclaimer
+  html+=`<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:10px 12px;margin-bottom:14px;font-size:.63rem;color:#4a5170;line-height:1.6">
+    ⚠️ Estas predicciones son estimaciones basadas en los ciclos registrados. No reemplazan orientación médica ni deben usarse como método anticonceptivo garantizado.
+  </div>`;
+
+  // ── Insights
+  if(preds&&recs.length>=2){
+    const allSymptoms={};
+    recs.forEach(r=>(r.symptoms||[]).forEach(s=>{allSymptoms[s]=(allSymptoms[s]||0)+1;}));
+    const topSym=Object.entries(allSymptoms).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([s])=>s);
+    html+=`<div class="card p-4 mb-3">
+      <div style="font-size:.62rem;font-weight:800;color:#7c6fda;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">Resumen del ciclo</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><div style="font-size:.58rem;color:#5c6480;margin-bottom:2px">Ciclos registrados</div><div style="font-weight:700;color:#e8eaf2;font-size:.88rem">${recs.length}</div></div>
+        <div><div style="font-size:.58rem;color:#5c6480;margin-bottom:2px">Último ciclo</div><div style="font-weight:700;color:#e8eaf2;font-size:.88rem">${recs[0]?fmtDate(recs[0].periodStart):'—'}</div></div>
+        ${preds.cLens.length?`<div><div style="font-size:.58rem;color:#5c6480;margin-bottom:2px">Ciclo más largo</div><div style="font-weight:700;color:#e8eaf2;font-size:.88rem">${Math.max(...preds.cLens)} días</div></div><div><div style="font-size:.58rem;color:#5c6480;margin-bottom:2px">Ciclo más corto</div><div style="font-weight:700;color:#e8eaf2;font-size:.88rem">${Math.min(...preds.cLens)} días</div></div>`:''}
+        ${topSym.length?`<div style="grid-column:1/-1"><div style="font-size:.58rem;color:#5c6480;margin-bottom:4px">Síntomas más frecuentes</div><div style="display:flex;flex-wrap:wrap;gap:4px">${topSym.map(s=>`<span style="background:rgba(124,111,218,0.12);color:#a5b4fc;font-size:.6rem;font-weight:600;padding:2px 8px;border-radius:99px">${s}</span>`).join('')}</div></div>`:''}
+      </div>
+    </div>`;
+  }
+
+  // ── History
+  html+=`<div style="font-size:.62rem;font-weight:800;color:#7c6fda;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">Historial · ${recs.length} registro${recs.length!==1?'s':''}</div>`;
+  if(!recs.length){
+    html+=`<div class="card p-4" style="text-align:center;color:#5c6480;font-size:.8rem">Sin registros todavía.</div>`;
+  } else {
+    recs.forEach((r,idx)=>{
+      const endLabel=r.isActive&&!r.periodEnd?'<span style="color:#f87171;font-weight:700">Activo</span>':r.periodEnd?fmtDate(r.periodEnd):'—';
+      const length=r.periodEnd?cycleDaysBetween(r.periodStart,r.periodEnd)+1:(r.isActive?cycleDaysBetween(r.periodStart,isoToday())+1:null);
+      const cycleLen=idx<recs.length-1?cycleDaysBetween(recs[idx+1].periodStart,r.periodStart):null;
+      const flowColors={light:'rgba(74,222,128,0.15)',medium:'rgba(244,114,182,0.15)',heavy:'rgba(239,68,68,0.2)'};
+      const flowDot={light:'#4ade80',medium:'#f472b6',heavy:'#ef4444'};
+      html+=`<div class="card mb-2 p-4">
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <div style="width:38px;height:38px;border-radius:11px;background:${r.flowIntensity?flowColors[r.flowIntensity]:'rgba(244,114,182,0.1)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem">🩸</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;color:#e8eaf2;font-size:.84rem">${fmtDate(r.periodStart)}</div>
+            <div style="font-size:.67rem;color:#5c6480;margin-top:2px">
+              Fin: ${endLabel}${length?` · ${length} días`:''}${cycleLen?` · ciclo: ${cycleLen} días`:''}
+            </div>
+            ${r.flowIntensity?`<div style="display:flex;align-items:center;gap:4px;margin-top:4px"><div style="width:6px;height:6px;border-radius:50%;background:${flowDot[r.flowIntensity]}"></div><span style="font-size:.62rem;color:#5c6480;text-transform:capitalize">${r.flowIntensity}</span></div>`:''}
+            ${(r.symptoms||[]).length?`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:5px">${(r.symptoms||[]).slice(0,4).map(s=>`<span style="background:rgba(124,111,218,0.1);color:#a5b4fc;font-size:.58rem;padding:1px 6px;border-radius:99px">${s}</span>`).join('')}${r.symptoms.length>4?`<span style="color:#4a5170;font-size:.58rem">+${r.symptoms.length-4}</span>`:''}</div>`:''}
+            ${r.notes?`<div style="font-size:.63rem;color:#4a5170;margin-top:4px;font-style:italic">"${r.notes.slice(0,60)}${r.notes.length>60?'…':''}"</div>`:''}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+            <button onclick="openModal('editCycleRecord','${r.id}')" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#9aa6d9;border-radius:8px;padding:5px 8px;font-size:.68rem;font-weight:600">✏️</button>
+            <button onclick="deleteCycleRecord('${r.id}')" style="background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.15);color:#f87171;border-radius:8px;padding:5px 8px;font-size:.68rem;font-weight:600">🗑</button>
+          </div>
+        </div>
+      </div>`;
+    });
+  }
+  document.getElementById('cycleContent').innerHTML=html;
+}
+
+function deleteCycleRecord(id){
+  if(!confirm('¿Eliminar este registro de ciclo?')) return;
+  S.cycleRecords=(S.cycleRecords||[]).filter(r=>r.id!==id);
+  save(); renderCycle(); showToast('Registro eliminado');
+}
+
+function saveCycleRecord(editId=null){
+  const start=(document.getElementById('mCycleStart')?.value||'').trim();
+  const endRaw=(document.getElementById('mCycleEnd')?.value||'').trim();
+  const isActive=!!(document.getElementById('mCycleActive')?.checked);
+  const end=isActive?null:(endRaw||null);
+  const flow=document.getElementById('mCycleFlow')?.value||null;
+  const notes=(document.getElementById('mCycleNotes')?.value||'').trim();
+  const symptoms=[];
+  document.querySelectorAll('.cycle-symptom-cb:checked').forEach(cb=>symptoms.push(cb.value));
+  if(!start){showToast('Selecciona la fecha de inicio');return;}
+  if(end&&end<start){showToast('La fecha de fin no puede ser anterior al inicio');return;}
+  const existing=(S.cycleRecords||[]);
+  // Duplicate start date check
+  const dup=existing.find(r=>r.periodStart===start&&(!editId||r.id!==editId));
+  if(dup&&!confirm('Ya existe un registro con esa fecha de inicio. ¿Continuar de todas formas?')) return;
+  // Warn if another active record
+  if(isActive&&existing.find(r=>r.isActive&&!r.periodEnd&&(!editId||r.id!==editId))){
+    if(!confirm('Ya hay un período activo. ¿Deseas continuar y tener dos activos?')) return;
+  }
+  // Warn unusual lengths
+  if(end){
+    const len=cycleDaysBetween(start,end)+1;
+    if(len<2||len>10){if(!confirm(`La duración del período (${len} días) parece inusual. ¿Confirmas las fechas?`)) return;}
+  }
+  if(!S.cycleRecords) S.cycleRecords=[];
+  const now=new Date().toISOString();
+  if(editId){
+    const idx=S.cycleRecords.findIndex(r=>r.id===editId);
+    if(idx>=0) Object.assign(S.cycleRecords[idx],{periodStart:start,periodEnd:end||null,isActive,flowIntensity:flow||null,symptoms,notes,updatedAt:now});
+  } else {
+    S.cycleRecords.push({id:uid(),periodStart:start,periodEnd:end||null,isActive,flowIntensity:flow||null,symptoms,notes,createdAt:now,updatedAt:now});
+  }
+  save(); closeModal(); renderCycle(); showToast(editId?'Ciclo actualizado ✓':'Ciclo guardado ✓');
+}
+
 // ────────────────────────────────────────────────────────────
 
 function renderCurrentView() {
@@ -12057,6 +12488,7 @@ function renderCurrentView() {
   else if(currentView==='cuentas') renderAccounts();
   else if(currentView==='mascotas') renderMascotas();
   else if(currentView==='millas') renderMillas();
+  else if(currentView==='cycle') renderCycle();
   else if(currentView==='mundial') renderMundial();
   else if(currentView==='profile') renderProfileView();
   else if(currentView==='config'){
