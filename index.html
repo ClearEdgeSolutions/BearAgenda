@@ -1299,6 +1299,27 @@ function houseUid(prefix='h') {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
 }
 
+// ── SPACE ACTIVITY LOG ─────────────────────────────────────────
+// Logs any personal action to the shared space so other members get notified.
+// Fire-and-forget: doesn't block the caller's flow.
+function logToSpace(label, amount=0, refType='personal', refId='') {
+  if(!currentSpaceId || !H) return;
+  if(!Array.isArray(H.transactions)) H.transactions=[];
+  H.transactions.unshift({
+    id: houseUid('htx'),
+    label,
+    amount,
+    date: isoToday(),
+    by: currentActorName(),
+    createdAt: new Date().toISOString(),
+    refType,
+    refId: refId||''
+  });
+  // Keep log bounded (last 300 entries)
+  if(H.transactions.length>300) H.transactions=H.transactions.slice(0,300);
+  saveHouse().catch(e=>console.warn('logToSpace error:',e));
+}
+
 function newestTime(obj) {
   return new Date(obj.updatedAt||obj.createdAt||obj.updated_at||0).getTime()||0;
 }
@@ -2297,6 +2318,30 @@ function catLabel(c) { return {trabajo:'Trabajo',deuda:'Deuda',persona:'Persona'
 function paymentCategoryOptions(selected='personal') {
   return PAYMENT_CATEGORIES.map(c=>`<option value="${c}" ${selected===c?'selected':''}>${catLabel(c)}</option>`).join('');
 }
+function checkGasolinaSubcat() {
+  const cat=document.getElementById('mCat')?.value;
+  const wrap=document.getElementById('gasSubcatWrap');
+  if(wrap) wrap.style.display=cat==='gasolina'?'':'none';
+}
+function setGasSubcat(val) {
+  const f=document.getElementById('mGasSubcat'); if(f) f.value=val;
+  const btnT=document.getElementById('gasSubBtnTrabajo'), btnP=document.getElementById('gasSubBtnPersonal');
+  if(btnT&&btnP){
+    [btnT,btnP].forEach(b=>{ b.style.background=''; b.style.borderColor=''; b.style.color=''; b.style.fontWeight='600'; });
+    const active=val==='trabajo'?btnT:btnP;
+    active.style.background='rgba(124,111,218,0.18)'; active.style.borderColor='rgba(124,111,218,0.5)'; active.style.color='#7c6fda'; active.style.fontWeight='800';
+  }
+}
+function gasSubcatHtml(preSelected='') {
+  return `<div id="gasSubcatWrap" style="display:none">
+    <label class="text-xs font-bold text-slate-500 uppercase">¿Gasolina de trabajo o personal?</label>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button type="button" id="gasSubBtnTrabajo" onclick="setGasSubcat('trabajo')" style="flex:1;padding:9px;border-radius:12px;border:1.5px solid rgba(148,163,184,0.3);background:transparent;font-size:0.8rem;font-weight:600;color:#64748b;cursor:pointer">💼 Trabajo</button>
+      <button type="button" id="gasSubBtnPersonal" onclick="setGasSubcat('personal')" style="flex:1;padding:9px;border-radius:12px;border:1.5px solid rgba(148,163,184,0.3);background:transparent;font-size:0.8rem;font-weight:600;color:#64748b;cursor:pointer">🤝 Personal</button>
+    </div>
+    <input type="hidden" id="mGasSubcat" value="${preSelected}">
+  </div>`;
+}
 function methodLabel(m) { return {deposito:'Depósito',efectivo:'Efectivo',transferencia:'Transferencia'}[m]||m; }
 function freqLabel(f) { return {monthly:'Mensual',biweekly:'Cada 2 semanas',every_two_weeks:'Cada 2 semanas',semimonthly:'Quincenal',quincenal:'Quincenal',weekly:'Semanal',once:'Único'}[f]||f; }
 function paycheckFreqLabel(p) { return {weekly:'Semanal',biweekly:'Cada 2 semanas',every_two_weeks:'Cada 2 semanas',semimonthly:'Quincenal',quincenal:'Quincenal',monthly:'Mensual'}[p.recurrenceFreq] || (p.paymentType==='unico'?'Único':'Recurrente'); }
@@ -2713,12 +2758,16 @@ function getTransactions(limit=8) {
   (S.spaces||[]).forEach(sp=>{
     const spaceItems=sp.id===currentSpaceId?(H.items||[]):(spaceItemsCache[sp.id]||[]);
     const who=currentHousePerson(sp.id);
+    const actor=currentActorName();
     const spaceName=sp.name||'Espacio';
     (spaceItems||[]).forEach(item=>{
       const assigned=item.assignedTo||'both';
       if(!(assigned==='both'||assigned===who)) return;
       (item.payments||[]).forEach(p=>{
         const by=p.by||'Alguien';
+        // Rule: only show in personal historial if the item is directly assigned to this user
+        // OR if this user made the payment. "both" items paid by others go to space historial only.
+        if(!(assigned===who || by===actor)) return;
         tx.push({date:p.date,createdAt:p.createdAt,type:'Casa',name:`${spaceName}: ${item.name} · hecho por ${by}`,amount:p.amount||0,sign:'-',spaceId:sp.id,refId:item.id,paymentId:p.id});
       });
     });
@@ -2731,7 +2780,13 @@ function getTransactions(limit=8) {
     if(seen.has(key)) return;
     seen.add(key); unique.push(t);
   });
-  return unique.sort((a,b)=>(parseDate(b.date)-parseDate(a.date))||(new Date(b.createdAt||b.date)-new Date(a.createdAt||a.date))).slice(0,limit);
+  return unique.sort((a,b)=>{
+    // Sort strictly by when the action was recorded (createdAt), most recent first.
+    // Fall back to date string only if both lack createdAt (edge case).
+    const ta=a.createdAt?new Date(a.createdAt).getTime():(parseDate(a.date||'').getTime()||0);
+    const tb=b.createdAt?new Date(b.createdAt).getTime():(parseDate(b.date||'').getTime()||0);
+    return tb-ta;
+  }).slice(0,limit);
 }
 function reverseTransaction(type,args=[]) {
   if(!type) return;
@@ -2785,7 +2840,7 @@ function getWidgetSummaryData() {
   return {disponible, totalBanco, totalEfectivo, totalBolsillos, proximoPago, proximoIngreso, porRecibir};
 }
 
-function getUpcomingItems(days=14) {
+function getUpcomingItems(days=7) {
   const t=today(), limit=new Date(t); limit.setDate(t.getDate()+days);
   const items=[];
   S.paychecks.forEach(p=>{
@@ -2845,6 +2900,34 @@ function getUpcomingItems(days=14) {
     const d=parseDate(list.date);
     if(d>=t&&d<=limit) items.push({type:'shopping',id:list.id,name:`Compras: ${list.title}`,amount:0,date:list.date,days:daysUntil(list.date),pending});
   });
+  // ── Espacio compartido: calendario, listas y planes visibles para TODOS los miembros ──
+  if(currentSpaceId && H) {
+    Object.entries(H.calendarNotes||{}).forEach(([date,notes])=>{
+      const d=parseDate(date);
+      if(d>=t&&d<=limit) (notes||[]).filter(n=>!n.done).forEach(n=>items.push({
+        type:'task', id:n.id, name:n.text||noteTypeLabel(n.type||'pendiente'),
+        amount:0, date, dateKey:date, days:daysUntil(date), spaceId:currentSpaceId,
+        spaceNote:true, emoji:null
+      }));
+    });
+    (H.shoppingLists||[]).forEach(list=>{
+      const pending=(list.items||[]).filter(i=>!i.done).length;
+      if(!pending||list.completed) return;
+      const d=parseDate(list.date);
+      if(d>=t&&d<=limit) items.push({
+        type:'shopping', id:list.id, name:list.title,
+        amount:0, date:list.date, days:daysUntil(list.date), pending, spaceId:currentSpaceId
+      });
+    });
+    (H.plans||[]).filter(p=>!p.completed).forEach(p=>{
+      const d=parseDate(p.date);
+      if(d>=t&&d<=limit) items.push({
+        type:'plan', id:p.id, name:p.label||'Plan',
+        amount:p.amount||0, date:p.date, days:daysUntil(p.date),
+        emoji:'receipt', pending:(p.items||[]).length, spaceId:currentSpaceId
+      });
+    });
+  }
   [monthKey(t),monthKey(new Date(t.getFullYear(),t.getMonth()+1,1))].forEach(m=>{
     getMonthPayments(m).forEach(p=>{
       const d=parseDate(p.date);
@@ -2874,7 +2957,7 @@ function getUpcomingItems(days=14) {
 
 function homeNoPayButton(item) {
   if(!item || !['bill','onetime','expense','borrowed','house'].includes(item.type)) return '';
-  // Show X for ALL payments in the next 14 days, regardless of space assignment
+  // Show X for ALL payments in the next 7 days, regardless of space assignment
   const kind={bill:'bill',onetime:'onetime',expense:'expense',borrowed:'borrowed',house:'house'}[item.type];
   const payload=[kind,item.id,item.paymentId||'',item.date||item.dateKey||''].join(':');
   const label=item.type==='house'?'Omitir':'No pagar';
@@ -2914,7 +2997,7 @@ function homeUpcomingKind(item) {
 
 function homeUpcomingDetailPayload(item) {
   if(!item) return '';
-  return [item.type,item.id||'',item.paymentId||'',item.date||item.dateKey||''].join(':');
+  return [item.type,item.id||'',item.paymentId||'',item.date||item.dateKey||'',item.spaceId||''].join(':');
 }
 
 function homeSpendingBars(month) {
@@ -3063,7 +3146,7 @@ function makeFabDraggable(fabEl, onTap) {
 // HOME
 // ═══════════════════════════════════════
 function renderHome() {
-  const upcoming=getUpcomingItems(14);
+  const upcoming=getUpcomingItems(7);
   const visibleUpcoming=upcoming.filter(item=>homeUpcomingFilter==='all'||homeUpcomingKind(item)===homeUpcomingFilter);
   const pay14=upcoming.filter(x=>['bill','onetime','expense','borrowed','house'].includes(x.type)).reduce((s,x)=>s+x.amount,0);
   const pay14Count=upcoming.filter(x=>['bill','onetime','expense','borrowed','house'].includes(x.type)).length;
@@ -3206,7 +3289,7 @@ function renderHome() {
     </div>`;
   }
   html+=`<div onclick="toggleHomeUpcoming()" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;cursor:pointer">
-    <span style="font-size:0.95rem;font-weight:700;color:#fff">Próximos 14 días</span>
+    <span style="font-size:0.95rem;font-weight:700;color:#fff">Próximos 7 días</span>
     <div style="display:flex;align-items:center;gap:6px">
       <span style="font-size:0.65rem;color:#5c6480">${visibleUpcoming.length} item${visibleUpcoming.length!==1?'s':''}</span>
       <svg style="width:14px;height:14px;color:#8b7fd4;transform:rotate(${homeUpcomingCollapsed?'0':'180'}deg);transition:transform .2s" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
@@ -3235,15 +3318,15 @@ function renderHome() {
         else if(item.type==='expense') actionBtn=`${homeActionIcon(`markExpensePaid('${item.id}')`,'yes','Pagar')}${homeNoPayButton(item)}`;
         else if(item.type==='borrowed') actionBtn=`${homeActionIcon(`markBorrowedPaid('${item.id}','${item.paymentId||''}')`,'yes','Pagar')}${homeNoPayButton(item)}`;
         else if(item.type==='house') actionBtn=`${homeActionIcon(`openModal('addHousePayment','${item.id}')`,'yes','Abonar')}${homeNoPayButton(item)}`;
-        else if(item.type==='task') actionBtn=`<button onclick="event.stopPropagation();completeCalendarNote('${item.dateKey}','${item.id}')" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.25)"><svg style="width:13px;height:13px" fill="none" stroke="#4ade80" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></button>`;
-        else if(item.type==='shopping') actionBtn=`<button onclick="event.stopPropagation();openModal('shoppingListDetail','${item.id}')" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;background:#252836;border:1px solid rgba(255,255,255,0.08)"><svg style="width:12px;height:12px" fill="none" stroke="#8b7fd4" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>`;
-        else if(item.type==='plan') actionBtn=`<button onclick="event.stopPropagation();openModal('editCustomPlan','${item.id}')" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;background:#252836;border:1px solid rgba(255,255,255,0.08)"><svg style="width:12px;height:12px" fill="none" stroke="#8b7fd4" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>`;
+        else if(item.type==='task') actionBtn=`${homeActionIcon(`toggleCalendarNote('${item.dateKey}','${item.id}')`, 'yes', 'Completar')}${homeActionIcon(`deleteCalendarNote('${item.dateKey}','${item.id}')`, 'no', 'Eliminar')}`;
+        else if(item.type==='shopping') actionBtn=`${homeActionIcon(`completeShoppingList('${item.id}')`, 'yes', 'Completar')}${homeActionIcon(`deleteShoppingList('${item.id}')`, 'no', 'Eliminar')}`;
+        else if(item.type==='plan') actionBtn=`${homeActionIcon(`toggleCustomPlanDone('${item.id}')`, 'yes', 'Completar')}${homeActionIcon(`deleteCustomPlan('${item.id}')`, 'no', 'Eliminar')}`;
         else actionBtn=`<button onclick="event.stopPropagation();openModal('addLoanPayment','${item.id}')" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;background:rgba(124,111,218,0.12);border:1px solid rgba(124,111,218,0.25)"><svg style="width:12px;height:12px" fill="none" stroke="#a78bfa" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></button>`;
         html+=`<div onclick="openModal('homeUpcomingDetail','${homeUpcomingDetailPayload(item)}')" class="card" style="display:flex;align-items:center;gap:9px;padding:8px 11px;margin-bottom:6px;cursor:pointer">
           <div style="width:30px;height:30px;border-radius:9px;background:${iconBg};display:flex;align-items:center;justify-content:center;color:${iconColor};flex-shrink:0;font-size:0.72rem">${item.emoji?renderStoredIcon(item.emoji,item.type,item.category||''):icon}</div>
           <div style="flex:1;min-width:0">
             <div style="font-weight:600;color:#e8eaf2;font-size:0.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.name}</div>
-            <div style="color:#5c6480;font-size:0.6rem;margin-top:2px">${typeLabel} · ${fmtDate(item.date||item.dateKey)} <span style="color:${daysBadgeColor};font-weight:700">${daysN>0?'· '+daysN+'d':''}</span></div>
+            <div style="color:#5c6480;font-size:0.6rem;margin-top:2px">${typeLabel} · ${fmtDate(item.date||item.dateKey)}${item.spaceId?` <span style="background:rgba(124,111,218,0.12);color:#a5b4fc;font-weight:700;padding:1px 5px;border-radius:6px;font-size:0.55rem">🏠 Espacio</span>`:''} <span style="color:${daysBadgeColor};font-weight:700">${daysN>0?'· '+daysN+'d':''}</span></div>
           </div>
           <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
             <div style="font-weight:700;color:${amtColor};font-size:0.82rem">${amtText}</div>
@@ -3277,14 +3360,24 @@ function renderHome() {
         const iconColor=isMemo?'#94a3b8':isIn?'#4ade80':'#ef4444';
         const iconChar=isMemo?'↔':isIn?'+':'−';
         const reverseBtn=t.reverseType?`<button onclick="event.stopPropagation();reverseTransaction('${t.reverseType}',${JSON.stringify(t.reverseArgs||[]).replace(/"/g,'&quot;')})" aria-label="Deshacer transacción" style="width:28px;height:28px;border-radius:9px;border:1px solid rgba(239,68,68,0.18);background:rgba(239,68,68,0.08);color:#ef4444;font-weight:800;line-height:1;flex-shrink:0">×</button>`:'';
-        html+=`<div class="card" style="display:flex;align-items:center;gap:9px;padding:8px 11px;margin-bottom:6px${isMemo?';opacity:0.8':''}">
-          <div style="width:30px;height:30px;border-radius:9px;background:${iconBg};display:flex;align-items:center;justify-content:center;color:${iconColor};flex-shrink:0;font-size:0.72rem;font-weight:700">${iconChar}</div>
+        const typeBadgeBg=isMemo?'rgba(148,163,184,0.12)':isIn?'rgba(74,222,128,0.12)':'rgba(124,111,218,0.12)';
+        const typeBadgeColor=isMemo?'#94a3b8':isIn?'#4ade80':'#a5b4fc';
+        const actionNote=[t.note,t.installmentLabel,t.sourceLabel].filter(Boolean).join(' · ');
+        const actionDateStr=fmtActionTime(t.createdAt||(t.date?t.date+'T00:00:00':null));
+        html+=`<div class="card" style="display:flex;align-items:flex-start;gap:9px;padding:10px 11px;margin-bottom:6px${isMemo?';opacity:0.85':''}">
+          <div style="width:32px;height:32px;border-radius:9px;background:${iconBg};display:flex;align-items:center;justify-content:center;color:${iconColor};flex-shrink:0;font-size:0.75rem;font-weight:700;margin-top:1px">${iconChar}</div>
           <div style="flex:1;min-width:0">
-            <div style="font-weight:600;color:#e8eaf2;font-size:0.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name||t.type}</div>
-            <div style="color:#5c6480;font-size:0.6rem;margin-top:2px">${t.type} · ${fmtDate(t.date)}${t.note?' · '+t.note:''}${t.installmentLabel?' · '+t.installmentLabel:''}${t.sourceLabel?' · '+t.sourceLabel:''}</div>
+            <div style="font-weight:700;color:#e8eaf2;font-size:0.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name||t.type}</div>
+            <div style="display:flex;align-items:center;gap:5px;margin-top:3px;flex-wrap:wrap">
+              <span style="font-size:0.58rem;font-weight:700;background:${typeBadgeBg};color:${typeBadgeColor};padding:2px 7px;border-radius:99px;white-space:nowrap">${t.type}</span>
+              ${actionNote?`<span style="font-size:0.6rem;color:#8492b4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px">${actionNote}</span>`:''}
+            </div>
+            <div style="font-size:0.58rem;color:#4a5170;margin-top:4px">🕐 ${actionDateStr}</div>
           </div>
-          <div style="font-weight:700;color:${amtColor};font-size:0.82rem;flex-shrink:0">${isMemo?'—':isIn?'+':'-'}${isMemo?'':fmt(t.amount)}</div>
-          ${reverseBtn}
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+            <div style="font-weight:700;color:${amtColor};font-size:0.82rem">${isMemo?'—':isIn?'+':'-'}${isMemo?'':fmt(t.amount)}</div>
+            ${reverseBtn}
+          </div>
         </div>`;
       });
     }
@@ -3328,7 +3421,9 @@ function saveShoppingList(dateKey) {
   const title=(document.getElementById('mTitle')?.value||'Compras').trim()||'Compras';
   const lines=(document.getElementById('mShoppingItems')?.value||'').split('\n').map(x=>x.trim()).filter(Boolean);
   const now=new Date().toISOString();
-  S.shoppingLists.unshift({id:uid(),title,date:dateKey,completed:false,items:lines.map(name=>({id:uid(),name,done:false,createdAt:now,updatedAt:now})),createdAt:now,updatedAt:now,userId:CURRENT_USER&&CURRENT_USER.id});
+  const _newList={id:uid(),title,date:dateKey,completed:false,items:lines.map(name=>({id:uid(),name,done:false,createdAt:now,updatedAt:now})),createdAt:now,updatedAt:now,userId:CURRENT_USER&&CURRENT_USER.id};
+  S.shoppingLists.unshift(_newList);
+  logToSpace(`Creó lista de compras: ${title}`, 0, 'shoppingListCreate', _newList.id);
   save(); closeModal(); calDate=dateKey; renderCurrentView(); showToast('Lista de compras creada');
 }
 
@@ -3350,6 +3445,7 @@ function completeShoppingList(listId, stay=false) {
   list.completed=done;
   list.items=(list.items||[]).map(item=>({...item,done,updatedAt:now}));
   list.updatedAt=now;
+  logToSpace(`${done?'Completó':'Reactivó'} lista: ${list.title||'Lista'}`, 0, 'shoppingList', listId);
   save();
   if(stay) renderCurrentView();
   else { openModal('shoppingListDetail',listId); renderCurrentView(); }
@@ -3384,6 +3480,40 @@ function toggleShoppingItem(listId,itemId) {
   const list=(S.shoppingLists||[]).find(x=>x.id===listId), item=list&&(list.items||[]).find(x=>x.id===itemId);
   if(item){item.done=!item.done; item.updatedAt=new Date().toISOString(); list.completed=(list.items||[]).length>0&&(list.items||[]).every(x=>x.done); list.updatedAt=item.updatedAt; save(); openModal('shoppingListDetail',listId);}
 }
+function toggleShoppingItemFromDetail(listId,itemId) {
+  // Toggle personal shopping item and refresh the homeUpcomingDetail modal
+  const list=(S.shoppingLists||[]).find(x=>x.id===listId), item=list&&(list.items||[]).find(x=>x.id===itemId);
+  if(item){item.done=!item.done; item.updatedAt=new Date().toISOString(); list.completed=(list.items||[]).length>0&&(list.items||[]).every(x=>x.done); list.updatedAt=item.updatedAt; save(); openModal('homeUpcomingDetail',homeUpcomingDetailPayload({type:'shopping',id:listId,date:list.date}));}
+}
+function toggleSpaceShoppingItem(listId,itemId) {
+  if(!H) return;
+  const list=(H.shoppingLists||[]).find(x=>x.id===listId), item=list&&(list.items||[]).find(x=>x.id===itemId);
+  if(!item) return;
+  item.done=!item.done; item.updatedAt=new Date().toISOString();
+  list.completed=(list.items||[]).length>0&&(list.items||[]).every(x=>x.done); list.updatedAt=item.updatedAt;
+  logToSpace(`${item.done?'Marcó':'Desmarcó'} ítem: ${item.name||''}`, 0, 'shoppingItemToggle', listId);
+  saveHouse().then(()=>openModal('homeUpcomingDetail',homeUpcomingDetailPayload({type:'shopping',id:listId,spaceId:currentSpaceId,date:list.date}))).catch(e=>console.warn('toggleSpaceShoppingItem:',e));
+}
+function toggleSpaceCalendarNote(dateKey,id) {
+  if(!H) return;
+  const n=((H.calendarNotes||{})[dateKey]||[]).find(x=>x.id===id);
+  if(!n) return;
+  n.done=!n.done;
+  const label=n.text||(n.type==='cita'?'Cita':n.type==='llamada'?'Llamada':'Tarea');
+  logToSpace(`${n.done?'Completó':'Reactivó'} ${noteTypeLabel(n.type)}: ${label}`, 0, 'calendarToggle', id);
+  saveHouse().catch(e=>console.warn('toggleSpaceCalendarNote:',e));
+  renderCurrentView();
+  showToast(n.done?'✅ Completado':'↩ Marcado como pendiente');
+}
+function toggleSpacePlanDone(id) {
+  if(!H) return;
+  const p=(H.plans||[]).find(x=>x.id===id); if(!p) return;
+  p.completed=!p.completed;
+  logToSpace(`${p.completed?'Completó':'Reactivó'} plan: ${p.label||'Plan'}`, 0, 'planToggle', id);
+  saveHouse().catch(e=>console.warn('toggleSpacePlanDone:',e));
+  renderCurrentView();
+  showToast(p.completed?'Plan completado ✓':'Plan reactivado');
+}
 function editShoppingItem(listId,itemId,value) {
   const list=(S.shoppingLists||[]).find(x=>x.id===listId), item=list&&(list.items||[]).find(x=>x.id===itemId);
   if(item){item.name=(value||'').trim()||item.name; item.updatedAt=new Date().toISOString(); list.updatedAt=item.updatedAt; save(); renderCurrentView();}
@@ -3395,6 +3525,8 @@ function deleteShoppingItem(listId,itemId) {
 }
 function deleteShoppingList(listId) {
   if(!confirm('¿Borrar esta lista de compras completa?')) return;
+  const _dsList=(S.shoppingLists||[]).find(x=>x.id===listId);
+  logToSpace(`Eliminó lista: ${_dsList?.title||'Lista'}`, 0, 'shoppingListDelete', listId);
   S.shoppingLists=(S.shoppingLists||[]).filter(x=>x.id!==listId);
   save(); closeModal(); renderCurrentView(); showToast('Lista borrada');
 }
@@ -3832,7 +3964,8 @@ async function rescheduleScheduledPayment(kind,pid,paymentId,newDate,origDateKey
     :kind==='expense'?(S.expenses.find(x=>x.id===pid)?.name||'Gasto')
     :'Pago';
   if(!S.historyLog) S.historyLog=[];
-  S.historyLog.unshift({id:uid(),date:newDate,createdAt:new Date().toISOString(),type:'Reprogramado',name:_logName,note:`Movido al ${newDate}`,amount:0,sign:'memo'});
+  S.historyLog.unshift({id:uid(),date:isoToday(),createdAt:new Date().toISOString(),type:'Reprogramado',name:_logName,note:`Movido para: ${fmtDate(newDate)}`,amount:0,sign:'memo'});
+  logToSpace(`Reprogramó ${_logName} → ${fmtDate(newDate)}`, 0, 'reschedule', pid);
   save(); closeModal(); renderCurrentView(); showToast('Pago reprogramado');
 }
 
@@ -4722,9 +4855,25 @@ function renderHouse() {
     html+=renderHouseCalendarContent();
   } else {
     const completed=visibleItems.filter(item=>housePaid(item)>0).sort((a,b)=>new Date(b.updatedAt||b.createdAt||0)-new Date(a.updatedAt||a.createdAt||0));
-    const recent=(H.transactions||[]).filter(t=>txMonthMatches(t.date,houseMonth)).slice(0,30);
+    const recent=(H.transactions||[]).filter(t=>txMonthMatches(t.date,houseMonth)).slice(0,60);
+    const actor=currentActorName();
+    // refType → icon emoji for space log
+    function spaceRefIcon(rt) {
+      if(!rt) return '📋';
+      if(rt.startsWith('bill')) return '🧾';
+      if(rt.startsWith('onetime')) return '💳';
+      if(rt.startsWith('expense')) return '🛒';
+      if(rt.startsWith('borrowed')) return '🤝';
+      if(rt.startsWith('calendar')) return '📅';
+      if(rt.startsWith('shopping')) return '🛍️';
+      if(rt.startsWith('plan')) return '📌';
+      if(rt.startsWith('reschedule')) return '🔄';
+      if(rt.startsWith('house')) return '🏠';
+      if(rt.startsWith('pocket')) return '💼';
+      return '📋';
+    }
     html+=`<div class="card p-4 mb-3">
-      <div style="color:#7c6fda;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Pagos realizados</div>
+      <div style="color:#7c6fda;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Pagos del espacio realizados</div>
       ${completed.length?completed.map(item=>`<button onclick="openModal('houseItemDetail','${item.id}')" class="w-full text-left" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid rgba(255,255,255,0.06)">
         <div style="display:flex;align-items:center;gap:10px;min-width:0">
           <div style="width:36px;height:36px;border-radius:10px;background:#252836;color:#4ade80;display:flex;align-items:center;justify-content:center;flex-shrink:0">${renderStoredIcon(item.emoji||'home','house','')}</div>
@@ -4737,14 +4886,20 @@ function renderHouse() {
       </button>`).join(''):`<div style="text-align:center;color:#5c6480;font-size:0.82rem;padding:12px 0">Aún no hay pagos realizados.</div>`}
     </div>
     <div class="card p-4">
-      <div style="color:#7c6fda;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Actividad compartida</div>
-      ${recent.length?recent.map(t=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid rgba(255,255,255,0.06)">
-        <div>
-          <div style="font-size:0.82rem;font-weight:600;color:#fff">${t.label}</div>
-          <div style="font-size:0.62rem;color:#5c6480">${fmtDate(t.date)} · ${t.by||'Casa'}</div>
-        </div>
-        <div style="font-weight:700;color:${t.amount>=0?'#4ade80':'#ef4444'};font-size:0.875rem;flex-shrink:0;margin-left:12px">${fmt(Math.abs(t.amount||0))}</div>
-      </div>`).join(''):`<div style="text-align:center;color:#5c6480;font-size:0.82rem;padding:12px 0">Sin actividad todavía.</div>`}
+      <div style="color:#7c6fda;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Actividad del espacio</div>
+      ${recent.length?recent.map(t=>{
+        const isMe=t.by===actor;
+        const memberColor=isMe?'#a5b4fc':'#94a3b8';
+        const memberBg=isMe?'rgba(124,111,218,0.12)':'rgba(148,163,184,0.08)';
+        return `<div style="display:flex;align-items:flex-start;gap:9px;padding:9px 0;border-top:1px solid rgba(255,255,255,0.06)">
+          <div style="width:30px;height:30px;border-radius:9px;background:${memberBg};display:flex;align-items:center;justify-content:center;font-size:0.85rem;flex-shrink:0;margin-top:1px">${spaceRefIcon(t.refType)}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:0.78rem;font-weight:600;color:#e8eaf2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.label}</div>
+            <div style="font-size:0.6rem;color:#5c6480;margin-top:2px"><span style="color:${memberColor};font-weight:700">${t.by||'Casa'}</span> · ${fmtActionTime(t.createdAt||t.date)}</div>
+          </div>
+          ${t.amount?`<div style="font-weight:700;color:${t.amount>0?'#4ade80':'#e8eaf2'};font-size:0.8rem;flex-shrink:0">${fmt(Math.abs(t.amount))}</div>`:''}
+        </div>`;
+      }).join(''):`<div style="text-align:center;color:#5c6480;font-size:0.82rem;padding:12px 0">Sin actividad todavía.</div>`}
     </div>`;
   }
   document.getElementById('houseContent').innerHTML=html;
@@ -5353,7 +5508,18 @@ function deletePocketMovement(pocketId, txId, idxHint=null){
 }
 function deleteLoan(id) { if(!confirm('¿Eliminar préstamo?')) return; S.loans=S.loans.filter(x=>x.id!==id); save(); renderCurrentView(); }
 function deleteBorrowedLoan(id) { if(!confirm('¿Eliminar este préstamo recibido y todas sus cuotas futuras?')) return; S.borrowedLoans=S.borrowedLoans.filter(x=>x.id!==id); save(); renderCurrentView(); updateHeaderBalance(); }
-function deleteCustomPlan(id) { if(!confirm('¿Eliminar plan?')) return; S.plans=S.plans.filter(x=>x.id!==id); save(); renderCurrentView(); }
+function deleteCustomPlan(id) {
+  if(!confirm('¿Eliminar plan?')) return;
+  const _dp=(S.plans||[]).find(x=>x.id===id);
+  logToSpace(`Eliminó plan: ${_dp?.label||'Plan'}`, 0, 'planDelete', id);
+  S.plans=S.plans.filter(x=>x.id!==id); save(); renderCurrentView();
+}
+function toggleCustomPlanDone(id) {
+  const p=(S.plans||[]).find(x=>x.id===id); if(!p) return;
+  p.completed=!p.completed;
+  logToSpace(`${p.completed?'Completó':'Reactivó'} plan: ${p.label||'Plan'}`, 0, 'planToggle', id);
+  save(); renderCurrentView(); showToast(p.completed?'Plan completado ✓':'Plan reactivado');
+}
 function toggleCustomPlan(id) { const p=S.plans.find(x=>x.id===id); if(p) p.completed=!p.completed; save(); renderCurrentView(); }
 
 function calendarItemsForDate(dateKey) {
@@ -5538,16 +5704,61 @@ function renderCalendar() {
   });
 
   notes.forEach(n=>{
-    const nItems=(n.items||[]).filter(Boolean);
-    html+=`<div class="card mb-2" style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;position:relative;overflow:hidden">
-      <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:${n.done?'#4ade80':'#7c6fda'};border-radius:4px 0 0 4px"></div>
-      <button onclick="completeCalendarNote('${selected}','${n.id}')" style="width:24px;height:24px;border-radius:50%;margin-top:2px;background:${n.done?'rgba(74,222,128,0.15)':'#1a1d2e'};border:1.5px solid ${n.done?'#4ade80':'rgba(255,255,255,0.15)'};color:${n.done?'#4ade80':'#5c6480'};font-size:0.65rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer">${n.done?'✓':''}</button>
-      <div style="flex:1;min-width:0">
-        <span style="background:rgba(124,111,218,0.12);color:#a5b4fc;font-size:0.58rem;font-weight:700;padding:2px 8px;border-radius:99px;margin-bottom:4px;display:inline-block">${noteTypeIcon(n.type)} ${noteTypeLabel(n.type)}</span>
-        <div style="font-size:0.82rem;color:${n.done?'#5c6480':'#fff'};${n.done?'text-decoration:line-through':''};font-weight:500">${n.text}</div>
-        ${nItems.length?`<div style="font-size:0.62rem;color:#5c6480;margin-top:4px">${nItems.map(x=>`• ${x}`).join('<br>')}</div>`:''}
+    /* ── Colores por tipo ── */
+    const typeColors={recordatorio:'#7c6fda',cita:'#06b6d4',llamada:'#4ade80',lista:'#f59e0b'};
+    const acColor=typeColors[n.type]||'#7c6fda';
+    const urgencyColors=['#94a3b8','#60a5fa','#fbbf24','#f87171'];
+    const citaCatColors={trabajo:'#7c6fda',personal:'#4ade80',medica:'#f87171',otra:'#94a3b8'};
+    /* ── Detalles extra por tipo ── */
+    let extraHtml='';
+    if(n.type==='cita'){
+      const catLabel={trabajo:'💼 Trabajo',personal:'🤝 Personal',medica:'🏥 Médica',otra:'📌 Otra'}[n.citaCategory]||'';
+      if(n.citaWith) extraHtml+=`<div style="display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--text-sub);margin-top:5px"><span>👤</span><span>${n.citaWith}</span></div>`;
+      if(n.citaTime) extraHtml+=`<div style="display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--text-sub);margin-top:3px"><span>⏰</span><span>${n.citaTime}</span></div>`;
+      if(n.citaAddress) extraHtml+=`<div style="display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--text-sub);margin-top:3px"><span>📍</span><span>${n.citaAddress}</span></div>`;
+      if(n.citaRepeat&&n.citaRepeat!=='no') extraHtml+=`<div style="display:flex;align-items:center;gap:5px;font-size:.72rem;color:#a5b4fc;margin-top:3px"><span>🔁</span><span>Se repite: ${{diario:'Diario',semanal:'Semanal',quincenal:'Quincenal',mensual:'Mensual'}[n.citaRepeat]||n.citaRepeat}</span></div>`;
+      if(catLabel) extraHtml+=`<span style="display:inline-block;margin-top:5px;font-size:.58rem;font-weight:700;padding:2px 8px;border-radius:99px;background:rgba(6,182,212,.12);color:#22d3ee">${catLabel}</span>`;
+      if(n.citaNotes) extraHtml+=`<div style="font-size:.68rem;color:var(--text-muted);margin-top:5px;line-height:1.4;border-top:1px solid var(--border);padding-top:5px">${n.citaNotes}</div>`;
+    } else if(n.type==='llamada'){
+      if(n.llamadaPhone) extraHtml+=`<div style="display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--text-sub);margin-top:5px"><span>📞</span><span>${n.llamadaPhone}</span></div>`;
+      if(n.llamadaTime) extraHtml+=`<div style="display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--text-sub);margin-top:3px"><span>⏰</span><span>${n.llamadaTime}</span></div>`;
+      if(n.llamadaReason) extraHtml+=`<div style="font-size:.68rem;color:var(--text-muted);margin-top:5px;line-height:1.4;border-top:1px solid var(--border);padding-top:5px">${n.llamadaReason}</div>`;
+    } else if(n.type==='recordatorio'){
+      const urg=parseInt(n.urgency||1);
+      const urgLabels=['','🔵 Baja','🟡 Media','🔴 Alta'];
+      if(urg>1) extraHtml+=`<span style="display:inline-block;margin-top:5px;font-size:.58rem;font-weight:700;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,.06);color:${urgencyColors[urg]||'#94a3b8'}">${urgLabels[urg]||''}</span>`;
+      const rItems=(n.items||[]).filter(x=>x&&x.value);
+      if(rItems.length) extraHtml+=`<div style="margin-top:5px;display:grid;gap:2px">${rItems.map(x=>`<div style="font-size:.68rem;color:var(--text-muted)">• ${x.value}</div>`).join('')}</div>`;
+    } else if(n.type==='lista'){
+      const listaItems=n.listaItems||[];
+      if(listaItems.length){
+        const done=listaItems.filter(i=>i.done).length;
+        extraHtml+=`<div style="margin-top:6px;font-size:.6rem;color:var(--text-muted);margin-bottom:4px">${done}/${listaItems.length} completados</div>`;
+        extraHtml+=`<div style="display:grid;gap:3px">`;
+        listaItems.forEach((item,idx)=>{
+          extraHtml+=`<button onclick="toggleListaItem('${selected}','${n.id}',${idx})" style="display:flex;align-items:center;gap:7px;text-align:left;background:none;border:none;cursor:pointer;padding:2px 0;width:100%">
+            <span style="width:16px;height:16px;border-radius:4px;border:1.5px solid ${item.done?'#4ade80':'var(--border)'};background:${item.done?'rgba(74,222,128,.15)':'transparent'};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:#4ade80">${item.done?'✓':''}</span>
+            <span style="font-size:.74rem;color:${item.done?'var(--text-muted)':'var(--text-sub)'};${item.done?'text-decoration:line-through':''}">${item.text||''}</span>
+          </button>`;
+        });
+        extraHtml+=`</div>`;
+      }
+    }
+
+    html+=`<div class="card mb-2" style="padding:12px 14px;position:relative;overflow:hidden">
+      <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:${n.done?'#4ade80':acColor};border-radius:4px 0 0 4px"></div>
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <button onclick="toggleCalendarNote('${selected}','${n.id}')" title="${n.done?'Marcar como pendiente':'Marcar como completado'}" style="width:24px;height:24px;border-radius:50%;margin-top:2px;background:${n.done?'rgba(74,222,128,0.15)':'transparent'};border:1.5px solid ${n.done?'#4ade80':'rgba(255,255,255,0.18)'};color:${n.done?'#4ade80':'#5c6480'};font-size:0.65rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;transition:all .15s">${n.done?'✓':''}</button>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">
+            <span style="background:rgba(255,255,255,.06);color:${acColor};font-size:0.58rem;font-weight:700;padding:2px 8px;border-radius:99px">${noteTypeIcon(n.type)} ${noteTypeLabel(n.type)}</span>
+            ${n.done?`<span style="font-size:.56rem;font-weight:700;color:#4ade80;background:rgba(74,222,128,.1);padding:2px 6px;border-radius:99px">✓ Completado</span>`:''}
+          </div>
+          <div style="font-size:0.82rem;color:${n.done?'var(--text-muted)':'var(--text)'};${n.done?'text-decoration:line-through':''};font-weight:600">${n.text||''}</div>
+          ${extraHtml}
+        </div>
+        <button onclick="deleteCalendarNote('${selected}','${n.id}')" style="color:#4a5170;font-size:1.1rem;line-height:1;cursor:pointer;flex-shrink:0;padding:2px 4px;margin-top:-2px">×</button>
       </div>
-      <button onclick="deleteCalendarNote('${selected}','${n.id}')" style="color:#4a5170;font-size:1.1rem;line-height:1;cursor:pointer;flex-shrink:0;padding:2px 4px;margin-top:-2px">×</button>
     </div>`;
   });
 
@@ -5818,9 +6029,12 @@ function saveCalendarNote(dateKey) {
     const text=document.getElementById('mNoteText2')?.value.trim();
     if(!text){showToast('Describe la cita');return;}
     note.text=text;
+    note.citaCategory=document.getElementById('mCitaCategory')?.value||'otra';
     note.citaWith=document.getElementById('mCitaWith')?.value.trim()||'';
     note.citaTime=document.getElementById('mCitaTime')?.value||'';
     note.citaAddress=document.getElementById('mCitaAddr')?.value.trim()||'';
+    note.citaRepeat=document.getElementById('mCitaRepeat')?.value||'no';
+    note.citaRepeatEndType=note.citaRepeat!=='no'?(document.getElementById('mCitaRepeatEndType')?.value||'nunca'):'';
     note.citaNotes=document.getElementById('mCitaNotes')?.value.trim()||'';
   } else if(type==='llamada'){
     const name=document.getElementById('mLlamadaName')?.value.trim();
@@ -5838,6 +6052,7 @@ function saveCalendarNote(dateKey) {
   }
   if(!S.calendarNotes[dateKey]) S.calendarNotes[dateKey]=[];
   S.calendarNotes[dateKey].unshift(note);
+  logToSpace(`Agendó ${noteTypeLabel(type)}: ${note.text||''}`, 0, 'calendarNote', note.id);
   save(); closeModal(); renderCalendar(); showToast('Guardado');
 }
 function setNoteUrgency(level){
@@ -5883,7 +6098,23 @@ function addListaItem(){
   inp.value='';
 }
 function completeCalendarNote(dateKey,id) { const n=(S.calendarNotes[dateKey]||[]).find(x=>x.id===id); if(n){n.done=true;setUndoAction('Tarea marcada como completada','task',[dateKey,id]);} save(); renderCurrentView(); showToast('Tarea completada'); }
-function toggleCalendarNote(dateKey,id) { const n=(S.calendarNotes[dateKey]||[]).find(x=>x.id===id); if(n)n.done=!n.done; save(); renderCurrentView(); }
+function toggleCalendarNote(dateKey,id) {
+  const n=(S.calendarNotes[dateKey]||[]).find(x=>x.id===id);
+  if(!n) return;
+  n.done=!n.done;
+  if(!S.historyLog) S.historyLog=[];
+  const label=n.text||(n.type==='cita'?'Cita':n.type==='llamada'?'Llamada':'Tarea');
+  S.historyLog.unshift({id:uid(),date:isoToday(),createdAt:new Date().toISOString(),type:n.done?'Completado':'Reactivado',name:label,note:n.done?'Marcado como completado':'Marcado como pendiente',amount:0,sign:'memo'});
+  logToSpace(`${n.done?'Completó':'Reactivó'} ${noteTypeLabel(n.type)}: ${label}`, 0, 'calendarToggle', id);
+  save(); renderCurrentView();
+  showToast(n.done?'✅ Completado':'↩ Marcado como pendiente');
+}
+function toggleListaItem(dateKey,noteId,idx) {
+  const n=(S.calendarNotes[dateKey]||[]).find(x=>x.id===noteId);
+  if(!n||!n.listaItems||!n.listaItems[idx]) return;
+  n.listaItems[idx].done=!n.listaItems[idx].done;
+  save(); renderCurrentView();
+}
 function rescheduleCalendarNote(oldDate,id,newDate) {
   if(!newDate){showToast('Selecciona una fecha');return;}
   const list=S.calendarNotes[oldDate]||[];
@@ -5897,6 +6128,8 @@ function rescheduleCalendarNote(oldDate,id,newDate) {
 }
 function deleteCalendarNote(dateKey,id) {
   if(!confirm('¿Eliminar esta nota o tarea del calendario?')) return;
+  const _dn=(S.calendarNotes[dateKey]||[]).find(x=>x.id===id);
+  logToSpace(`Eliminó ${_dn?noteTypeLabel(_dn.type)+': '+(_dn.text||''):'nota del calendario'}`, 0, 'calendarDelete', id);
   S.calendarNotes[dateKey]=(S.calendarNotes[dateKey]||[]).filter(x=>x.id!==id);
   save(); renderCalendar();
 }
@@ -5942,11 +6175,22 @@ function confirmedBillPaid(billId, dateKey, amount, date, source=null) {
     adjustSource(src,-conv.convertedAmount);
     setUndoAction('Pago de factura marcado como pagado','bill',[billId,dateKey]);
   }
+  const _billName=S.bills.find(x=>x.id===billId)?.name||'Factura';
+  logToSpace(`Pagó ${_billName}`, paidAmount, 'billPaid', billId);
   setLastAction(); closeModal(); renderCurrentView(); showToast('Factura marcada como pagada');
+}
+function savePaymentCategory(kind, id) {
+  const newCat=document.getElementById('mEditCat')?.value||'otros';
+  if(kind==='bill'){const b=S.bills.find(x=>x.id===id);if(b)b.category=newCat;}
+  else if(kind==='expense'){const e=S.expenses.find(x=>x.id===id);if(e)e.category=newCat;}
+  else if(kind==='onetime'){const o=S.oneTimePayments.find(x=>x.id===id);if(o)o.category=newCat;}
+  save(); closeModal(); renderCurrentView(); showToast('Categoría actualizada');
 }
 function unmarkBillPaid(billId, dateKey) {
   const paid=S.paidBills.find(p=>p.billId===billId&&p.dateKey===dateKey);
   if(paid) adjustSource(paid.source||{type:'balance'},paid.currencyConversion?.convertedAmount||paid.paidAmount||0);
+  const _ubName=S.bills.find(x=>x.id===billId)?.name||'Factura';
+  logToSpace(`Deshizo pago de ${_ubName}`, 0, 'billUnpaid', billId);
   S.paidBills=S.paidBills.filter(p=>!(p.billId===billId&&p.dateKey===dateKey));
   save(); renderCurrentView(); updateHeaderBalance();
 }
@@ -6024,6 +6268,8 @@ function confirmedPayOnce(id, amount, date, dateKey=null, source=null) {
     }
     setUndoAction('Pago único marcado como pagado','onetime',[id,key]);
   }
+  const _otName=S.oneTimePayments.find(x=>x.id===id)?.name||'Pago único';
+  logToSpace(`Pagó ${_otName}`, parseFloat(amount)||0, 'onetimePaid', id);
   setLastAction(); closeModal(); renderCurrentView(); showToast('Pago completado');
 }
 function unmarkOneTimePaid(id,dateKey=null) {
@@ -6040,6 +6286,8 @@ function unmarkOneTimePaid(id,dateKey=null) {
       o.paid=false;o.paidDate=null;o.paidAmount=null;
     }
   }
+  const _uotName=S.oneTimePayments.find(x=>x.id===id)?.name||'Pago único';
+  logToSpace(`Deshizo pago de ${_uotName}`, 0, 'onetimeUnpaid', id);
   save(); renderCurrentView(); updateHeaderBalance();
 }
 function markExpensePaid(id) {
@@ -6054,12 +6302,14 @@ function markExpensePaid(id) {
   e.paidAmount=(e.paidAmount||0)+conv.originalAmount; e.paid=e.paidAmount>=(e.amount||0); e.source=_expSrc; e.currencyConversion=conv;
   adjustSource(_expSrc,-conv.convertedAmount);
   setUndoAction('Gasto marcado como pagado','expense',[id]);
+  logToSpace(`Pagó gasto: ${e.name||'Gasto'}`, conv.originalAmount, 'expensePaid', id);
   setLastAction(); renderCurrentView(); showToast('Gasto pagado'); return true;
 }
 function unmarkExpensePaid(id) {
   const e=S.expenses.find(x=>x.id===id);
   if(!e||!e.paid) return;
   const refundAmount=e.currencyConversion?.convertedAmount||e.paidAmount||e.amount||0;
+  logToSpace(`Deshizo gasto: ${e.name||'Gasto'}`, 0, 'expenseUnpaid', id);
   e.paid=false; e.dueDate=e.dueDate||e.date; e.paidDate=null; e.paidAmount=null; e.currencyConversion=null;
   adjustSource(e.source||{type:'balance'}, refundAmount);
   setLastAction(); renderCurrentView(); showToast('Gasto marcado como pendiente');
@@ -6077,6 +6327,7 @@ function markBorrowedPaid(id,paymentId='') {
   l.paid=(l.installments||[]).every(x=>x.paid); l.paidDate=l.paid?isoToday():null; l.paidAt=l.paid?new Date().toISOString():null;
   adjustSource(_bSrc,-conv.convertedAmount);
   setUndoAction('Prestamo marcado como pagado','borrowed',[id,p.id]);
+  logToSpace(`Pagó cuota préstamo: ${l.personName||'prestamo'}`, conv.originalAmount, 'borrowedPaid', id);
   setLastAction(); renderCurrentView(); showToast('Prestamo pagado'); return true;
 }
 function unmarkBorrowedPaid(id,paymentId='') {
@@ -6427,7 +6678,7 @@ function openModal(type, id, extra) {
       const all=scheduledRows(pdate||fmtISO(getBillDueDate(b,today())),b.frequency||'monthly',b.amount,{totalPayments:b.termType==='term'?b.totalPayments:null,limit:24}).filter(r=>!isBillPaid(b.id,r.date));
       future=renderSchedulePreview(all,'paymentDetail',`${kind}:${pid}:${pdate}`,showCount);
       details=`<div class="card p-3 mb-3 space-y-2 text-sm"><div class="flex justify-between"><span class="text-slate-400">Frecuencia</span><span class="font-semibold text-slate-700">${freqLabel(b.frequency)}</span></div><div class="flex justify-between"><span class="text-slate-400">Duración</span><span class="font-semibold text-slate-700">${planDurationLabel(b,billPaidCount(b))}</span></div><div class="flex justify-between"><span class="text-slate-400">Categoría</span><span class="font-semibold text-slate-700">${b.category||'pago'}</span></div></div>`;
-      actions=`<button onclick="openModal('confirmPay','${b.id}','${pdate}')" class="flex-1 btn-primary py-3">Pagar</button><button onclick="openModal('skipPayment','bill:${b.id}::${pdate}')" class="bg-amber-50 text-amber-700 font-semibold px-4 rounded-xl">No pagar</button><button onclick="openModal('editBill','${b.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Editar</button>`;
+      actions=`<button onclick="openModal('confirmPay','${b.id}','${pdate}')" class="flex-1 btn-primary py-3">Pagar</button><button onclick="openModal('skipPayment','bill:${b.id}::${pdate}')" class="bg-amber-50 text-amber-700 font-semibold px-4 rounded-xl">No pagar</button><button onclick="openModal('editBill','${b.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Editar</button><button onclick="openModal('editPaymentCategory','bill:${b.id}')" style="background:rgba(124,111,218,.1);color:#a5b4fc;font-size:.72rem;font-weight:700;padding:0 14px;border-radius:12px;border:1px solid rgba(124,111,218,.2)">Categoría</button>`;
     } else if(kind==='onetime') {
       const o=S.oneTimePayments.find(x=>x.id===pid); if(!o) return;
       const dateKey=pdate||o.dueDate;
@@ -6438,14 +6689,14 @@ function openModal(type, id, extra) {
       rows=(o.payments||[]).map(p=>`<div class="flex justify-between py-2 border-t border-slate-50"><span>${fmtDate(p.paidDate||p.dateKey)}${p.dateKey?` · programado ${fmtDate(p.dateKey)}`:''}${p.source?` · ${sourceLabel(p.source)}`:''}</span><span class="font-bold text-green-600">${fmt(p.paidAmount||o.amount)}</span></div>`).join('') || (o.paid?`<div class="flex justify-between py-2 border-t border-slate-50"><span>${fmtDate(o.paidDate||o.dueDate)}${o.source?` · ${sourceLabel(o.source)}`:''}</span><span class="font-bold text-green-600">${fmt(o.paidAmount||o.amount)}</span></div>`:'');
       future=renderSchedulePreview(schedule.filter(r=>!isOneTimePaid(o,r.date)),'paymentDetail',`${kind}:${pid}:${dateKey}`,showCount);
       details=`<div class="card p-3 mb-3 space-y-2 text-sm"><div class="flex justify-between"><span class="text-slate-400">Frecuencia</span><span class="font-semibold text-slate-700">${freqLabel(freq)}</span></div><div class="flex justify-between"><span class="text-slate-400">Duración</span><span class="font-semibold text-slate-700">${planDurationLabel({frequency:freq,totalPayments:o.totalPayments},(o.payments||[]).length)}</span></div><div class="flex justify-between"><span class="text-slate-400">Categoría</span><span class="font-semibold text-slate-700">${o.category||'único'}</span></div></div>`;
-      actions=isPaid?`<button onclick="unmarkOneTimePaid('${o.id}','${dateKey}');closeModal()" class="flex-1 bg-slate-100 text-slate-600 font-semibold py-3 rounded-xl">Deshacer</button><button onclick="openModal('editOneTime','${o.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Editar</button>`:`<button onclick="openModal('confirmPayOnce','${o.id}','${dateKey}')" class="flex-1 btn-primary py-3">Pagar</button><button onclick="openModal('skipPayment','onetime:${o.id}::${dateKey}')" class="bg-amber-50 text-amber-700 font-semibold px-4 rounded-xl">No pagar</button><button onclick="openModal('editOneTime','${o.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Editar</button>`;
+      actions=isPaid?`<button onclick="unmarkOneTimePaid('${o.id}','${dateKey}');closeModal()" class="flex-1 bg-slate-100 text-slate-600 font-semibold py-3 rounded-xl">Deshacer</button><button onclick="openModal('editPaymentCategory','onetime:${o.id}')" style="background:rgba(124,111,218,.1);color:#a5b4fc;font-size:.72rem;font-weight:700;padding:0 14px;border-radius:12px;border:1px solid rgba(124,111,218,.2)">Categoría</button><button onclick="openModal('editOneTime','${o.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Editar</button>`:`<button onclick="openModal('confirmPayOnce','${o.id}','${dateKey}')" class="flex-1 btn-primary py-3">Pagar</button><button onclick="openModal('skipPayment','onetime:${o.id}::${dateKey}')" class="bg-amber-50 text-amber-700 font-semibold px-4 rounded-xl">No pagar</button><button onclick="openModal('editOneTime','${o.id}')" class="bg-slate-100 text-slate-600 font-semibold px-4 rounded-xl">Editar</button>`;
     } else if(kind==='expense') {
       const e=S.expenses.find(x=>x.id===pid); if(!e) return;
       title=`${e.name}`; subtitle=`Gasto · ${e.category||'otros'} · ${e.paid?'Pagado':'Pendiente'}`; amount=e.amount;
       rows=e.paid?`<div class="flex justify-between py-2 border-t border-slate-50"><span>${fmtDate(e.paidDate||e.date)}${e.source?` · ${sourceLabel(e.source)}`:''}</span><span class="font-bold text-red-500">${fmt(e.amount)}</span></div>`:'';
       future=renderSchedulePreview(!e.paid?[{date:e.dueDate||e.date,amount:e.amount,label:'Pago único'}]:[],'paymentDetail',`${kind}:${pid}:${pdate}`,showCount);
       details=`<div class="card p-3 mb-3 space-y-2 text-sm"><div class="flex justify-between"><span class="text-slate-400">Duración</span><span class="font-semibold text-slate-700">Único · 1 pago</span></div><div class="flex justify-between"><span class="text-slate-400">Categoría</span><span class="font-semibold text-slate-700">${e.category||'otros'}</span></div></div>`;
-      actions=e.paid?`<button onclick="unmarkExpensePaid('${e.id}');closeModal()" class="flex-1 bg-slate-100 text-slate-600 font-semibold py-3 rounded-xl">Deshacer</button>`:`<button onclick="openModal('confirmExpensePay','${e.id}')" class="flex-1 btn-primary py-3">Marcar pagado</button><button onclick="openModal('skipPayment','expense:${e.id}::${e.dueDate||e.date}')" class="bg-amber-50 text-amber-700 font-semibold px-4 rounded-xl">No pagar</button>`;
+      actions=e.paid?`<button onclick="unmarkExpensePaid('${e.id}');closeModal()" class="flex-1 bg-slate-100 text-slate-600 font-semibold py-3 rounded-xl">Deshacer</button><button onclick="openModal('editPaymentCategory','expense:${e.id}')" style="background:rgba(124,111,218,.1);color:#a5b4fc;font-size:.72rem;font-weight:700;padding:0 14px;border-radius:12px;border:1px solid rgba(124,111,218,.2)">Categoría</button>`:`<button onclick="openModal('confirmExpensePay','${e.id}')" class="flex-1 btn-primary py-3">Marcar pagado</button><button onclick="openModal('skipPayment','expense:${e.id}::${e.dueDate||e.date}')" class="bg-amber-50 text-amber-700 font-semibold px-4 rounded-xl">No pagar</button>`;
     } else if(kind==='borrowed') {
       const l=S.borrowedLoans.find(x=>x.id===pid); if(!l) return;
       const inst=borrowedInstallments(l);
@@ -6478,6 +6729,26 @@ function openModal(type, id, extra) {
     <div class="font-bold text-indigo-700 text-xs uppercase mb-2">Transacciones anteriores</div>${rows||'<div class="text-sm text-indigo-300 text-center py-3">Sin transacciones anteriores.</div>'}
     <div class="font-bold text-indigo-700 text-xs uppercase mt-4 mb-2">Pagos programados</div>${future||'<div class="text-sm text-indigo-300 text-center py-3">Sin pagos programados.</div>'}
     <div class="flex flex-wrap gap-2 mt-4">${actions}</div>`;
+  }
+
+  else if(type==='editPaymentCategory') {
+    /* id format: "kind:objectId" — e.g. "bill:abc123", "expense:xyz", "onetime:def" */
+    const [pkind,pkid]=String(id).split(':');
+    let curCat='otros', itemName='';
+    if(pkind==='bill'){const b=S.bills.find(x=>x.id===pkid);curCat=b?.category||'pago';itemName=b?.name||'Factura';}
+    else if(pkind==='expense'){const e=S.expenses.find(x=>x.id===pkid);curCat=e?.category||'otros';itemName=e?.name||'Gasto';}
+    else if(pkind==='onetime'){const o=S.oneTimePayments.find(x=>x.id===pkid);curCat=o?.category||'otros';itemName=o?.name||'Pago';}
+    const catOpts=PAYMENT_CATEGORIES.map(c=>`<option value="${c}" ${c===curCat?'selected':''}>${catLabel(c)}</option>`).join('');
+    html=`<h3 class="text-lg font-bold text-slate-800 mb-1">Editar categoría</h3>
+    <p class="text-sm text-slate-500 mb-4">${itemName}</p>
+    <div class="space-y-4">
+      <div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:12px;padding:10px 14px;font-size:.75rem;color:#f87171">
+        Solo puedes editar la categoría. El monto, la cuenta y la fecha no se pueden modificar.
+      </div>
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
+      <select id="mEditCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">${catOpts}</select></div>
+      <button onclick="savePaymentCategory('${pkind}','${pkid}')" class="w-full btn-primary py-3">Guardar categoría</button>
+    </div>`;
   }
 
   else if(type==='confirmReceive') {
@@ -6651,9 +6922,9 @@ function openModal(type, id, extra) {
     const totalOwedByThem=loansByMe.reduce((sum,l)=>sum+(l.payments||[]).filter(p=>!p.paid).reduce((s,p)=>s+(p.amount||0),0),0);
     const loansFromThem=(S.borrowedLoans||[]).filter(l=>l.personName===key);
     const totalIOweThem=loansFromThem.reduce((sum,l)=>sum+borrowedInstallments(l).filter(p=>!p.paid).reduce((s,p)=>s+(p.amount||0),0),0);
-    // Próximos 14 días
+    // Próximos 7 días
     const todayStr=isoToday();
-    const end14=new Date(); end14.setDate(end14.getDate()+14);
+    const end14=new Date(); end14.setDate(end14.getDate()+7);
     const end14Str=end14.toISOString().slice(0,10);
     const upPay=[];
     loansByMe.forEach(l=>(l.payments||[]).filter(p=>!p.paid&&p.date&&p.date>=todayStr&&p.date<=end14Str).forEach(p=>upPay.push({date:p.date,amount:p.amount,dir:'receive',name:l.loanName||'Prestamo'})));
@@ -6676,7 +6947,7 @@ function openModal(type, id, extra) {
           </div>
           <div style="font-weight:800;color:${p.dir==='receive'?'#4ade80':'#f87171'};font-size:0.9rem">${p.dir==='receive'?'+':'-'}${fmt(p.amount||0)}</div>
         </div>`).join('')
-      :`<div style="text-align:center;color:#5c6480;font-size:0.75rem;padding:6px 0">Sin pagos en los próximos 14 días</div>`;
+      :`<div style="text-align:center;color:#5c6480;font-size:0.75rem;padding:6px 0">Sin pagos en los próximos 7 días</div>`;
     html=`<div style="display:flex;align-items:center;gap:10px;padding:4px 0 12px">
       <div style="width:44px;height:44px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;color:#fff;flex-shrink:0;border:2px solid rgba(255,255,255,0.15)">${initial}</div>
       <div>
@@ -6702,15 +6973,15 @@ function openModal(type, id, extra) {
       </div>
     </div>
     <div style="background:#252836;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:10px 12px;margin-bottom:12px">
-      <div style="font-size:0.6rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Próximos 14 días</div>
+      <div style="font-size:0.6rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Próximos 7 días</div>
       ${pay14Html}
     </div>
     <div style="display:flex;justify-content:center;gap:7px;padding-bottom:2px">${emojiBtns}</div>`;
   }
 
   else if(type==='homeUpcomingDetail') {
-    const [kind,pid,paymentId,dateKey]=String(id||'').split(':');
-    let title='Detalle', subtitle='', icon='pin', amount=null, rows=[], accentCls='bg-indigo-50 text-indigo-500';
+    const [kind,pid,paymentId,dateKey,spaceId]=String(id||'').split(':');
+    let title='Detalle', subtitle='', icon='pin', amount=null, rows=[], accentCls='bg-indigo-50 text-indigo-500', payActionHtml='';
     if(kind==='income') {
       const p=(S.paychecks||[]).find(x=>x.id===pid);
       if(p) {
@@ -6854,16 +7125,80 @@ function openModal(type, id, extra) {
         ];
       }
     } else if(kind==='task') {
-      const n=((S.calendarNotes||{})[dateKey]||[]).find(x=>x.id===pid);
-      if(n) { title=n.text; subtitle=`${noteTypeLabel(n.type)} · ${fmtDate(dateKey)}`; icon='pin'; rows=[['Tipo',noteTypeLabel(n.type)],['Fecha',fmtDate(dateKey)],['Estado',n.done?'Completada':'Pendiente']]; }
+      const noteSource=spaceId?(H&&H.calendarNotes||{}):(S.calendarNotes||{});
+      const n=(noteSource[dateKey]||[]).find(x=>x.id===pid);
+      if(n) {
+        title=n.text||(n.type==='cita'?'Cita':n.type==='llamada'?'Llamada':'Tarea');
+        subtitle=`${noteTypeLabel(n.type)} · ${fmtDate(dateKey)}${spaceId?' · 🏠 Espacio':''}`;
+        icon='pin';
+        rows=[['Tipo',noteTypeLabel(n.type)],['Fecha',fmtDate(dateKey)],['Estado',n.done?'Completada ✓':'Pendiente']];
+        if(n.type==='cita') {
+          if(n.citaWith) rows.push(['Con',n.citaWith]);
+          if(n.citaTime) rows.push(['Hora',n.citaTime]);
+          if(n.citaAddress) rows.push(['Lugar',n.citaAddress]);
+          if(n.citaCategory) rows.push(['Categoría',({trabajo:'💼 Trabajo',personal:'🤝 Personal',medica:'🏥 Médica',otra:'📌 Otra'})[n.citaCategory]||n.citaCategory]);
+          if(n.citaRepeat&&n.citaRepeat!=='no') rows.push(['Repetición',n.citaRepeat]);
+          if(n.citaNotes) rows.push(['Notas',n.citaNotes]);
+        } else if(n.type==='llamada') {
+          if(n.llamadaPhone) rows.push(['Teléfono',n.llamadaPhone]);
+          if(n.llamadaTime) rows.push(['Hora',n.llamadaTime]);
+          if(n.llamadaReason) rows.push(['Motivo',n.llamadaReason]);
+        } else if(n.type==='recordatorio'||n.type==='pendiente') {
+          if(n.urgency&&n.urgency!=='normal') rows.push(['Urgencia',n.urgency==='alta'?'🔴 Alta':'🟡 Media']);
+          if(n.items&&n.items.length) rows.push(['Elementos',n.items.join(', ')]);
+        } else if(n.type==='lista') {
+          if(n.listaItems&&n.listaItems.length) rows.push(['Items',`${n.listaItems.filter(i=>i.done).length}/${n.listaItems.length} completados`]);
+        }
+        if(n.note) rows.push(['Nota',n.note]);
+        if(spaceId) {
+          payActionHtml=`<div class="flex gap-2 mt-3 pt-3 border-t border-slate-100">
+            <button onclick="toggleSpaceCalendarNote('${dateKey}','${pid}');closeModal()" class="flex-1 btn-primary py-2.5">${n.done?'↩ Reactivar':'✓ Completar'}</button>
+          </div>`;
+        } else {
+          payActionHtml=`<div class="flex gap-2 mt-3 pt-3 border-t border-slate-100">
+            <button onclick="toggleCalendarNote('${dateKey}','${pid}');closeModal()" class="flex-1 btn-primary py-2.5">${n.done?'↩ Reactivar':'✓ Completar'}</button>
+            <button onclick="deleteCalendarNote('${dateKey}','${pid}')" class="flex-1 py-2.5 rounded-xl border border-red-200 text-red-500 font-semibold text-sm bg-red-50">🗑 Eliminar</button>
+          </div>`;
+        }
+      }
     } else if(kind==='shopping') {
-      const list=(S.shoppingLists||[]).find(x=>x.id===pid);
-      if(list) { const pending=(list.items||[]).filter(x=>!x.done).length; title=list.title; subtitle=`Lista · ${fmtDate(list.date)}`; icon='cart'; rows=[['Items',`${pending} pendientes de ${(list.items||[]).length}`],['Estado',list.completed?'Completada':'Pendiente']]; }
+      const list=spaceId?(H&&H.shoppingLists||[]).find(x=>x.id===pid):(S.shoppingLists||[]).find(x=>x.id===pid);
+      if(list) {
+        const pending=(list.items||[]).filter(x=>!x.done).length;
+        title=list.title;
+        subtitle=`Lista de compras · ${fmtDate(list.date)}${spaceId?' · 🏠 Espacio':''}`;
+        icon='cart';
+        accentCls='bg-blue-50 text-blue-500';
+        rows=[['Pendientes',`${pending} de ${(list.items||[]).length}`],['Estado',list.completed?'Completada':'Pendiente']];
+        const itemsHtml=(list.items||[]).length?(list.items||[]).map(si=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid rgba(255,255,255,0.05)">
+          <button onclick="${spaceId?`toggleSpaceShoppingItem('${pid}','${si.id}')`:`toggleShoppingItemFromDetail('${pid}','${si.id}')`}" style="width:22px;height:22px;border-radius:7px;border:2px solid ${si.done?'#4ade80':'rgba(148,163,184,0.4)'};background:${si.done?'rgba(74,222,128,0.18)':'transparent'};display:flex;align-items:center;justify-content:center;color:#4ade80;font-size:0.72rem;font-weight:900;flex-shrink:0;cursor:pointer">${si.done?'✓':''}</button>
+          <span style="font-size:0.8rem;color:${si.done?'#4a5170':'#e8eaf2'};text-decoration:${si.done?'line-through':'none'}">${si.name||''}</span>
+        </div>`).join(''):'<div style="color:#4a5170;font-size:0.75rem;padding:8px 0">Sin ítems en la lista</div>';
+        payActionHtml=`<div class="mt-3 pt-3 border-t border-slate-100">
+          <div style="font-size:0.62rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Ítems de la lista</div>
+          ${itemsHtml}
+        </div>`;
+      }
     } else if(kind==='plan') {
-      const plan=(S.plans||[]).find(x=>x.id===pid);
-      if(plan) { title=plan.label; subtitle=`Plan · ${fmtDate(plan.date)}`; icon='receipt'; amount=plan.amount||0; rows=[['Items',`${(plan.items||[]).length}`],['Estado',plan.completed?'Completado':'Pendiente'],['Nota',plan.note||'Sin nota']]; }
+      const plan=spaceId?(H&&H.plans||[]).find(x=>x.id===pid):(S.plans||[]).find(x=>x.id===pid);
+      if(plan) {
+        title=plan.label;
+        subtitle=`Plan · ${fmtDate(plan.date)}${spaceId?' · 🏠 Espacio':''}`;
+        icon='receipt';
+        amount=plan.amount||0;
+        rows=[['Items',`${(plan.items||[]).length}`],['Estado',plan.completed?'Completado':'Pendiente'],...(plan.note?[['Nota',plan.note]]:[])];
+        if(spaceId) {
+          payActionHtml=`<div class="flex gap-2 mt-3 pt-3 border-t border-slate-100">
+            <button onclick="toggleSpacePlanDone('${pid}');closeModal()" class="flex-1 btn-primary py-2.5">${plan.completed?'↩ Reactivar':'✓ Completar'}</button>
+          </div>`;
+        } else {
+          payActionHtml=`<div class="flex gap-2 mt-3 pt-3 border-t border-slate-100">
+            <button onclick="toggleCustomPlanDone('${pid}');closeModal()" class="flex-1 btn-primary py-2.5">${plan.completed?'↩ Reactivar':'✓ Completar'}</button>
+            <button onclick="deleteCustomPlan('${pid}')" class="flex-1 py-2.5 rounded-xl border border-red-200 text-red-500 font-semibold text-sm bg-red-50">🗑 Eliminar</button>
+          </div>`;
+        }
+      }
     }
-    let payActionHtml='';
     if(kind==='bill'){
       const b=(S.bills||[]).find(x=>x.id===pid);
       if(b&&!isBillPaid(pid,dateKey)){
@@ -7005,10 +7340,11 @@ function openModal(type, id, extra) {
           ${['weekly','every_two_weeks','semimonthly','monthly'].map(f=>`<option value="${f}" ${(!b&&f==='monthly')||(b&&(b.frequency===f||(b.frequency==='biweekly'&&f==='every_two_weeks')||(b.frequency==='quincenal'&&f==='semimonthly')))?'selected':''}>${freqLabel(f)}</option>`).join('')}
         </select></div>
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
-        <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+        <select id="mCat" onchange="checkGasolinaSubcat()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
           ${paymentCategoryOptions(b&&b.category?b.category:'personal')}
         </select></div>
       </div>
+      ${gasSubcatHtml(b&&b.gasSubcategory?b.gasSubcategory:'')}
       <div class="bg-indigo-50 rounded-xl p-3">
         <label class="text-xs font-bold text-indigo-700 uppercase">Duración</label>
         <select id="mTermType" onchange="document.getElementById('termCountWrap').classList.toggle('hidden', this.value!=='term')" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm">
@@ -7020,6 +7356,7 @@ function openModal(type, id, extra) {
       </div>
       <button onclick="saveBill(${b?`'${id}'`:'null'})" class="w-full btn-primary py-3">${b?'Guardar cambios':'Agregar factura'}</button>
     </div>`;
+    setTimeout(()=>{checkGasolinaSubcat(); if(b&&b.gasSubcategory) setTimeout(()=>setGasSubcat(b.gasSubcategory),40);},30);
   }
 
   else if(type==='addPaycheck'||type==='editPaycheck') {
@@ -7101,10 +7438,11 @@ function openModal(type, id, extra) {
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Fecha</label>
         <input type="date" id="mDate" value="${o?o.dueDate:(extra&&extra.date)||''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
-        <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+        <select id="mCat" onchange="checkGasolinaSubcat()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
           ${paymentCategoryOptions(o&&o.category?o.category:'personal')}
         </select></div>
       </div>
+      ${gasSubcatHtml(o&&o.gasSubcategory?o.gasSubcategory:'')}
       <div class="bg-indigo-50 rounded-xl p-3">
         <label class="text-xs font-bold text-indigo-700 uppercase">Frecuencia</label>
         <select id="mFreq" onchange="(function(v){const h=v==='once';document.getElementById('oneTimeDurWrap').classList.toggle('hidden',h);})(this.value)" class="w-full border border-indigo-100 bg-white rounded-xl px-3 py-2 mt-1 text-sm">
@@ -7122,6 +7460,7 @@ function openModal(type, id, extra) {
       </div>
       <button onclick="saveOneTime(${o?`'${id}'`:'null'})" class="w-full btn-primary py-3">${o?'Guardar':'Agregar'}</button>
     </div>`;
+    setTimeout(()=>{checkGasolinaSubcat(); if(o&&o.gasSubcategory) setTimeout(()=>setGasSubcat(o.gasSubcategory),40);},30);
   }
 
   else if(type==='addExpense'||type==='editExpense') {
@@ -7146,14 +7485,15 @@ function openModal(type, id, extra) {
         <input type="date" id="mDate" value="${q.date||isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       </div>
       <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
-      <select id="mCat" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+      <select id="mCat" onchange="checkGasolinaSubcat()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
         ${paymentCategoryOptions(q.category||'personal')}
       </select></div>
+      ${gasSubcatHtml(q.gasSubcategory||'')}
       <input type="hidden" id="mPaid" value="true">
       ${(extra&&extra.loanId)?`<input type="hidden" id="mLoanId" value="${extra.loanId}"><input type="hidden" id="mInstallmentId" value="${extra.installmentId||''}">`:'' }
       <button onclick="saveExpense(${type==='editExpense'?`'${id}'`:'null'})" class="w-full btn-primary py-3">Guardar gasto</button>
     </div>`;
-    setTimeout(updateTrmVisibility,30);
+    setTimeout(()=>{ updateTrmVisibility(); checkGasolinaSubcat(); if(q.gasSubcategory) setTimeout(()=>setGasSubcat(q.gasSubcategory),40); },30);
   }
 
   else if(type==='pocketDetail') {
@@ -7521,6 +7861,13 @@ function openModal(type, id, extra) {
       <div id="noteCitaWrap" class="hidden space-y-2">
         <div><label class="text-xs font-bold text-slate-500 uppercase">Descripción de la cita</label>
         <input id="mNoteText2" placeholder="ej. Cita médico, reunión..." class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+        <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría / Motivo</label>
+        <select id="mCitaCategory" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+          <option value="trabajo">💼 Cita de trabajo</option>
+          <option value="personal">🤝 Cita personal</option>
+          <option value="medica">🏥 Cita médica</option>
+          <option value="otra">📌 Otra</option>
+        </select></div>
         <div class="grid grid-cols-2 gap-2">
           <div><label class="text-xs font-bold text-slate-500 uppercase">Con quién</label>
           <input id="mCitaWith" placeholder="Nombre" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
@@ -7529,6 +7876,24 @@ function openModal(type, id, extra) {
         </div>
         <div><label class="text-xs font-bold text-slate-500 uppercase">Dirección</label>
         <input id="mCitaAddr" placeholder="Dirección o lugar" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+        <div>
+          <label class="text-xs font-bold text-slate-500 uppercase">¿Se repite?</label>
+          <select id="mCitaRepeat" onchange="document.getElementById('mCitaRepeatEnd').style.display=this.value!=='no'?'block':'none'" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+            <option value="no">No se repite</option>
+            <option value="diario">Diario</option>
+            <option value="semanal">Semanal</option>
+            <option value="quincenal">Quincenal</option>
+            <option value="mensual">Mensual</option>
+          </select>
+        </div>
+        <div id="mCitaRepeatEnd" style="display:none">
+          <label class="text-xs font-bold text-slate-500 uppercase">Termina</label>
+          <select id="mCitaRepeatEndType" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
+            <option value="nunca">Sin fin</option>
+            <option value="fecha">En una fecha</option>
+            <option value="veces">Después de N veces</option>
+          </select>
+        </div>
         <div><label class="text-xs font-bold text-slate-500 uppercase">Notas</label>
         <textarea id="mCitaNotes" rows="2" placeholder="Notas adicionales…" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1 text-sm resize-none"></textarea></div>
       </div>
@@ -7826,7 +8191,7 @@ function openModal(type, id, extra) {
       return members.some(m=>String(m?.name||m||'').toLowerCase()===name.toLowerCase());
     }).length;
     const todayStr=isoToday();
-    const end14=new Date(); end14.setDate(end14.getDate()+14);
+    const end14=new Date(); end14.setDate(end14.getDate()+7);
     const end14Str=end14.toISOString().slice(0,10);
     const upPay=[];
     lentTxs.forEach(l=>(l.payments||[]).filter(pp=>!pp.paid&&pp.date&&pp.date>=todayStr&&pp.date<=end14Str).forEach(pp=>upPay.push({date:pp.date,amount:pp.amount,dir:'receive',name:l.loanName||'Préstamo'})));
@@ -7884,7 +8249,7 @@ function openModal(type, id, extra) {
         </div>
       </div>
       <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:12px;margin-bottom:14px">
-        <div style="font-size:.6rem;font-weight:800;color:#818cf8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">📅 Próximos 14 días</div>
+        <div style="font-size:.6rem;font-weight:800;color:#818cf8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">📅 Próximos 7 días</div>
         ${upPay.length?`<div style="display:flex;flex-direction:column;gap:6px">${upPay.slice(0,5).map(pp=>`<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:.78rem;font-weight:600;color:#e8eaf2">${pp.name}</div><div style="font-size:.62rem;color:#5c6480">${fmtDate(pp.date)} · ${pp.dir==='receive'?'↓ A recibir':'↑ A pagar'}</div></div><span style="font-weight:700;color:${pp.dir==='receive'?'#4ade80':'#f87171'};font-size:.83rem">${pp.dir==='receive'?'+':'-'}${fmt(pp.amount)}</span></div>`).join('')}</div>`:`<div style="color:#5c6480;font-size:.78rem;text-align:center">Sin pagos programados</div>`}
       </div>
       ${lentTxs.length?`<div style="font-size:.6rem;font-weight:800;color:#4ade80;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">💸 Presté · ${lentTxs.length} activo${lentTxs.length!==1?'s':''}</div><div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">${lentTxs.map(tx=>txRow(tx)).join('')}</div>`:''}
@@ -8322,6 +8687,12 @@ function openModal(type, id, extra) {
       <input id="mCarYear" type="number" inputmode="numeric" placeholder="Año" value="${carEditing?.year||''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm">
       <input id="mCarStartMiles" type="number" inputmode="decimal" placeholder="Millaje inicial" value="${carEditing?.startMiles||''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm">
       <input id="mCarPlate" placeholder="Placa" value="${carEditing?.plate||''}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 text-sm">
+      <div><label class="text-xs font-bold text-slate-500 uppercase">Uso del vehículo</label>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button type="button" id="carUseBtnPersonal" onclick="setCarUseBtn('personal')" style="flex:1;padding:9px;border-radius:12px;border:1.5px solid ${(!carEditing||carEditing.vehicleUse==='personal')?'rgba(124,111,218,0.5)':'rgba(148,163,184,0.3)'};background:${(!carEditing||carEditing.vehicleUse==='personal')?'rgba(124,111,218,0.15)':'transparent'};font-size:0.8rem;font-weight:${(!carEditing||carEditing.vehicleUse==='personal')?'800':'600'};color:${(!carEditing||carEditing.vehicleUse==='personal')?'#7c6fda':'#64748b'};cursor:pointer">🤝 Personal</button>
+        <button type="button" id="carUseBtnTrabajo" onclick="setCarUseBtn('trabajo')" style="flex:1;padding:9px;border-radius:12px;border:1.5px solid ${carEditing?.vehicleUse==='trabajo'?'rgba(124,111,218,0.5)':'rgba(148,163,184,0.3)'};background:${carEditing?.vehicleUse==='trabajo'?'rgba(124,111,218,0.15)':'transparent'};font-size:0.8rem;font-weight:${carEditing?.vehicleUse==='trabajo'?'800':'600'};color:${carEditing?.vehicleUse==='trabajo'?'#7c6fda':'#64748b'};cursor:pointer">💼 Trabajo</button>
+      </div>
+      <input type="hidden" id="mCarUse" value="${carEditing?.vehicleUse||'personal'}"></div>
       <button onclick="saveCarFromModal()" class="w-full btn-primary py-3">${carEditing?'Guardar cambios':'Guardar vehículo'}</button>
       ${carEditing?`<button onclick="deleteCarFromEdit('${carEditing.id}')" class="w-full btn-red py-3">Borrar vehículo</button>`:''}
     </div>`;
@@ -9034,9 +9405,10 @@ function saveBill(id) {
   const termType=document.getElementById('mTermType')?document.getElementById('mTermType').value:'indefinite';
   const totalPayments=termType==='term'?(parseInt(document.getElementById('mTotalPayments').value)||1):null;
   const startDate=fmtISO(getBillDueDate({dueDay}, parseDate(`${finMonth||monthKey(today())}-01`)));
+  const gasSubcategory=document.getElementById('mGasSubcat')?.value||'';
   if(!name||!amount||!dueDay){showToast('❌ Completa los campos');return;}
-  if(id){const b=S.bills.find(x=>x.id===id);if(b)Object.assign(b,{name,amount,dueDay,emoji,category,currency,frequency,termType,totalPayments,startDate:b.startDate||startDate});}
-  else S.bills.unshift({id:uid(),name,amount,dueDay,emoji,category,currency,frequency,termType,totalPayments,startDate,active:true});
+  if(id){const b=S.bills.find(x=>x.id===id);if(b)Object.assign(b,{name,amount,dueDay,emoji,category,gasSubcategory:gasSubcategory||undefined,currency,frequency,termType,totalPayments,startDate:b.startDate||startDate});}
+  else S.bills.unshift({id:uid(),name,amount,dueDay,emoji,category,gasSubcategory:gasSubcategory||undefined,currency,frequency,termType,totalPayments,startDate,active:true});
   save(); closeModal(); renderCurrentView(); showToast('✅ Factura guardada');
 }
 
@@ -9078,9 +9450,10 @@ function saveOneTime(id) {
   const frequency=document.getElementById('mFreq')?.value||'once';
   const termType=frequency==='once'?'term':(document.getElementById('mTermType')?.value||'indefinite');
   const totalPayments=termType==='term'?(parseInt(document.getElementById('mTotalPayments')?.value)||1):(frequency==='once'?1:null);
+  const gasSubcategory=document.getElementById('mGasSubcat')?.value||'';
   if(!name||!amount||!dueDate){showToast('❌ Completa los campos');return;}
-  if(id){const o=S.oneTimePayments.find(x=>x.id===id);if(o)Object.assign(o,{name,amount,dueDate,category,currency,emoji,frequency,termType,totalPayments});}
-  else S.oneTimePayments.unshift({id:uid(),name,amount,dueDate,category,currency,emoji,frequency,termType,totalPayments,paid:false,paidDate:null,paidAmount:null,payments:[]});
+  if(id){const o=S.oneTimePayments.find(x=>x.id===id);if(o)Object.assign(o,{name,amount,dueDate,category,gasSubcategory:gasSubcategory||undefined,currency,emoji,frequency,termType,totalPayments});}
+  else S.oneTimePayments.unshift({id:uid(),name,amount,dueDate,category,gasSubcategory:gasSubcategory||undefined,currency,emoji,frequency,termType,totalPayments,paid:false,paidDate:null,paidAmount:null,payments:[]});
   save(); closeModal(); renderCurrentView(); showToast('✅ Guardado');
 }
 
@@ -9088,12 +9461,17 @@ function saveExpense(id=null) {
   const name=document.getElementById('mName').value.trim(), amount=parseFloat(document.getElementById('mAmount').value);
   const date=document.getElementById('mDate').value, category=document.getElementById('mCat').value;
   const currency=document.getElementById('mCurrency')?.value||'USD';
+  const gasSubcategory=document.getElementById('mGasSubcat')?.value||'';
   if(!name||!amount){showToast('❌ Completa los campos');return;}
   const paid=document.getElementById('mPaid')?(document.getElementById('mPaid').type==='checkbox'?document.getElementById('mPaid').checked:document.getElementById('mPaid').value==='true'):true;
   const dueDate=document.getElementById('mDueDate')?document.getElementById('mDueDate').value:(date||isoToday());
   const src=readPaymentSource();
   const conv=paid?readCurrencyConversion(src,amount):null;
   if(paid&&!confirmInsufficientFunds(src,conv.convertedAmount)) return;
+  // Auto-link gasolina-trabajo to the corresponding vehicle
+  const linkedVehicleId=(category==='gasolina'&&gasSubcategory==='trabajo')
+    ? ((S.cars||[]).find(c=>c.vehicleUse==='trabajo')?.id||'')
+    : '';
   if(id) {
     const e=S.expenses.find(x=>x.id===id);
     if(e) {
@@ -9101,10 +9479,10 @@ function saveExpense(id=null) {
       const newPaid=paid?amount:0;
       const netDiff=oldPaid-newPaid;
       if(netDiff!==0) adjustSource(src, paid?-(conv.convertedAmount-(e.currencyConversion?.convertedAmount||oldPaid)):netDiff);
-      Object.assign(e,{name,amount,date:date||isoToday(),category,currency,paid,dueDate:paid?(date||isoToday()):dueDate,paidDate:paid?(date||isoToday()):null,paidAt:paid?(e.paidAt||new Date().toISOString()):null,currencyConversion:conv,updatedAt:new Date().toISOString()});
+      Object.assign(e,{name,amount,date:date||isoToday(),category,currency,gasSubcategory:gasSubcategory||undefined,linkedVehicleId:linkedVehicleId||undefined,paid,dueDate:paid?(date||isoToday()):dueDate,paidDate:paid?(date||isoToday()):null,paidAt:paid?(e.paidAt||new Date().toISOString()):null,currencyConversion:conv,updatedAt:new Date().toISOString()});
     }
   } else {
-    S.expenses.unshift({id:uid(),name,amount,date:date||isoToday(),category,currency,paid,dueDate:paid?(date||isoToday()):dueDate,paidDate:paid?(date||isoToday()):null,paidAt:paid?new Date().toISOString():null,source:paid?src:null,paidAmount:paid?conv.originalAmount:null,currencyConversion:conv,createdAt:new Date().toISOString()});
+    S.expenses.unshift({id:uid(),name,amount,date:date||isoToday(),category,currency,gasSubcategory:gasSubcategory||undefined,linkedVehicleId:linkedVehicleId||undefined,paid,dueDate:paid?(date||isoToday()):dueDate,paidDate:paid?(date||isoToday()):null,paidAt:paid?new Date().toISOString():null,source:paid?src:null,paidAmount:paid?conv.originalAmount:null,currencyConversion:conv,createdAt:new Date().toISOString()});
     if(paid) adjustSource(src, -conv.convertedAmount);
   }
   // Si viene del flujo payPersonaLoan, marcar la cuota del préstamo como pagada (sin doble deducción)
@@ -9478,7 +9856,9 @@ function accountWeeklySpending(accId) {
   return days;
 }
 
+function setCuentasTab(t){window._cuentasTab=t;renderAccounts();}
 function renderAccounts() {
+  const tab=window._cuentasTab||'cuentas';
   const accs=activeAccounts();
   const totalBal=totalAccountsBalance();
   const libre=freeBalance();
@@ -9486,8 +9866,18 @@ function renderAccounts() {
   const typeIconColor={bank:'#7c6fda',cash:'#4ade80',savings:'#f59e0b'};
   if(!window._patrExpanded) window._patrExpanded={};
 
-  // 2 big summary cards
-  let html=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+  /* ── Tab selector ── */
+  let html=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--icon-bg);border-radius:14px;padding:4px;margin-bottom:14px">
+    <button onclick="setCuentasTab('cuentas')" style="padding:9px 0;border-radius:10px;font-size:.78rem;font-weight:700;border:none;background:${tab==='cuentas'?'#6c63c7':'transparent'};color:${tab==='cuentas'?'#fff':'var(--text-muted)'};cursor:pointer;transition:all .15s">
+      🏦 Cuentas
+    </button>
+    <button onclick="setCuentasTab('bolsillos')" style="padding:9px 0;border-radius:10px;font-size:.78rem;font-weight:700;border:none;background:${tab==='bolsillos'?'#6c63c7':'transparent'};color:${tab==='bolsillos'?'#fff':'var(--text-muted)'};cursor:pointer;transition:all .15s">
+      💼 Bolsillos
+    </button>
+  </div>`;
+
+  /* ── 2 summary cards (always visible) ── */
+  html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
     <div class="card p-4">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
         <div style="width:32px;height:32px;background:#252836;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
@@ -9510,6 +9900,7 @@ function renderAccounts() {
     </div>
   </div>`;
 
+  if(tab==='cuentas') {
   // Distribución de cuentas (cuentas + bolsillos por cuenta)
   if(accs.length>0) {
     const palette=['#7c6fda','#4ade80','#f59e0b','#ef4444','#06b6d4','#a78bfa','#ec4899','#22d3ee'];
@@ -9614,6 +10005,9 @@ function renderAccounts() {
     });
   }
 
+  } // end tab==='cuentas'
+
+  if(tab==='bolsillos') {
   // ── Bolsillos separator + cards ──
   const allPockets=S.pockets||[];
   const pocketTotal=allPockets.reduce((s,p)=>s+(p.saved||0),0);
@@ -9652,13 +10046,15 @@ function renderAccounts() {
     });
   }
 
+  } // end tab==='bolsillos'
+
   document.getElementById('cuentasContent').innerHTML=html;
   const oldAcFab=document.getElementById('cuentasFab');
   if(oldAcFab) oldAcFab.remove();
   const acFab=document.createElement('button');
   acFab.id='cuentasFab'; acFab.className='bear-fab'; acFab.textContent='Nuevo';
   document.body.appendChild(acFab);
-  makeFabDraggable(acFab, ()=>openModal('addAccount'));
+  makeFabDraggable(acFab, tab==='bolsillos'?()=>openModal('addPocket'):()=>openModal('addAccount'));
 }
 
 function renderPockets() {
@@ -10268,16 +10664,33 @@ function recentSpaceNotifications() {
     }));
   const activeSpace=(currentSpaceId&&H&&Array.isArray(H.transactions))?H.transactions:[];
   const actor=currentActorName();
-  const tx=activeSpace.filter(t=>t.createdAt&&new Date(t.createdAt).getTime()>=cutoff&&t.by!==actor).slice(0,8).map(t=>{
-    const rejected=/no pagar|rechaz/i.test(t.label||'');
-    const confirmed=/abono|confirm/i.test(t.label||'');
+  // Map refType to a human-readable notification title
+  function spaceTxTitle(t) {
+    const rt=t.refType||'';
+    if(rt==='billPaid'||rt==='onetimePaid'||rt==='expensePaid'||rt==='borrowedPaid') return '💳 Pago realizado';
+    if(rt==='billUnpaid'||rt==='onetimeUnpaid'||rt==='expenseUnpaid') return '↩ Pago deshecho';
+    if(rt==='calendarNote') return '📅 Agenda actualizada';
+    if(rt==='calendarToggle') return '✅ Tarea actualizada';
+    if(rt==='calendarDelete') return '🗑 Tarea eliminada';
+    if(rt==='shoppingListCreate'||rt==='shoppingList') return '🛍 Lista de compras';
+    if(rt==='shoppingListDelete') return '🗑 Lista eliminada';
+    if(rt==='planToggle') return '📌 Plan actualizado';
+    if(rt==='planDelete') return '🗑 Plan eliminado';
+    if(rt==='reschedule') return '🔄 Pago reprogramado';
+    if(rt==='houseItem') return '🏠 Pago del espacio';
+    if(/rechaz|no pagar/i.test(t.label||'')) return '⛔ Pago rechazado';
+    if(/abono|confirm/i.test(t.label||'')) return '✅ Pago confirmado';
+    return '🔔 Actividad del espacio';
+  }
+  const tx=activeSpace.filter(t=>t.createdAt&&new Date(t.createdAt).getTime()>=cutoff&&t.by!==actor).slice(0,12).map(t=>{
+    const title=spaceTxTitle(t);
     return {
-      id:`space-tx:${currentSpaceId}:${t.id}`,type:rejected?'space_rejected':confirmed?'space_confirmed':'space_change',
-      priority:rejected?3:2,createdAt:t.createdAt,
-      title:rejected?'Pago rechazado':confirmed?'Pago confirmado':'Cambio en espacio compartido',
-      description:`${t.by||'Alguien'} ${rejected?'rechazó':confirmed?'confirmó':'actualizó'} ${t.label||'un movimiento'}${currentSpaceName?' en '+currentSpaceName:''}.`,
+      id:`space-tx:${currentSpaceId}:${t.id}`,type:'space_change',
+      priority:2,createdAt:t.createdAt,
+      title,
+      description:`${t.by||'Alguien'}: ${t.label||'un movimiento'}${currentSpaceName?' · '+currentSpaceName:''}.`,
       status:'no_leida',
-      items:[{name:t.label||'Movimiento',amount:t.amount||0,meta:t.by||''}]
+      items:[{name:t.label||'Movimiento',amount:t.amount||0,meta:`${t.by||''} · ${fmtActionTime(t.createdAt||t.date)}`}]
     };
   });
   return [...assigned,...tx];
@@ -11197,7 +11610,7 @@ function renderProfileView() {
   const accounts=activeAccounts();
   const total=totalAccountsBalance();
   const pockets=totalPockets();
-  const pending=getUpcomingItems(14).filter(x=>['bill','onetime','expense','borrowed','house'].includes(x.type)).length;
+  const pending=getUpcomingItems(7).filter(x=>['bill','onetime','expense','borrowed','house'].includes(x.type)).length;
   document.getElementById('profileContent').innerHTML=`<div style="display:flex;flex-direction:column;gap:12px">
     <div class="card p-4" style="border:1px solid rgba(124,111,218,0.22)">
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
@@ -11261,7 +11674,7 @@ function renderProfileView() {
         <div style="background:#1a1d2e;border-radius:10px;padding:10px">
           <div style="font-size:0.57rem;color:#5c6480;font-weight:700;text-transform:uppercase;margin-bottom:4px">Próximos pagos</div>
           <div style="color:#f87171;font-size:0.88rem;font-weight:900">${pending}</div>
-          <div style="font-size:0.58rem;color:#5c6480;margin-top:2px">en 14 días</div>
+          <div style="font-size:0.58rem;color:#5c6480;margin-top:2px">en 7 días</div>
         </div>
         <div style="background:#1a1d2e;border-radius:10px;padding:10px">
           <div style="font-size:0.57rem;color:#5c6480;font-weight:700;text-transform:uppercase;margin-bottom:4px">Mascotas</div>
@@ -11731,7 +12144,7 @@ function vehicleNextOilInfo(carId){
   return {date:oil?.nextDate||'', miles:Number(oil?.nextMiles||0)||0};
 }
 function setMileageTab(tab){
-  currentMileageTab=['miles','oil','repair'].includes(tab)?tab:'miles';
+  currentMileageTab=['miles','oil','repair','gas'].includes(tab)?tab:'miles';
   renderMillas();
 }
 function changeVehicleMonth(delta) {
@@ -11773,9 +12186,19 @@ function renderMillas(){
     const tripMiles=vehicleTravelMiles(car.id);
     const currentMiles=vehicleCurrentMiles(car);
     const repairsCount=svc.filter(s=>s.kind==='repair').length;
+    // Month-scoped KPIs (change with month selector)
+    const monthTripsCount=monthLogs.length;
+    const monthTripMiles=monthLogs.reduce((s,l)=>s+Number(l.totalMiles||0),0);
+    const monthRepairsCount=monthSvc.filter(s=>s.kind==='repair').length;
     const nextOil=vehicleNextOilInfo(car.id);
     const oilHistory=monthSvc.filter(s=>s.kind==='oil');
     const repairHistory=monthSvc.filter(s=>s.kind==='repair');
+    // Gasolina: if trabajo car → all gasolina-trabajo expenses linked (or unlinked)
+    const allGasExp=(S.expenses||[]).filter(e=>e.category==='gasolina'&&(e.linkedVehicleId===car.id||(car.vehicleUse==='trabajo'&&e.gasSubcategory==='trabajo'&&!e.linkedVehicleId)));
+    const monthGasExp=allGasExp.filter(e=>monthKey(parseDate(e.date||isoToday()))===vehicleMonth);
+    const monthGasTotal=monthGasExp.reduce((s,e)=>s+(e.amount||0),0);
+    const monthTanqueadas=monthGasExp.length;
+    const gasFiltered=monthGasExp.map(e=>({id:e.id,kind:'gas',date:e.date||isoToday(),title:e.name||'Gasolina',subtitle:e.gasSubcategory==='trabajo'?'💼 Trabajo':'🤝 Personal',amount:fmt(e.amount||0)}));
     const history=[
       ...logs.map(l=>({kind:'miles',date:l.date||isoToday(),title:l.title||'Viaje',subtitle:`${l.startMiles||0} → ${l.endMiles||0} mi`,amount:`${Number(l.totalMiles||0).toFixed(1)} mi`})),
       ...svc.map(s=>({kind:s.kind,date:s.date||isoToday(),title:s.kind==='oil'?'Cambio de aceite':'Reparación',subtitle:s.title||'',amount:s.cost?fmt(s.cost):''}))
@@ -11784,7 +12207,9 @@ function renderMillas(){
       ? oilHistory.map(s=>({id:s.id,kind:'oil',date:s.date||isoToday(),title:'Cambio de aceite',subtitle:s.title||'',amount:s.cost?fmt(s.cost):''}))
       : currentMileageTab==='repair'
         ? repairHistory.map(s=>({id:s.id,kind:'repair',date:s.date||isoToday(),title:'Reparación',subtitle:s.title||'',amount:s.cost?fmt(s.cost):''}))
-        : monthLogs.map(l=>({id:l.id,kind:'miles',date:l.date||isoToday(),title:l.title||l.project||'Trayecto',subtitle:`${l.startMiles||0} → ${l.endMiles||0} mi`,amount:`${Number(l.totalMiles||0).toFixed(1)} mi`}));
+        : currentMileageTab==='gas'
+          ? gasFiltered
+          : monthLogs.map(l=>({id:l.id,kind:'miles',date:l.date||isoToday(),title:l.title||l.project||'Trayecto',subtitle:`${l.startMiles||0} → ${l.endMiles||0} mi`,amount:`${Number(l.totalMiles||0).toFixed(1)} mi`}));
     document.getElementById('millasContent').innerHTML=`<div class="flex items-center justify-between mb-3"><button onclick="currentMileageCarId=null;renderMillas()" class="btn-dark px-3 py-2 text-sm">← Vehículos</button><div style="display:flex;gap:6px"><button onclick="openModal('carFormModal','${car.id}')" class="btn-dark px-3 py-2 text-sm" title="Editar vehículo">⚙ Editar</button><button onclick="openModal('exportVehicleOptions','${car.id}')" class="btn-primary px-3 py-2 text-sm">Exportar</button></div></div>
       <div class="card p-4 mb-3" style="background:radial-gradient(circle at top left,rgba(34,211,238,.18),transparent 34%),linear-gradient(135deg,rgba(30,41,59,.96),rgba(15,23,42,.98));border:1px solid rgba(34,211,238,.24)">
         <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
@@ -11800,11 +12225,15 @@ function renderMillas(){
           </div>
         </div>
         <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:14px">
-          <div class="card2 p-3" style="border-color:rgba(34,211,238,.18)"><div style="font-size:0.58rem;color:#5c6480;text-transform:uppercase;font-weight:800">Viajes</div><div style="font-weight:900;color:#fff;font-size:1.08rem">${logs.length}</div></div>
-          <div class="card2 p-3" style="border-color:rgba(34,211,238,.18)"><div style="font-size:0.58rem;color:#5c6480;text-transform:uppercase;font-weight:800">Millas viajes</div><div style="font-weight:900;color:#fff;font-size:1.08rem">${tripMiles.toFixed(1)}</div></div>
+          <div class="card2 p-3" style="border-color:rgba(34,211,238,.18)"><div style="font-size:0.58rem;color:#5c6480;text-transform:uppercase;font-weight:800">Viajes</div><div style="font-weight:900;color:#fff;font-size:1.08rem">${monthTripsCount}</div></div>
+          <div class="card2 p-3" style="border-color:rgba(34,211,238,.18)"><div style="font-size:0.58rem;color:#5c6480;text-transform:uppercase;font-weight:800">Millas viajes</div><div style="font-weight:900;color:#fff;font-size:1.08rem">${monthTripMiles.toFixed(1)}</div></div>
           <div class="card2 p-3" style="border-color:rgba(34,211,238,.18)"><div style="font-size:0.58rem;color:#5c6480;text-transform:uppercase;font-weight:800">Próx. aceite</div><div style="font-weight:900;color:#fff;font-size:.98rem">${nextOil.date?fmtDate(nextOil.date):(nextOil.miles?nextOil.miles.toLocaleString('en-US')+' mi':'—')}</div></div>
-          <div class="card2 p-3" style="border-color:rgba(34,211,238,.18)"><div style="font-size:0.58rem;color:#5c6480;text-transform:uppercase;font-weight:800">Reparaciones</div><div style="font-weight:900;color:#fff;font-size:1.08rem">${repairsCount}</div></div>
+          <div class="card2 p-3" style="border-color:rgba(34,211,238,.18)"><div style="font-size:0.58rem;color:#5c6480;text-transform:uppercase;font-weight:800">Reparaciones</div><div style="font-weight:900;color:#fff;font-size:1.08rem">${monthRepairsCount}</div></div>
         </div>
+        ${car.vehicleUse==='trabajo'?`<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:9px">
+          <div class="card2 p-3" style="border-color:rgba(251,191,36,.22)"><div style="font-size:0.58rem;color:#92400e;text-transform:uppercase;font-weight:800">⛽ Gasolina</div><div style="font-weight:900;color:#fbbf24;font-size:1.08rem">${monthGasTotal>0?fmt(monthGasTotal):'$0'}</div></div>
+          <div class="card2 p-3" style="border-color:rgba(251,191,36,.22)"><div style="font-size:0.58rem;color:#92400e;text-transform:uppercase;font-weight:800">Tanqueadas</div><div style="font-weight:900;color:#fbbf24;font-size:1.08rem">${monthTanqueadas}</div></div>
+        </div>`:''}
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <button onclick="changeVehicleMonth(-1)" style="width:40px;height:40px;border-radius:12px;background:#1a1d2e;border:none;color:#22d3ee;font-size:1.1rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">‹</button>
@@ -11814,14 +12243,15 @@ function renderMillas(){
         </div>
         <button onclick="changeVehicleMonth(1)" style="width:40px;height:40px;border-radius:12px;background:#1a1d2e;border:none;color:#22d3ee;font-size:1.1rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">›</button>
       </div>
-      <div class="mod-tabs grid-cols-3" style="margin-bottom:10px">
-        <button class="pill-tab ${currentMileageTab==='miles'?'active':''}" onclick="setMileageTab('miles',this)">Millas</button>
-        <button class="pill-tab ${currentMileageTab==='oil'?'active':''}" onclick="setMileageTab('oil',this)">Aceite</button>
-        <button class="pill-tab ${currentMileageTab==='repair'?'active':''}" onclick="setMileageTab('repair',this)">Reparaciones</button>
+      <div class="mod-tabs ${car.vehicleUse==='trabajo'?'grid-cols-4':'grid-cols-3'}" style="margin-bottom:10px">
+        <button class="pill-tab ${currentMileageTab==='miles'?'active':''}" onclick="setMileageTab('miles')">Millas</button>
+        <button class="pill-tab ${currentMileageTab==='oil'?'active':''}" onclick="setMileageTab('oil')">Aceite</button>
+        <button class="pill-tab ${currentMileageTab==='repair'?'active':''}" onclick="setMileageTab('repair')">Reparac.</button>
+        ${car.vehicleUse==='trabajo'?`<button class="pill-tab ${currentMileageTab==='gas'?'active':''}" onclick="setMileageTab('gas')">⛽ Gas</button>`:''}
       </div>
       <div class="card p-3 mb-2">
-        <div style="font-size:.72rem;color:#94a3b8;font-weight:700;margin-bottom:6px">Historial de ${currentMileageTab==='miles'?'millas':currentMileageTab==='oil'?'aceite':'reparaciones'}</div>
-        ${filtered.length?filtered.sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(h=>`<div style="padding:8px 0;border-top:1px solid var(--border)"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div style="min-width:0;flex:1"><div style="font-weight:700;color:#fff">${h.kind==='miles'?'Trayecto':(h.kind==='oil'?'Aceite':'Reparación')} · ${fmtDate(h.date)}</div><div style="font-size:.68rem;color:#94a3b8">${h.title}${h.subtitle?` · ${h.subtitle}`:''}</div></div><div style="font-weight:700;color:#a5b4fc;flex-shrink:0">${h.amount||''}</div></div><div style="display:flex;gap:6px;margin-top:5px">${h.kind==='miles'?`<button onclick="prefillMileage('${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);color:#a5b4fc">✏ Editar</button><button onclick="deleteMileage('${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#f87171">🗑 Borrar</button>`:h.kind==='oil'?`<button onclick="openModal('oilChangeFormModal','${car.id}::${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);color:#a5b4fc">✏ Editar</button><button onclick="deleteServiceLog('${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#f87171">🗑 Borrar</button>`:`<button onclick="openModal('repairFormModal','${car.id}::${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);color:#a5b4fc">✏ Editar</button><button onclick="deleteServiceLog('${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#f87171">🗑 Borrar</button>`}</div></div>`).join(''):`<div class="text-slate-400 text-sm py-3 text-center">Sin registros aún</div>`}
+        <div style="font-size:.72rem;color:#94a3b8;font-weight:700;margin-bottom:6px">Historial de ${currentMileageTab==='miles'?'millas':currentMileageTab==='oil'?'aceite':currentMileageTab==='gas'?'gasolina':'reparaciones'}</div>
+        ${filtered.length?filtered.sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(h=>`<div style="padding:8px 0;border-top:1px solid var(--border)"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div style="min-width:0;flex:1"><div style="font-weight:700;color:#fff">${h.kind==='miles'?'Trayecto':h.kind==='oil'?'Aceite':h.kind==='gas'?'⛽ Gasolina':'Reparación'} · ${fmtDate(h.date)}</div><div style="font-size:.68rem;color:#94a3b8">${h.title}${h.subtitle?` · ${h.subtitle}`:''}</div></div><div style="font-weight:700;color:${h.kind==='gas'?'#fbbf24':'#a5b4fc'};flex-shrink:0">${h.amount||''}</div></div>${h.kind!=='gas'?`<div style="display:flex;gap:6px;margin-top:5px">${h.kind==='miles'?`<button onclick="prefillMileage('${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);color:#a5b4fc">✏ Editar</button><button onclick="deleteMileage('${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#f87171">🗑 Borrar</button>`:h.kind==='oil'?`<button onclick="openModal('oilChangeFormModal','${car.id}::${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);color:#a5b4fc">✏ Editar</button><button onclick="deleteServiceLog('${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#f87171">🗑 Borrar</button>`:`<button onclick="openModal('repairFormModal','${car.id}::${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);color:#a5b4fc">✏ Editar</button><button onclick="deleteServiceLog('${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#f87171">🗑 Borrar</button>`}</div>`:''}</div>`).join(''):`<div class="text-slate-400 text-sm py-3 text-center">Sin registros aún</div>`}
       </div>`;
     const oldFabIn=document.getElementById('millasFab'); if(oldFabIn) oldFabIn.remove();
     const fabIn=document.createElement('button'); fabIn.id='millasFab'; fabIn.className='bear-fab'; fabIn.textContent='Nuevo'; document.body.appendChild(fabIn);
@@ -11865,6 +12295,17 @@ function carTypeBadge(type){
   const t=String(type||'sedan');
   return t==='coupe'?'Coupé':(t==='suv'?'SUV':'Sedán');
 }
+function setCarUseBtn(val) {
+  const f=document.getElementById('mCarUse'); if(f) f.value=val;
+  const btnP=document.getElementById('carUseBtnPersonal'), btnT=document.getElementById('carUseBtnTrabajo');
+  if(btnP&&btnT) [['personal',btnP],['trabajo',btnT]].forEach(([v,b])=>{
+    const active=v===val;
+    b.style.background=active?'rgba(124,111,218,0.15)':'transparent';
+    b.style.borderColor=active?'rgba(124,111,218,0.5)':'rgba(148,163,184,0.3)';
+    b.style.color=active?'#7c6fda':'#64748b';
+    b.style.fontWeight=active?'800':'600';
+  });
+}
 function setCarType(type){
   const t=(type==='coupe'||type==='suv')?type:'sedan';
   const f=document.getElementById('mCarType'); if(f) f.value=t;
@@ -11882,7 +12323,8 @@ function saveCarFromModal(){
   const model=(document.getElementById('mCarModel')?.value||'').trim();
   const year=parseInt(document.getElementById('mCarYear')?.value||'0',10)||null;
   const startMiles=parseFloat(document.getElementById('mCarStartMiles')?.value||'0')||0;
-  const row={id:editId||uid(),name,plate,color,brand,model,year,startMiles,updatedAt:new Date().toISOString()};
+  const vehicleUse=(document.getElementById('mCarUse')?.value||'personal');
+  const row={id:editId||uid(),name,plate,color,brand,model,year,startMiles,vehicleUse,updatedAt:new Date().toISOString()};
   if(editId){
     const i=(S.cars||[]).findIndex(c=>c.id===editId);
     if(i>=0) S.cars[i]={...(S.cars[i]||{}),...row};
@@ -11977,13 +12419,106 @@ function exportVehicleData(carId){
   const includeRepair=!!document.getElementById('exRepair')?.checked;
   if(!includeMiles && !includeOil && !includeRepair){ showToast('Selecciona al menos una opción'); return; }
   const car=(S.cars||[]).find(c=>c.id===carId); if(!car) return;
-  const miles=(S.carMileageLogs||[]).filter(l=>l.carId===carId).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
-  const oil=(S.carServiceLogs||[]).filter(s=>s.carId===carId&&s.kind==='oil').sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
-  const repairs=(S.carServiceLogs||[]).filter(s=>s.carId===carId&&s.kind==='repair').sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
-  const milesRows=miles.map((l,i)=>`<tr><td>${i+1}</td><td>${fmtDate(l.date||isoToday())}</td><td>${l.title||''}</td><td>${l.startMiles||0}</td><td>${l.endMiles||0}</td><td>${l.totalMiles||0}</td><td>${l.notes||''}</td></tr>`).join('');
-  const oilRows=oil.map((o,i)=>`<tr><td>${i+1}</td><td>${fmtDate(o.date||isoToday())}</td><td>${o.title||''}</td><td>${o.currentMiles||0}</td><td>${o.nextMiles||0}</td><td>${o.cost?fmt(o.cost):''}</td><td>${o.notes||''}</td></tr>`).join('');
-  const repairRows=repairs.map((r,i)=>`<tr><td>${i+1}</td><td>${fmtDate(r.date||isoToday())}</td><td>${r.title||''}</td><td>${r.cost?fmt(r.cost):''}</td><td>${r.notes||''}</td></tr>`).join('');
-  const html=`<!doctype html><html><head><meta charset="utf-8"><title>Reporte ${car.name}</title><style>body{font-family:Inter,Arial;padding:24px;background:#f5f7fb;color:#111}h1{margin:0 0 4px}p{margin:0 0 16px;color:#555}.section{margin:16px 0}.section h2{margin:0 0 8px}table{width:100%;border-collapse:collapse;background:#fff}th,td{border:1px solid #ddd;padding:8px;font-size:12px}th{background:#eef2ff;text-align:left}</style></head><body><h1>Reporte vehículo - ${car.name}</h1><p>Placa: ${car.plate||'-'} · Marca: ${car.brand||'-'} · Modelo: ${car.model||'-'} · Año: ${car.year||'-'}</p>${includeMiles?`<div class="section"><h2>Millas</h2><table><thead><tr><th>#</th><th>Fecha</th><th>Registro</th><th>Inicio</th><th>Final</th><th>Millas</th><th>Notas</th></tr></thead><tbody>${milesRows||'<tr><td colspan="7">Sin datos</td></tr>'}</tbody></table></div>`:''}${includeOil?`<div class="section"><h2>Cambio de aceite</h2><table><thead><tr><th>#</th><th>Fecha</th><th>Lugar</th><th>Millaje actual</th><th>Próximo cambio</th><th>Costo</th><th>Notas</th></tr></thead><tbody>${oilRows||'<tr><td colspan="7">Sin datos</td></tr>'}</tbody></table></div>`:''}${includeRepair?`<div class="section"><h2>Reparaciones</h2><table><thead><tr><th>#</th><th>Fecha</th><th>Tipo</th><th>Costo</th><th>Notas</th></tr></thead><tbody>${repairRows||'<tr><td colspan="5">Sin datos</td></tr>'}</tbody></table></div>`:''}</body></html>`;
+  const miles=(S.carMileageLogs||[]).filter(l=>l.carId===carId).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  const oil=(S.carServiceLogs||[]).filter(s=>s.carId===carId&&s.kind==='oil').sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  const repairs=(S.carServiceLogs||[]).filter(s=>s.carId===carId&&s.kind==='repair').sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  const totalMiles=miles.reduce((s,l)=>s+(l.totalMiles||0),0);
+  const totalOilCost=oil.reduce((s,o)=>s+(o.cost||0),0);
+  const totalRepairCost=repairs.reduce((s,r)=>s+(r.cost||0),0);
+
+  const milesCards=miles.length
+    ? miles.map((l,i)=>`<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px 14px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+          <div style="font-weight:700;color:#111;font-size:14px">${l.title||'Trayecto '+(i+1)}</div>
+          <div style="font-weight:800;color:#4f46e5;font-size:15px">${l.totalMiles||0} mi</div>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:#6b7280">
+          <span>📅 ${l.date||''}</span>
+          <span>▶ Inicio: ${l.startMiles||0}</span>
+          <span>⏹ Final: ${l.endMiles||0}</span>
+          ${l.project?`<span>📁 ${l.project}</span>`:''}
+        </div>
+        ${l.notes?`<div style="margin-top:6px;font-size:12px;color:#9ca3af;border-top:1px solid #f3f4f6;padding-top:6px">${l.notes}</div>`:''}
+      </div>`).join('')
+    : '<div style="color:#9ca3af;font-size:13px;padding:12px 0">Sin registros de millas</div>';
+
+  const oilCards=oil.length
+    ? oil.map((o,i)=>`<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px 14px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+          <div style="font-weight:700;color:#111;font-size:14px">${o.title||'Cambio '+(i+1)}</div>
+          ${o.cost?`<div style="font-weight:800;color:#d97706;font-size:15px">$${o.cost.toFixed(2)}</div>`:''}
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:#6b7280">
+          <span>📅 ${o.date||''}</span>
+          <span>🔢 Actual: ${o.currentMiles||0} mi</span>
+          ${o.nextMiles?`<span>⏭ Próximo: ${o.nextMiles} mi</span>`:''}
+          ${o.nextDate?`<span>📆 Próxima fecha: ${o.nextDate}</span>`:''}
+        </div>
+        ${o.notes?`<div style="margin-top:6px;font-size:12px;color:#9ca3af;border-top:1px solid #f3f4f6;padding-top:6px">${o.notes}</div>`:''}
+      </div>`).join('')
+    : '<div style="color:#9ca3af;font-size:13px;padding:12px 0">Sin cambios de aceite registrados</div>';
+
+  const repairCards=repairs.length
+    ? repairs.map((r,i)=>`<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px 14px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+          <div style="font-weight:700;color:#111;font-size:14px">${r.title||'Reparación '+(i+1)}</div>
+          ${r.cost?`<div style="font-weight:800;color:#dc2626;font-size:15px">$${r.cost.toFixed(2)}</div>`:''}
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:#6b7280">
+          <span>📅 ${r.date||''}</span>
+        </div>
+        ${r.notes?`<div style="margin-top:6px;font-size:12px;color:#9ca3af;border-top:1px solid #f3f4f6;padding-top:6px">${r.notes}</div>`:''}
+      </div>`).join('')
+    : '<div style="color:#9ca3af;font-size:13px;padding:12px 0">Sin reparaciones registradas</div>';
+
+  const html=`<!doctype html><html><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Reporte · ${car.name}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f3f4f6;color:#111;padding:0}
+    .header{background:linear-gradient(135deg,#312e81,#4f46e5);color:#fff;padding:20px 16px 16px}
+    .header h1{font-size:20px;font-weight:800;margin-bottom:4px}
+    .header .sub{font-size:13px;opacity:.75}
+    .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px 16px}
+    .kpi{background:#fff;border-radius:12px;padding:10px 12px;border:1px solid #e5e7eb}
+    .kpi .label{font-size:10px;color:#9ca3af;font-weight:700;text-transform:uppercase;margin-bottom:4px}
+    .kpi .val{font-size:17px;font-weight:800;color:#111}
+    .kpi .val.green{color:#16a34a}
+    .kpi .val.blue{color:#4f46e5}
+    .kpi .val.amber{color:#d97706}
+    .kpi .val.red{color:#dc2626}
+    .section{padding:0 16px 16px}
+    .sec-header{font-size:13px;font-weight:800;color:#374151;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;padding-top:16px;border-top:1px solid #e5e7eb;display:flex;align-items:center;gap:6px}
+    .meta{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 14px}
+    .meta-chip{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:5px 10px;font-size:12px;color:#374151}
+    .meta-chip b{color:#111}
+    .footer{padding:14px 16px;font-size:11px;color:#9ca3af;text-align:center;border-top:1px solid #e5e7eb}
+  </style>
+  </head><body>
+  <div class="header">
+    <div class="sub">Reporte de vehículo</div>
+    <h1>🚘 ${car.name}</h1>
+    <div class="sub" style="margin-top:4px">Generado el ${new Date().toLocaleDateString('es',{year:'numeric',month:'long',day:'numeric'})}</div>
+  </div>
+  <div class="meta">
+    ${car.plate?`<div class="meta-chip">Placa <b>${car.plate}</b></div>`:''}
+    ${car.brand?`<div class="meta-chip">Marca <b>${car.brand}</b></div>`:''}
+    ${car.model?`<div class="meta-chip">Modelo <b>${car.model}</b></div>`:''}
+    ${car.year?`<div class="meta-chip">Año <b>${car.year}</b></div>`:''}
+  </div>
+  <div class="kpi-grid">
+    ${includeMiles?`<div class="kpi"><div class="label">Viajes</div><div class="val blue">${miles.length}</div></div><div class="kpi"><div class="label">Total millas</div><div class="val blue">${totalMiles.toLocaleString()}</div></div>`:''}
+    ${includeOil?`<div class="kpi"><div class="label">Aceite costo</div><div class="val amber">$${totalOilCost.toFixed(0)}</div></div>`:''}
+    ${includeRepair?`<div class="kpi"><div class="label">Reparaciones</div><div class="val red">$${totalRepairCost.toFixed(0)}</div></div>`:''}
+  </div>
+  ${includeMiles?`<div class="section"><div class="sec-header">🛣️ Trayectos (${miles.length})</div>${milesCards}</div>`:''}
+  ${includeOil?`<div class="section"><div class="sec-header">🔧 Cambios de aceite (${oil.length})</div>${oilCards}</div>`:''}
+  ${includeRepair?`<div class="section"><div class="sec-header">🔨 Reparaciones (${repairs.length})</div>${repairCards}</div>`:''}
+  <div class="footer">CE HUB · Reporte generado el ${isoToday()}</div>
+  </body></html>`;
+
   const blob=new Blob([html],{type:'text/html'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`reporte_vehiculo_${(car.name||'carro').replace(/\s+/g,'_')}_${isoToday()}.html`; a.click();
   closeModal();
