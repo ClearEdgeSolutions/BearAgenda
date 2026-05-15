@@ -4323,7 +4323,7 @@ function renderBills() {
         else { payBtn=`<button onclick="event.stopPropagation();markBorrowedPaid('${item.id}','${item.paymentId||''}')" style="${btnStyle}">${payIcon}Abonar</button>`; skipBtn=`<button onclick="event.stopPropagation();openModal('skipPayment','${item.kind}:${item.id}:${item.paymentId||''}:${item.date}')" style="background:rgba(255,255,255,0.06);color:#94a3b8;font-size:0.75rem;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:4px"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>Omitir</button>`; }
       } else if(item.kind==='house'){
         if(item.paid) payBtn=`<button onclick="event.stopPropagation();showView('casa')" style="${btnStyle};background:rgba(255,255,255,0.06);color:#94a3b8">Ver Espacios</button>`;
-        else payBtn=`<button onclick="event.stopPropagation();openModal('addExpense',null,{fromAbono:true})" style="${btnStyle}">${payIcon}Abonar</button>`;
+        else payBtn=`<button onclick="event.stopPropagation();openModal('addHousePayment','${item.id}')" style="${btnStyle}">${payIcon}Abonar</button>`;
       }
       const canEditHouse=item.kind==='house'&&((H.items||[]).find(x=>x.id===item.id)?.assignedTo===currentHousePerson());
       let editBtn='';
@@ -7544,10 +7544,12 @@ function openModal(type, id, extra) {
   else if(type==='addExpense'||type==='editExpense') {
     const q=type==='editExpense'?(S.expenses.find(x=>x.id===id)||{}):(extra||{});
     const _expBackBtn=(extra&&extra.backTo)?`<button onclick="openModal('${extra.backTo}','${extra.backId||''}')" class="flex items-center gap-1.5 text-indigo-600 text-sm font-bold mb-3"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Volver</button>`:'';
-    html=`${_expBackBtn}<h3 class="text-lg font-bold text-slate-800 mb-1">${type==='editExpense'?'Editar gasto':(extra&&extra.fromAbono?'Registrar abono':extra&&extra.fromLoanPay?'Pagar préstamo':'Registrar pago realizado')}</h3>
+    const _isLoanPay=!!(extra&&extra.fromLoanPay);
+    html=`${_expBackBtn}<h3 class="text-lg font-bold text-slate-800 mb-1">${type==='editExpense'?'Editar gasto':(extra&&extra.fromAbono?'Registrar abono':_isLoanPay?'Pagar préstamo':'Registrar pago realizado')}</h3>
     <div class="space-y-3">
-      <div><label class="text-xs font-bold text-slate-500 uppercase">Descripción</label>
-      <input type="text" id="mName" value="${q.name||''}" placeholder="ej. Gasolina, supermercado…" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
+      ${_isLoanPay
+        ? `<div class="rounded-xl bg-indigo-50 border border-indigo-100 px-3 py-2.5 text-sm font-semibold text-slate-700">💳 ${q.name||''}</div><input type="hidden" id="mName" value="${q.name||''}">`
+        : `<div><label class="text-xs font-bold text-slate-500 uppercase">Descripción</label><input type="text" id="mName" value="${q.name||''}" placeholder="ej. Gasolina, supermercado…" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>`}
       <div class="flex gap-3">
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Monto ($)</label>
         <input type="number" id="mAmount" value="${q.amount||''}" oninput="maskMoneyInput(this)" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
@@ -7562,11 +7564,9 @@ function openModal(type, id, extra) {
         <div class="flex-1"><label class="text-xs font-bold text-slate-500 uppercase">Fecha</label>
         <input type="date" id="mDate" value="${q.date||isoToday()}" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1"></div>
       </div>
-      <div><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label>
-      <select id="mCat" onchange="checkGasolinaSubcat()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">
-        ${paymentCategoryOptions(q.category||'personal')}
-      </select></div>
-      ${gasSubcatHtml(q.gasSubcategory||'')}
+      ${_isLoanPay
+        ? `<input type="hidden" id="mCat" value="${q.category||'personal'}">`
+        : `<div><label class="text-xs font-bold text-slate-500 uppercase">Categoría</label><select id="mCat" onchange="checkGasolinaSubcat()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">${paymentCategoryOptions(q.category||'personal')}</select></div>${gasSubcatHtml(q.gasSubcategory||'')}`}
       <input type="hidden" id="mPaid" value="true">
       ${(extra&&extra.loanId)?`<input type="hidden" id="mLoanId" value="${extra.loanId}"><input type="hidden" id="mInstallmentId" value="${extra.installmentId||''}">`:'' }
       <button onclick="saveExpense(${type==='editExpense'?`'${id}'`:'null'})" class="w-full btn-primary py-3">Guardar gasto</button>
