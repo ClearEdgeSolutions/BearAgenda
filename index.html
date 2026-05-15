@@ -337,6 +337,8 @@
     /* Context FAB wrapper — posicionamiento fijo, sin drag */
     .fab-ctx-wrap { position:fixed !important; right:calc(14px + env(safe-area-inset-right,0px)) !important; bottom:calc(68px + env(safe-area-inset-bottom,0px)) !important; z-index:400 !important; display:flex; flex-direction:column; align-items:center; gap:3px; pointer-events:auto; }
     .fab-ctx-label { font-size:9px; font-weight:800; color:rgba(255,255,255,0.7); letter-spacing:.07em; text-transform:uppercase; text-shadow:0 1px 4px rgba(0,0,0,.6); user-select:none; pointer-events:none; }
+    /* Ocultar FAB cuando hay un modal abierto — se restaura automáticamente al cerrar */
+    body:has(#modalOverlay:not(.hidden)) .fab-ctx-wrap { display:none !important; }
     /* Cycle modal — scoped dark/light mode fix */
     #modalContent .cycle-field {
       background: var(--icon-bg) !important;
@@ -2774,8 +2776,9 @@ function getMonthPayments(month=finMonth) {
 function getTransactions(limit=8) {
   const tx=[];
   S.paychecks.filter(p=>p.received).forEach(p=>{const src=p.receivedAccountId?{type:'account',id:p.receivedAccountId}:defaultPaymentSource();tx.push({date:p.receivedDate||p.date,createdAt:p.receivedAt,type:'Ingreso',name:catLabel(p.category),amount:p.amount,sign:'+',source:src,sourceLabel:sourceLabel(src),reverseType:'income',reverseArgs:[p.id]});});
-  S.loanPayments=S.loans.flatMap(l=>(l.payments||[]).map(p=>({...p,person:l.personName})));
-  S.loanPayments.forEach(p=>tx.push({date:p.date,createdAt:p.createdAt,type:'Ingreso',name:`Abono préstamo: ${p.person}`,amount:p.amount,sign:'+',reverseType:'loanPayment',reverseArgs:[p.loanId,p.id]}));
+  // Usar variable local — no mutar S para evitar persistir datos computados en Supabase
+  const _loanPayments=S.loans.flatMap(l=>(l.payments||[]).map(p=>({...p,loanId:l.id,person:l.personName})));
+  _loanPayments.forEach(p=>tx.push({date:p.date,createdAt:p.createdAt,type:'Ingreso',name:`Abono préstamo: ${p.person}`,amount:p.amount,sign:'+',reverseType:'loanPayment',reverseArgs:[p.loanId,p.id]}));
   S.paidBills.forEach(p=>{const b=S.bills.find(x=>x.id===p.billId); if(b){const info=paymentSourceInfo(p.source); tx.push({date:p.paidDate||p.dateKey,createdAt:p.createdAt,type:'Pago',name:b.name,amount:p.paidAmount||b.amount,sign:'-',source:info.source,sourceLabel:info.label,reverseType:'bill',reverseArgs:[p.billId,p.dateKey]});}});
   S.oneTimePayments.forEach(o=>{
     if(Array.isArray(o.payments)&&o.payments.length) o.payments.forEach(p=>{const info=paymentSourceInfo(p.source);tx.push({date:p.paidDate||p.dateKey||o.dueDate,createdAt:p.paidAt,type:'Pago',name:o.name,amount:p.paidAmount||o.amount,sign:'-',source:info.source,sourceLabel:info.label,reverseType:'onetime',reverseArgs:[o.id,p.dateKey||o.dueDate]});});
@@ -4675,7 +4678,11 @@ function myShareLeft(item) {
   const myPaid=shared
     ?(item.payments||[]).reduce((s,p)=>s+(normalizePersonText(p.by||'')===myName?p.amount||0:0),0)
     :housePaid(item);
-  return Math.max(0, Math.round((total * factor - myPaid) * 100) / 100);
+  const myQuotaLeft=Math.max(0, Math.round((total * factor - myPaid) * 100) / 100);
+  // Cap at total remaining: if another member paid more than their share and the item is
+  // globally covered, this user owes nothing more regardless of their individual quota.
+  const totalLeft=Math.max(0, total - housePaid(item));
+  return Math.min(myQuotaLeft, totalLeft);
 }
 
 function housePocketTotal() {
