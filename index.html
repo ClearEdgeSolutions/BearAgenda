@@ -2539,15 +2539,18 @@ function adjustSource(source, amount) {
     }
   }
 }
-function paymentSourceOptions() {
+function paymentSourceOptions(preselectedId) {
   const accs=activeAccounts();
+  const def=defaultPaymentSource();
+  const defVal=def.type==='account'?`account:${def.id}`:def.type==='pocket'?`pocket:${def.id}`:'balance';
+  const selVal=preselectedId||defVal;
   let opts='';
   if(accs.length) {
-    opts=accs.map(a=>`<option value="account:${a.id}">${a.name} · ${a.currency||'USD'} (${fmt(accountAvailable(a.id))})</option>`).join('');
+    opts=accs.map(a=>{const v=`account:${a.id}`;return `<option value="${v}"${v===selVal?' selected':''}>${a.name} · ${a.currency||'USD'} (${fmt(accountAvailable(a.id))})</option>`;}).join('');
   } else {
-    opts=`<option value="balance">Balance general (${fmt(freeBalance())})</option>`;
+    opts=`<option value="balance"${selVal==='balance'?' selected':''}>Balance general (${fmt(freeBalance())})</option>`;
   }
-  opts+=(S.pockets||[]).map(p=>`<option value="pocket:${p.id}">${p.name} (${fmt(p.saved||0)})</option>`).join('');
+  opts+=(S.pockets||[]).map(p=>{const v=`pocket:${p.id}`;return `<option value="${v}"${v===selVal?' selected':''}>${p.name} (${fmt(p.saved||0)})</option>`;}).join('');
   return `<div><label class="text-xs font-bold text-slate-500 uppercase">De dónde sale el dinero</label>
   <select id="mSource" onchange="updateTrmVisibility()" class="w-full border border-indigo-100 bg-indigo-50 rounded-xl px-3 py-2.5 mt-1">${opts}</select></div>`;
 }
@@ -3657,7 +3660,16 @@ function renderChecks() {
   </div>`;
 
   if(incomeTab==='active') {
-    const activeGroups=Object.entries(groups).filter(([cat,items])=>items.some(p=>monthKey(parseDate(p.date))===incomeMonth)).sort(([a],[b])=>a.localeCompare(b));
+    const activeGroups=Object.entries(groups).filter(([cat,items])=>{
+      const hasThisMonth=items.some(p=>monthKey(parseDate(p.date))===incomeMonth);
+      if(!hasThisMonth) return false;
+      // Unique (one-time) payments: only show if there's at least one pending (not received) entry this month
+      const sample=items[0]||{};
+      if((sample.paymentType||'recurrente')==='unico') {
+        return items.some(p=>!p.received&&!p.inactive&&monthKey(parseDate(p.date))===incomeMonth);
+      }
+      return true; // Recurring: always show while this month has entries
+    }).sort(([a],[b])=>a.localeCompare(b));
     // Summary card
     html+=`<div class="card p-4 mb-4">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
@@ -4402,6 +4414,28 @@ function renderBills() {
         </div>
       </div>`;
     });
+    // Audit log for this month
+    const auditEntries=(S.historyLog||[]).filter(e=>e.date&&e.date.slice(0,7)===finMonth).slice(0,30);
+    if(auditEntries.length){
+      html+=`<div style="color:#7c6fda;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin:16px 0 8px">Registro de cambios</div>`;
+      const typeColor={'Creado':'#4ade80','Editado':'#f59e0b','Eliminado':'#ef4444','Pagado':'#7c6fda'};
+      const typeIcon={'Creado':'✚','Editado':'✎','Eliminado':'✕','Pagado':'✓'};
+      auditEntries.forEach(e=>{
+        const col=typeColor[e.type]||'#94a3b8';
+        const ico=typeIcon[e.type]||'•';
+        html+=`<div class="card p-3 mb-2" style="display:flex;align-items:center;gap:10px">
+          <div style="width:32px;height:32px;border-radius:9px;background:rgba(124,111,218,0.1);display:flex;align-items:center;justify-content:center;color:${col};font-size:0.9rem;flex-shrink:0">${ico}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;color:#e8eaf2;font-size:0.8rem">${e.name||'—'}</div>
+            <div style="color:#5c6480;font-size:0.65rem;margin-top:1px">${e.by||''} · ${fmtDate(e.date)}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <span style="font-size:0.68rem;font-weight:700;color:${col};background:rgba(124,111,218,0.1);border-radius:6px;padding:2px 7px">${e.type}</span>
+            ${e.amount?`<div style="color:#94a3b8;font-size:0.65rem;margin-top:2px">${fmt(e.amount)}</div>`:''}
+          </div>
+        </div>`;
+      });
+    }
   }
 
   else if(currentTab==='prestamos') {
@@ -4752,19 +4786,31 @@ function houseItemOccurrencesForMonth(mk) {
     if(mk<startKey) return;
     const maxOcc=item.termType==='term'?(item.totalPayments||1):9999;
     let cur=item.dueDate||isoToday();
-    let count=0, found=false;
+    let count=0;
+    const occDates=[];
+    // Collect ALL occurrence dates within the target month
     while(count<maxOcc){
       const curMk=cur.slice(0,7);
-      if(curMk===mk){found=true;break;}
       if(curMk>mk) break;
+      if(curMk===mk) occDates.push(cur);
       const next=nextDateByFrequency(cur,freq);
       if(next<=cur) break;
       cur=next; count++;
     }
-    if(found){
-      const occPay=(item.payments||[]).filter(p=>(p.date||'').slice(0,7)===mk);
-      results.push({...item,dueDate:cur,payments:occPay});
-    }
+    if(!occDates.length) return;
+    // FIFO payment assignment across occurrences
+    const monthPays=(item.payments||[]).filter(p=>(p.date||'').slice(0,7)===mk)
+      .sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    occDates.forEach((occDate,idx)=>{
+      let assignedPays;
+      if(occDates.length===1){
+        assignedPays=monthPays;
+      } else {
+        // Each occurrence gets its positional payment; last gets all remaining
+        assignedPays=idx===occDates.length-1?monthPays.slice(idx):(monthPays[idx]?[monthPays[idx]]:[]);
+      }
+      results.push({...item,dueDate:occDate,payments:assignedPays,_occIdx:idx});
+    });
   });
   return results;
 }
@@ -5533,11 +5579,29 @@ function renderPlan() {
 // ═══════════════════════════════════════
 // ACTIONS
 // ═══════════════════════════════════════
-function deleteBill(id) { if(!confirm('¿Eliminar?')) return; S.bills=S.bills.filter(x=>x.id!==id); save(); renderCurrentView(); }
+function deleteBill(id) {
+  const b=S.bills.find(x=>x.id===id);
+  if(!confirm('¿Eliminar?')) return;
+  if(b) S.historyLog.unshift({id:uid(),date:isoToday(),createdAt:new Date().toISOString(),type:'Eliminado',name:b.name||'Factura',amount:b.amount||0,sign:'memo',by:currentActorName()});
+  S.bills=S.bills.filter(x=>x.id!==id);
+  save(); renderCurrentView();
+}
 
-function deletePaycheck(id) { if(!confirm('¿Eliminar?')) return; S.paychecks=S.paychecks.filter(x=>x.id!==id); save(); renderCurrentView(); }
+function deletePaycheck(id) {
+  const p=S.paychecks.find(x=>x.id===id);
+  if(!confirm('¿Eliminar?')) return;
+  if(p) S.historyLog.unshift({id:uid(),date:isoToday(),createdAt:new Date().toISOString(),type:'Eliminado',name:paycheckSourceLabel(p)||'Ingreso',amount:p.amount||0,sign:'memo',by:currentActorName()});
+  S.paychecks=S.paychecks.filter(x=>x.id!==id);
+  save(); renderCurrentView();
+}
 
-function deleteOneTime(id) { if(!confirm('¿Eliminar?')) return; S.oneTimePayments=S.oneTimePayments.filter(x=>x.id!==id); save(); renderCurrentView(); }
+function deleteOneTime(id) {
+  const o=S.oneTimePayments.find(x=>x.id===id);
+  if(!confirm('¿Eliminar?')) return;
+  if(o) S.historyLog.unshift({id:uid(),date:isoToday(),createdAt:new Date().toISOString(),type:'Eliminado',name:o.name||'Pago',amount:o.amount||0,sign:'memo',by:currentActorName()});
+  S.oneTimePayments=S.oneTimePayments.filter(x=>x.id!==id);
+  save(); renderCurrentView();
+}
 
 function updateBankBalance(v) {
   const val=parseFloat(v)||0;
@@ -6239,6 +6303,7 @@ function confirmedBillPaid(billId, dateKey, amount, date, source=null) {
     setUndoAction('Pago de factura marcado como pagado','bill',[billId,dateKey]);
   }
   const _billName=S.bills.find(x=>x.id===billId)?.name||'Factura';
+  S.historyLog.unshift({id:uid(),date:isoToday(),createdAt:new Date().toISOString(),type:'Pagado',name:_billName,amount:paidAmount,sign:'memo',by:currentActorName()});
   logToSpace(`Pagó ${_billName}`, paidAmount, 'billPaid', billId);
   setLastAction(); closeModal(); renderCurrentView(); showToast('Factura marcada como pagada');
 }
@@ -6406,6 +6471,7 @@ function unmarkBorrowedPaid(id,paymentId='') {
 function deleteExpense(id) {
   const e=S.expenses.find(x=>x.id===id);
   if(!e || !confirm('¿Eliminar este gasto?')) return;
+  S.historyLog.unshift({id:uid(),date:isoToday(),createdAt:new Date().toISOString(),type:'Eliminado',name:e.name||'Gasto',amount:e.amount||0,sign:'memo',by:currentActorName()});
   if(e&&e.paid) adjustBalance(e.amount||0);
   S.expenses=S.expenses.filter(x=>x.id!==id);
   save(); renderCurrentView(); updateHeaderBalance();
@@ -9205,22 +9271,43 @@ function openModal(type, id, extra) {
     const p=S.paychecks.find(x=>x.id===id); if(!p) return;
     const accName=p.receivedAccountId?((S.accounts||[]).find(a=>a.id===p.receivedAccountId)?.name||'Cuenta'):(p.method==='efectivo'?'Efectivo':'Balance libre');
     const isReceived=!!p.received;
+    // Gather group data (same source label)
+    const srcLabel=paycheckSourceLabel(p);
+    const group=(S.paychecks||[]).filter(x=>paycheckSourceLabel(x)===srcLabel);
+    const receivedGroup=group.filter(x=>x.received);
+    const pendingGroup=group.filter(x=>!x.received&&!x.inactive).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
+    const totalReceived=receivedGroup.reduce((s,x)=>s+(x.amount||0),0);
+    const lastReceived=receivedGroup.sort((a,b)=>parseDate(b.receivedDate||b.date)-parseDate(a.receivedDate||a.date))[0];
+    const nextPending=pendingGroup[0];
+    // Creation date = earliest paycheck date in group
+    const allDates=group.map(x=>x.date||x.createdAt||isoToday()).sort();
+    const createdDate=allDates[0]||p.date;
+    // End date = last scheduled date or "Indefinido"
+    const isIndefinite=p.recurrenceTerm==='indefinite'||(p.paymentType==='recurrente'&&!p.recurrenceCount);
+    const allScheduled=group.map(x=>x.date||'').filter(Boolean).sort();
+    const endDate=isIndefinite?null:(allScheduled[allScheduled.length-1]||null);
     html=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
       <div style="width:52px;height:52px;border-radius:16px;background:rgba(74,222,128,0.15);border:1.5px solid rgba(74,222,128,0.3);color:#4ade80;display:flex;align-items:center;justify-content:center;flex-shrink:0">${renderStoredIcon(p.emoji||'brief','income',p.category||'')}</div>
       <div>
-        <div style="font-size:1.05rem;font-weight:700;color:#e8eaf2">${paycheckSourceLabel(p)}</div>
-        <div style="font-size:0.7rem;color:#94a3b8;margin-top:2px">${p.paymentType==='unico'?'Pago único':'Recurrente'} · ${freqLabel(p.frequency||'monthly')}</div>
+        <div style="font-size:1.05rem;font-weight:700;color:#e8eaf2">${srcLabel}</div>
+        <div style="font-size:0.7rem;color:#94a3b8;margin-top:2px">${p.paymentType==='unico'?'Pago único':'Recurrente'} · ${freqLabel(p.recurrenceFreq||p.frequency||'monthly')}</div>
       </div>
     </div>
     <div style="background:#1f2235;border-radius:14px;padding:14px;margin-bottom:14px;border:1px solid rgba(74,222,128,0.15)">
       <div style="font-size:1.8rem;font-weight:800;color:#4ade80;line-height:1;margin-bottom:2px">+${fmt(p.amount)}</div>
-      <div style="font-size:0.68rem;color:#94a3b8">Monto neto recibido</div>
+      <div style="font-size:0.68rem;color:#94a3b8">Monto por pago</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;font-size:0.875rem">
       <div style="display:flex;justify-content:space-between"><span style="color:#94a3b8">Estado</span><span style="font-weight:600;color:${isReceived?'#4ade80':'#f59e0b'}">${isReceived?'✓ Recibido':'Pendiente'}</span></div>
       ${isReceived?`<div style="display:flex;justify-content:space-between"><span style="color:#94a3b8">Fecha recibido</span><span style="font-weight:600;color:#e8eaf2">${fmtDate(p.receivedDate||p.date)}</span></div>`:''}
       <div style="display:flex;justify-content:space-between"><span style="color:#94a3b8">Fecha programada</span><span style="font-weight:600;color:#e8eaf2">${fmtDate(p.date)}</span></div>
       ${isReceived?`<div style="display:flex;justify-content:space-between"><span style="color:#94a3b8">Cuenta</span><span style="font-weight:600;color:#e8eaf2">${accName}</span></div>`:''}
+      <div style="display:flex;justify-content:space-between"><span style="color:#94a3b8">Fecha de inicio</span><span style="font-weight:600;color:#e8eaf2">${fmtDate(createdDate)}</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:#94a3b8">Fecha fin</span><span style="font-weight:600;color:${endDate?'#e8eaf2':'#5c6480'}">${endDate?fmtDate(endDate):'Indefinido'}</span></div>
+      ${lastReceived&&lastReceived.id!==p.id?`<div style="display:flex;justify-content:space-between"><span style="color:#94a3b8">Último cobro</span><span style="font-weight:600;color:#e8eaf2">${fmtDate(lastReceived.receivedDate||lastReceived.date)} · ${fmt(lastReceived.amount)}</span></div>`:''}
+      ${nextPending&&nextPending.id!==p.id?`<div style="display:flex;justify-content:space-between"><span style="color:#94a3b8">Próximo pago</span><span style="font-weight:600;color:#7c6fda">${fmtDate(nextPending.date)} · ${fmt(nextPending.amount)}</span></div>`:''}
+      <div style="display:flex;justify-content:space-between"><span style="color:#94a3b8">Total recibido</span><span style="font-weight:600;color:#4ade80">+${fmt(totalReceived)}</span></div>
+      ${receivedGroup.length?`<div style="display:flex;justify-content:space-between"><span style="color:#94a3b8">Pagos recibidos</span><span style="font-weight:600;color:#e8eaf2">${receivedGroup.length}</span></div>`:''}
       ${p.category?`<div style="display:flex;justify-content:space-between"><span style="color:#94a3b8">Categoría</span><span style="font-weight:600;color:#e8eaf2">${p.category}</span></div>`:''}
       ${p.note?`<div style="display:flex;justify-content:space-between"><span style="color:#94a3b8">Nota</span><span style="font-weight:600;color:#e8eaf2">${p.note}</span></div>`:''}
     </div>
@@ -9493,8 +9580,10 @@ function saveBill(id) {
   const startDate=fmtISO(getBillDueDate({dueDay}, parseDate(`${finMonth||monthKey(today())}-01`)));
   const gasSubcategory=document.getElementById('mGasSubcat')?.value||'';
   if(!name||!amount||!dueDay){showToast('❌ Completa los campos');return;}
+  const _billIsEdit=!!id;
   if(id){const b=S.bills.find(x=>x.id===id);if(b)Object.assign(b,{name,amount,dueDay,emoji,category,gasSubcategory:gasSubcategory||undefined,currency,frequency,termType,totalPayments,startDate:b.startDate||startDate});}
   else S.bills.unshift({id:uid(),name,amount,dueDay,emoji,category,gasSubcategory:gasSubcategory||undefined,currency,frequency,termType,totalPayments,startDate,active:true});
+  S.historyLog.unshift({id:uid(),date:isoToday(),createdAt:new Date().toISOString(),type:_billIsEdit?'Editado':'Creado',name,amount,sign:'memo',by:currentActorName()});
   save(); closeModal(); renderCurrentView(); showToast('✅ Factura guardada');
 }
 
@@ -9513,6 +9602,8 @@ function savePaycheck(id) {
   if(!date||!amount){showToast('❌ Completa fecha y monto');return;}
   if(category==='persona'&&!personName){showToast('Selecciona o agrega una persona');return;}
   if(category==='persona') ensureDirectoryPerson(personName,'heart');
+  const _paycheckIsEdit=!!id;
+  const _paycheckName=category==='persona'?personName:category==='trabajo'?(sourceName||'Trabajo'):(sourceName||'Ingreso');
   if(id){const p=S.paychecks.find(x=>x.id===id);if(p){const oldSource=paycheckSourceLabel(p);const shared={amount,category,note,paymentType,method,targetAccountId,recurrenceFreq,recurrenceTerm,recurrenceCount,personName,sourceName,emoji};Object.assign(p,{date,...shared});S.paychecks.forEach(x=>{if(x.id!==id&&!x.received&&paycheckSourceLabel(x)===oldSource) Object.assign(x,shared);});ensureIncomeSchedule(p);}}
   else {
     const base={amount,received:false,category,note,paymentType,method,targetAccountId,recurrenceFreq,recurrenceTerm,recurrenceCount,personName,sourceName,emoji};
@@ -9525,6 +9616,7 @@ function savePaycheck(id) {
       ensureIncomeSchedule(row);
     }
   }
+  S.historyLog.unshift({id:uid(),date:isoToday(),createdAt:new Date().toISOString(),type:_paycheckIsEdit?'Editado':'Creado',name:_paycheckName,amount,sign:'memo',by:currentActorName()});
   save(); closeModal(); renderCurrentView(); showToast('✅ Cheque guardado');
 }
 
@@ -9538,8 +9630,10 @@ function saveOneTime(id) {
   const totalPayments=termType==='term'?(parseInt(document.getElementById('mTotalPayments')?.value)||1):(frequency==='once'?1:null);
   const gasSubcategory=document.getElementById('mGasSubcat')?.value||'';
   if(!name||!amount||!dueDate){showToast('❌ Completa los campos');return;}
+  const _oneTimeIsEdit=!!id;
   if(id){const o=S.oneTimePayments.find(x=>x.id===id);if(o)Object.assign(o,{name,amount,dueDate,category,gasSubcategory:gasSubcategory||undefined,currency,emoji,frequency,termType,totalPayments});}
   else S.oneTimePayments.unshift({id:uid(),name,amount,dueDate,category,gasSubcategory:gasSubcategory||undefined,currency,emoji,frequency,termType,totalPayments,paid:false,paidDate:null,paidAmount:null,payments:[]});
+  S.historyLog.unshift({id:uid(),date:isoToday(),createdAt:new Date().toISOString(),type:_oneTimeIsEdit?'Editado':'Creado',name,amount,sign:'memo',by:currentActorName()});
   save(); closeModal(); renderCurrentView(); showToast('✅ Guardado');
 }
 
@@ -9586,6 +9680,7 @@ function saveExpense(id=null) {
       }
     }
   }
+  S.historyLog.unshift({id:uid(),date:isoToday(),createdAt:new Date().toISOString(),type:id?'Editado':'Creado',name,amount,sign:'memo',by:currentActorName()});
   setLastAction(); closeModal(); renderCurrentView(); showToast('✅ Gasto registrado');
 }
 
@@ -10585,7 +10680,8 @@ async function respondToTransactionRequest(requestId, accept) {
       personName:req.payload_json?.senderName||'',
       by:currentActorName(),
       at:new Date().toISOString(),
-      note:req.description||''
+      note:req.description||'',
+      spaceId:currentSpaceId||null
     });
     if(!S.notificationEvents) S.notificationEvents=[];
     S.notificationEvents.unshift({
@@ -10636,7 +10732,8 @@ async function sendTransactionRequest(personName, type, amount, description, pay
       personName:personName,
       by:senderName,
       at:new Date().toISOString(),
-      note:description||''
+      note:description||'',
+      spaceId:currentSpaceId||null
     });
     if(!S.notificationEvents) S.notificationEvents=[];
     S.notificationEvents.unshift({
@@ -10760,7 +10857,11 @@ function recentSpaceNotifications() {
     if(/abono|confirm/i.test(t.label||'')) return '✅ Pago confirmado';
     return '🔔 Actividad del espacio';
   }
-  const tx=activeSpace.filter(t=>t.createdAt&&new Date(t.createdAt).getTime()>=cutoff&&t.by!==actor).slice(0,12).map(t=>{
+  // Only show space-specific activity in space notifications (not personal bill/expense payments)
+  const SPACE_ONLY_REF_TYPES=['houseItem','calendarNote','calendarDone','calendarToggle','calendarDelete',
+    'shoppingListCreate','shoppingList','shoppingItemToggle','shoppingItemAdd','shoppingListDelete',
+    'planDone','planToggle','planDelete','reschedule'];
+  const tx=activeSpace.filter(t=>t.createdAt&&new Date(t.createdAt).getTime()>=cutoff&&t.by!==actor&&SPACE_ONLY_REF_TYPES.includes(t.refType||'')).slice(0,12).map(t=>{
     const title=spaceTxTitle(t);
     return {
       id:`space-tx:${currentSpaceId}:${t.id}`,type:'space_change',
@@ -12211,7 +12312,13 @@ function vehicleTravelMiles(carId){
 }
 function vehicleCurrentMiles(car){
   if(!car) return 0;
-  return (Number(car.startMiles||0)||0)+vehicleTravelMiles(car.id);
+  const startMiles=Number(car.startMiles||0)||0;
+  const logs=(S.carMileageLogs||[]).filter(l=>l.carId===car.id);
+  if(!logs.length) return startMiles;
+  // Correct formula: highest endMiles recorded (or startMiles if higher)
+  // Does NOT use SUM(totalMiles) — avoids gap/manual-entry drift
+  const maxEnd=logs.reduce((m,l)=>Math.max(m, Number(l.endMiles||0)||0), 0);
+  return Math.max(startMiles, maxEnd);
 }
 function vehicleNextOilInfo(carId){
   const oil=(S.carServiceLogs||[]).filter(s=>s.carId===carId&&s.kind==='oil').sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0]||null;
@@ -12283,7 +12390,7 @@ function renderMillas(){
         ? repairHistory.map(s=>({id:s.id,kind:'repair',date:s.date||isoToday(),title:'Reparación',subtitle:s.title||'',amount:s.cost?fmt(s.cost):''}))
         : currentMileageTab==='gas'
           ? gasFiltered
-          : monthLogs.map(l=>({id:l.id,kind:'miles',date:l.date||isoToday(),title:l.title||l.project||'Trayecto',subtitle:`${l.startMiles||0} → ${l.endMiles||0} mi`,amount:`${Number(l.totalMiles||0).toFixed(1)} mi`}));
+          : monthLogs.map(l=>({id:l.id,kind:'miles',date:l.date||isoToday(),title:l.title||l.project||'Trayecto',subtitle:`${Number(l.startMiles||0).toLocaleString('en-US')} → ${Number(l.endMiles||0).toLocaleString('en-US')} mi`,amount:`${Number(l.totalMiles||0).toFixed(1)} mi`,isCurrentMiles:(Number(l.endMiles||0)===currentMiles&&currentMiles>0)}));
     document.getElementById('millasContent').innerHTML=`<div class="flex items-center justify-between mb-3"><button onclick="currentMileageCarId=null;renderMillas()" class="btn-dark px-3 py-2 text-sm">← Vehículos</button><div style="display:flex;gap:6px"><button onclick="openModal('carFormModal','${car.id}')" class="btn-dark px-3 py-2 text-sm" title="Editar vehículo">⚙ Editar</button><button onclick="openModal('exportVehicleOptions','${car.id}')" class="btn-primary px-3 py-2 text-sm">Exportar</button></div></div>
       <div class="card p-4 mb-3" style="background:radial-gradient(circle at top left,rgba(34,211,238,.18),transparent 34%),linear-gradient(135deg,rgba(30,41,59,.96),rgba(15,23,42,.98));border:1px solid rgba(34,211,238,.24)">
         <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
@@ -12325,7 +12432,7 @@ function renderMillas(){
       </div>
       <div class="card p-3 mb-2">
         <div style="font-size:.72rem;color:#94a3b8;font-weight:700;margin-bottom:6px">Historial de ${currentMileageTab==='miles'?'millas':currentMileageTab==='oil'?'aceite':currentMileageTab==='gas'?'gasolina':'reparaciones'}</div>
-        ${filtered.length?filtered.sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(h=>`<div style="padding:8px 0;border-top:1px solid var(--border)"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div style="min-width:0;flex:1"><div style="font-weight:700;color:#fff">${h.kind==='miles'?'Trayecto':h.kind==='oil'?'Aceite':h.kind==='gas'?'⛽ Gasolina':'Reparación'} · ${fmtDate(h.date)}</div><div style="font-size:.68rem;color:#94a3b8">${h.title}${h.subtitle?` · ${h.subtitle}`:''}</div></div><div style="font-weight:700;color:${h.kind==='gas'?'#fbbf24':'#a5b4fc'};flex-shrink:0">${h.amount||''}</div></div>${h.kind!=='gas'?`<div style="display:flex;gap:6px;margin-top:5px">${h.kind==='miles'?`<button onclick="prefillMileage('${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);color:#a5b4fc">✏ Editar</button><button onclick="deleteMileage('${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#f87171">🗑 Borrar</button>`:h.kind==='oil'?`<button onclick="openModal('oilChangeFormModal','${car.id}::${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);color:#a5b4fc">✏ Editar</button><button onclick="deleteServiceLog('${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#f87171">🗑 Borrar</button>`:`<button onclick="openModal('repairFormModal','${car.id}::${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);color:#a5b4fc">✏ Editar</button><button onclick="deleteServiceLog('${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#f87171">🗑 Borrar</button>`}</div>`:''}</div>`).join(''):`<div class="text-slate-400 text-sm py-3 text-center">Sin registros aún</div>`}
+        ${filtered.length?filtered.sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(h=>`<div style="padding:8px 0;border-top:1px solid var(--border)"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div style="min-width:0;flex:1"><div style="font-weight:700;color:#fff;display:flex;align-items:center;gap:5px;flex-wrap:wrap">${h.kind==='miles'?'Trayecto':h.kind==='oil'?'Aceite':h.kind==='gas'?'⛽ Gasolina':'Reparación'} · ${fmtDate(h.date)}${h.isCurrentMiles?'<span style="background:rgba(34,211,238,.18);color:#22d3ee;font-size:.55rem;font-weight:900;padding:1px 7px;border-radius:99px;border:1px solid rgba(34,211,238,.35)">ACTUAL</span>':''}</div><div style="font-size:.68rem;color:#94a3b8">${h.title}${h.subtitle?` · ${h.subtitle}`:''}</div></div><div style="font-weight:700;color:${h.kind==='gas'?'#fbbf24':'#a5b4fc'};flex-shrink:0">${h.amount||''}</div></div>${h.kind!=='gas'?`<div style="display:flex;gap:6px;margin-top:5px">${h.kind==='miles'?`<button onclick="prefillMileage('${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);color:#a5b4fc">✏ Editar</button><button onclick="deleteMileage('${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#f87171">🗑 Borrar</button>`:h.kind==='oil'?`<button onclick="openModal('oilChangeFormModal','${car.id}::${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);color:#a5b4fc">✏ Editar</button><button onclick="deleteServiceLog('${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#f87171">🗑 Borrar</button>`:`<button onclick="openModal('repairFormModal','${car.id}::${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);color:#a5b4fc">✏ Editar</button><button onclick="deleteServiceLog('${h.id}')" style="font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#f87171">🗑 Borrar</button>`}</div>`:''}</div>`).join(''):`<div class="text-slate-400 text-sm py-3 text-center">Sin registros aún</div>`}
       </div>`;
     createContextFab('millasFab', ()=>openCurrentVehicleAdd(), 'Registro');
     return;
@@ -12345,7 +12452,8 @@ function saveCar(){
 function saveMileageLog(editId=null, forcedCarId=null){
   const carId=forcedCarId||(document.getElementById('mileCar')?.value||''); if(!carId){showToast('Selecciona carro');return;}
   const start=parseFloat(document.getElementById('mileStart')?.value||'0'); const end=parseFloat(document.getElementById('mileEnd')?.value||'0');
-  if(end<start){showToast('Odómetro final debe ser mayor o igual');return;}
+  if(start<0||end<0){showToast('Los odómetros no pueden ser negativos');return;}
+  if(end<start){showToast('Odómetro final debe ser mayor o igual al inicial');return;}
   const row={id:editId||uid(),carId,title:(document.getElementById('mileTitle')?.value||'').trim(),startMiles:start,endMiles:end,totalMiles:Math.max(0,end-start),project:(document.getElementById('mileProject')?.value||'').trim(),date:(document.getElementById('mileDate')?.value||isoToday()),notes:(document.getElementById('mileNotes')?.value||'').trim(),updatedAt:new Date().toISOString()};
   const idx=(S.carMileageLogs||[]).findIndex(x=>x.id===row.id); if(idx>=0) S.carMileageLogs[idx]=row; else S.carMileageLogs.unshift(row);
   save(); renderMillas(); showToast('Registro guardado');
@@ -12428,10 +12536,10 @@ function saveMileageFromModal(){
   const end=parseFloat(document.getElementById('mMileEnd')?.value||'0');
   const project=(document.getElementById('mMileProject')?.value||'').trim();
   if(!carId){ showToast('Selecciona un vehículo'); return; }
-  if(!Number.isFinite(start)){ showToast('Ingresa odómetro inicial'); return; }
-  if(!Number.isFinite(end)){ showToast('Ingresa odómetro final'); return; }
+  if(!Number.isFinite(start)||start<0){ showToast('Odómetro inicial debe ser un número positivo'); return; }
+  if(!Number.isFinite(end)||end<0){ showToast('Odómetro final debe ser un número positivo'); return; }
   if(!project){ showToast('Proyecto/categoría requerido'); return; }
-  if(end<=start){ showToast('El odómetro final debe ser mayor que el inicial.'); return; }
+  if(end<=start){ showToast('El odómetro final debe ser mayor que el inicial'); return; }
   const row={
     id:editId||uid(),
     carId,
